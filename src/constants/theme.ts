@@ -7,6 +7,12 @@ import '@/global.css';
 
 import { Platform } from 'react-native';
 
+/**
+ * `surface` / `surfaceGrouped` are not redundant with `background` /
+ * `backgroundElement`: grouped layouts (the active workout sheet) want a grey
+ * page carrying white cards, which is the inverse of what those two give in
+ * light mode.
+ */
 export const Colors = {
   light: {
     text: '#000000',
@@ -14,6 +20,16 @@ export const Colors = {
     backgroundElement: '#F0F0F3',
     backgroundSelected: '#E0E1E6',
     textSecondary: '#60646C',
+    accent: '#007AFF',
+    accentContent: '#FFFFFF',
+    success: '#34C759',
+    successMuted: '#DFF5E4',
+    danger: '#FF3B30',
+    dangerMuted: '#FFEDEC',
+    gold: '#8A6100',
+    goldMuted: '#FBEFD0',
+    surface: '#FFFFFF',
+    surfaceGrouped: '#F2F2F7',
   },
   dark: {
     text: '#ffffff',
@@ -21,6 +37,16 @@ export const Colors = {
     backgroundElement: '#212225',
     backgroundSelected: '#2E3135',
     textSecondary: '#B0B4BA',
+    accent: '#0A84FF',
+    accentContent: '#FFFFFF',
+    success: '#30D158',
+    successMuted: '#12351C',
+    danger: '#FF453A',
+    dangerMuted: '#3A1614',
+    gold: '#F5C542',
+    goldMuted: '#3A2E10',
+    surface: '#1C1C1E',
+    surfaceGrouped: '#000000',
   },
 } as const;
 

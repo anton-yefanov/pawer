@@ -1,0 +1,229 @@
+import { and, desc, eq, isNull, sql } from 'drizzle-orm';
+
+import { db } from '@/db/client';
+import { newId } from '@/db/id';
+import { sets, workoutExercises, workouts } from '@/db/schema';
+import { recordPersonalRecords } from '@/lib/personal-records';
+
+const touch = () => ({ updatedAt: Date.now() });
+
+/**
+ * The result of any "start a workout" action. There is only ever one active
+ * workout: a second one would strand the first, since the app surfaces the most
+ * recently started session and nothing else. `blocked` carries the session that
+ * is already running so the caller can offer to resume it.
+ */
+export type StartWorkoutResult =
+  | { status: 'started'; workoutId: string }
+  | { status: 'blocked'; workoutId: string };
+
+export async function activeWorkoutId(): Promise<string | null> {
+  const row = await db
+    .select({ id: workouts.id })
+    .from(workouts)
+    .where(and(isNull(workouts.finishedAt), isNull(workouts.deletedAt)))
+    .orderBy(desc(workouts.startedAt))
+    .limit(1)
+    .get();
+  return row?.id ?? null;
+}
+
+export async function startEmptyWorkout(): Promise<StartWorkoutResult> {
+  const active = await activeWorkoutId();
+  if (active) return { status: 'blocked', workoutId: active };
+
+  const id = newId();
+  const startedAt = Date.now();
+  await db.insert(workouts).values({ id, startedAt, createdAt: startedAt, updatedAt: startedAt });
+  return { status: 'started', workoutId: id };
+}
+
+export async function updateWorkout(
+  workoutId: string,
+  patch: { name?: string | null; notes?: string | null; startedAt?: number }
+): Promise<void> {
+  await db
+    .update(workouts)
+    .set({ ...patch, ...touch() })
+    .where(eq(workouts.id, workoutId));
+}
+
+export async function addExerciseToWorkout(
+  workoutId: string,
+  exerciseId: string
+): Promise<string> {
+  const last = await db
+    .select({ position: workoutExercises.position })
+    .from(workoutExercises)
+    .where(and(eq(workoutExercises.workoutId, workoutId), isNull(workoutExercises.deletedAt)))
+    .orderBy(desc(workoutExercises.position))
+    .limit(1)
+    .get();
+
+  const id = newId();
+  await db
+    .insert(workoutExercises)
+    .values({ id, workoutId, exerciseId, position: (last?.position ?? -1) + 1 });
+  await addSet(id);
+  return id;
+}
+
+export async function removeWorkoutExercise(workoutExerciseId: string): Promise<void> {
+  const deletedAt = Date.now();
+  await db
+    .update(sets)
+    .set({ deletedAt, updatedAt: deletedAt })
+    .where(eq(sets.workoutExerciseId, workoutExerciseId));
+  await db
+    .update(workoutExercises)
+    .set({ deletedAt, updatedAt: deletedAt })
+    .where(eq(workoutExercises.id, workoutExerciseId));
+}
+
+export async function setWorkoutExerciseNotes(
+  workoutExerciseId: string,
+  notes: string | null
+): Promise<void> {
+  await db
+    .update(workoutExercises)
+    .set({ notes, ...touch() })
+    .where(eq(workoutExercises.id, workoutExerciseId));
+}
+
+export async function setWorkoutExerciseRest(
+  workoutExerciseId: string,
+  restSeconds: number | null
+): Promise<void> {
+  await db
+    .update(workoutExercises)
+    .set({ restSeconds, ...touch() })
+    .where(eq(workoutExercises.id, workoutExerciseId));
+}
+
+/**
+ * Positions are never renumbered on delete — the number shown in the Set column
+ * is the row's index in the live list, so soft deletes leave no visible gap.
+ */
+export async function addSet(workoutExerciseId: string): Promise<string> {
+  const last = await db
+    .select({
+      position: sets.position,
+      weightKg: sets.weightKg,
+      reps: sets.reps,
+      durationSeconds: sets.durationSeconds,
+      distanceM: sets.distanceM,
+    })
+    .from(sets)
+    .where(and(eq(sets.workoutExerciseId, workoutExerciseId), isNull(sets.deletedAt)))
+    .orderBy(desc(sets.position))
+    .limit(1)
+    .get();
+
+  const id = newId();
+  await db.insert(sets).values({
+    id,
+    workoutExerciseId,
+    position: (last?.position ?? -1) + 1,
+    weightKg: last?.weightKg ?? null,
+    reps: last?.reps ?? null,
+    durationSeconds: last?.durationSeconds ?? null,
+    distanceM: last?.distanceM ?? null,
+  });
+  return id;
+}
+
+export async function updateSetValues(
+  setId: string,
+  values: {
+    weightKg?: number | null;
+    reps?: number | null;
+    durationSeconds?: number | null;
+    distanceM?: number | null;
+  }
+): Promise<void> {
+  await db
+    .update(sets)
+    .set({ ...values, ...touch() })
+    .where(eq(sets.id, setId));
+}
+
+export async function setSetCompleted(setId: string, completed: boolean): Promise<void> {
+  const now = Date.now();
+  await db
+    .update(sets)
+    .set({ completed, completedAt: completed ? now : null, updatedAt: now })
+    .where(eq(sets.id, setId));
+}
+
+export async function deleteSet(setId: string): Promise<void> {
+  const deletedAt = Date.now();
+  await db.update(sets).set({ deletedAt, updatedAt: deletedAt }).where(eq(sets.id, setId));
+}
+
+/**
+ * Only sets that carry a value — an untouched row has nothing to complete.
+ * Which column matters depends on the exercise's tracking type, but checking all
+ * three is equivalent here and saves joining back to `exercises`.
+ */
+export async function completeUnfinishedSets(workoutId: string): Promise<void> {
+  const now = Date.now();
+  await db
+    .update(sets)
+    .set({ completed: true, completedAt: now, updatedAt: now })
+    .where(
+      and(
+        eq(sets.completed, false),
+        isNull(sets.deletedAt),
+        sql`(${sets.reps} > 0 OR ${sets.durationSeconds} > 0 OR ${sets.distanceM} > 0)`,
+        sql`${sets.workoutExerciseId} IN (
+          SELECT id FROM ${workoutExercises}
+          WHERE workout_id = ${workoutId} AND deleted_at IS NULL
+        )`
+      )
+    );
+}
+
+/** Sets left empty are noise in history, so they go rather than getting logged as zeroes. */
+export async function finishWorkout(workoutId: string): Promise<void> {
+  const now = Date.now();
+  await db
+    .update(sets)
+    .set({ deletedAt: now, updatedAt: now })
+    .where(
+      and(
+        eq(sets.completed, false),
+        isNull(sets.deletedAt),
+        sql`${sets.workoutExerciseId} IN (
+          SELECT id FROM ${workoutExercises}
+          WHERE workout_id = ${workoutId} AND deleted_at IS NULL
+        )`
+      )
+    );
+
+  await db
+    .update(workouts)
+    .set({ finishedAt: now, updatedAt: now })
+    .where(eq(workouts.id, workoutId));
+
+  await recordPersonalRecords(workoutId);
+}
+
+export async function cancelWorkout(workoutId: string): Promise<void> {
+  const deletedAt = Date.now();
+  await db
+    .update(sets)
+    .set({ deletedAt, updatedAt: deletedAt })
+    .where(
+      sql`${sets.workoutExerciseId} IN (
+        SELECT id FROM ${workoutExercises} WHERE workout_id = ${workoutId}
+      )`
+    );
+  await db
+    .update(workoutExercises)
+    .set({ deletedAt, updatedAt: deletedAt })
+    .where(eq(workoutExercises.workoutId, workoutId));
+  await db
+    .update(workouts)
+    .set({ deletedAt, updatedAt: deletedAt })
+    .where(eq(workouts.id, workoutId));
+}

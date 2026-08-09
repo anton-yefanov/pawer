@@ -1,0 +1,186 @@
+import { and, asc, countDistinct, desc, eq, isNotNull, isNull, ne, sql } from 'drizzle-orm';
+
+import { db } from '@/db/client';
+import { exercises, personalRecords, sets, workoutExercises, workouts } from '@/db/schema';
+
+/**
+ * Query *builders*. Nothing here is awaited — the objects are handed to
+ * `useLiveQuery`, which subscribes and re-runs them on every write.
+ */
+
+const VOLUME_TRACKING_TYPES = sql`${exercises.trackingType} IN ('weight_reps', 'weighted_bodyweight')`;
+
+export function activeWorkoutQuery() {
+  return db
+    .select()
+    .from(workouts)
+    .where(and(isNull(workouts.finishedAt), isNull(workouts.deletedAt)))
+    .orderBy(desc(workouts.startedAt))
+    .limit(1);
+}
+
+/**
+ * The history list, with its totals aggregated in SQL — a per-row `summarise()`
+ * would mean two more queries per finished workout.
+ *
+ * `COUNT(DISTINCT)` is what keeps the set-row fan-out of the second join from
+ * multiplying the exercise count.
+ *
+ * Volume is gated on the tracking type so an assisted pull-up's −23 kg doesn't
+ * read as 23 kg of work; this must stay in step with `countsVolume` in
+ * src/lib/tracking-types.ts, which the summary card uses on the same data.
+ */
+export function finishedWorkoutsQuery() {
+  return db
+    .select({
+      id: workouts.id,
+      name: workouts.name,
+      startedAt: workouts.startedAt,
+      finishedAt: workouts.finishedAt,
+      exerciseCount: countDistinct(workoutExercises.id),
+      completedSets: sql<number>`COALESCE(SUM(CASE WHEN ${sets.completed} = 1 THEN 1 ELSE 0 END), 0)`,
+      volumeKg: sql<number>`COALESCE(SUM(CASE WHEN ${sets.completed} = 1 AND ${VOLUME_TRACKING_TYPES} THEN COALESCE(${sets.weightKg}, 0) * COALESCE(${sets.reps}, 0) ELSE 0 END), 0)`,
+      // A scalar subquery, not a fourth join: joining records in would multiply
+      // the set fan-out that COUNT(DISTINCT) above only just contains.
+      prCount: sql<number>`(SELECT COUNT(*) FROM ${personalRecords} pr
+        WHERE pr.workout_id = ${workouts.id} AND pr.deleted_at IS NULL)`,
+    })
+    .from(workouts)
+    .leftJoin(
+      workoutExercises,
+      and(eq(workoutExercises.workoutId, workouts.id), isNull(workoutExercises.deletedAt))
+    )
+    .leftJoin(exercises, eq(exercises.id, workoutExercises.exerciseId))
+    .leftJoin(
+      sets,
+      and(eq(sets.workoutExerciseId, workoutExercises.id), isNull(sets.deletedAt))
+    )
+    .where(and(isNotNull(workouts.finishedAt), isNull(workouts.deletedAt)))
+    .groupBy(workouts.id)
+    .orderBy(desc(workouts.finishedAt));
+}
+
+export function workoutQuery(workoutId: string) {
+  return db.select().from(workouts).where(eq(workouts.id, workoutId)).limit(1);
+}
+
+export function workoutExercisesQuery(workoutId: string) {
+  return db
+    .select({
+      id: workoutExercises.id,
+      exerciseId: workoutExercises.exerciseId,
+      position: workoutExercises.position,
+      notes: workoutExercises.notes,
+      restSeconds: workoutExercises.restSeconds,
+      name: exercises.name,
+      sourceId: exercises.sourceId,
+      trackingType: exercises.trackingType,
+    })
+    .from(workoutExercises)
+    .innerJoin(exercises, eq(workoutExercises.exerciseId, exercises.id))
+    .where(and(eq(workoutExercises.workoutId, workoutId), isNull(workoutExercises.deletedAt)))
+    .orderBy(asc(workoutExercises.position));
+}
+
+export function workoutSetsQuery(workoutId: string) {
+  return db
+    .select({
+      id: sets.id,
+      workoutExerciseId: sets.workoutExerciseId,
+      position: sets.position,
+      weightKg: sets.weightKg,
+      reps: sets.reps,
+      durationSeconds: sets.durationSeconds,
+      distanceM: sets.distanceM,
+      completed: sets.completed,
+    })
+    .from(sets)
+    .innerJoin(workoutExercises, eq(sets.workoutExerciseId, workoutExercises.id))
+    .where(
+      and(
+        eq(workoutExercises.workoutId, workoutId),
+        isNull(sets.deletedAt),
+        isNull(workoutExercises.deletedAt)
+      )
+    )
+    .orderBy(asc(sets.position));
+}
+
+/**
+ * Ghost values for the "Previous" column: every exercise's sets from the last
+ * finished workout that actually logged it.
+ *
+ * The subquery is correlated on `exercise_id` so one pass covers every card in
+ * the session — each exercise picks its own most recent workout, which a plain
+ * `ORDER BY … LIMIT 1` can't express. Requiring a completed set inside the
+ * subquery is deliberate: an abandoned session where the exercise was added but
+ * never logged would otherwise mask the last real numbers.
+ */
+export function previousSetsQuery(currentWorkoutId: string) {
+  return db
+    .select({
+      exerciseId: workoutExercises.exerciseId,
+      position: sets.position,
+      weightKg: sets.weightKg,
+      reps: sets.reps,
+      durationSeconds: sets.durationSeconds,
+      distanceM: sets.distanceM,
+    })
+    .from(sets)
+    .innerJoin(workoutExercises, eq(sets.workoutExerciseId, workoutExercises.id))
+    .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
+    .where(
+      and(
+        isNull(sets.deletedAt),
+        isNull(workoutExercises.deletedAt),
+        isNull(workouts.deletedAt),
+        isNotNull(workouts.finishedAt),
+        ne(workouts.id, currentWorkoutId),
+        eq(sets.completed, true),
+        sql`${workouts.finishedAt} = (
+          SELECT MAX(w2.finished_at)
+          FROM ${workouts} w2
+          JOIN ${workoutExercises} we2 ON we2.workout_id = w2.id
+          JOIN ${sets} s2 ON s2.workout_exercise_id = we2.id
+          WHERE we2.exercise_id = ${workoutExercises.exerciseId}
+            AND w2.id <> ${currentWorkoutId}
+            AND w2.finished_at IS NOT NULL
+            AND w2.deleted_at IS NULL
+            AND we2.deleted_at IS NULL
+            AND s2.deleted_at IS NULL
+            AND s2.completed = 1
+        )`
+      )
+    )
+    .orderBy(asc(workoutExercises.exerciseId), asc(sets.position));
+}
+
+export function workoutPersonalRecordsQuery(workoutId: string) {
+  return db
+    .select({
+      id: personalRecords.id,
+      exerciseId: personalRecords.exerciseId,
+      kind: personalRecords.kind,
+      value: personalRecords.value,
+      setId: personalRecords.setId,
+    })
+    .from(personalRecords)
+    .where(and(eq(personalRecords.workoutId, workoutId), isNull(personalRecords.deletedAt)));
+}
+
+export type HistoryRow = Awaited<ReturnType<typeof finishedWorkoutsQuery>>[number];
+export type WorkoutPrRow = Awaited<ReturnType<typeof workoutPersonalRecordsQuery>>[number];
+export type WorkoutExerciseRow = Awaited<ReturnType<typeof workoutExercisesQuery>>[number];
+export type WorkoutSetRow = Awaited<ReturnType<typeof workoutSetsQuery>>[number];
+export type PreviousSet = Awaited<ReturnType<typeof previousSetsQuery>>[number];
+
+export function groupBy<T, K>(rows: readonly T[], key: (row: T) => K): Map<K, T[]> {
+  const out = new Map<K, T[]>();
+  for (const row of rows) {
+    const k = key(row);
+    const bucket = out.get(k);
+    if (bucket) bucket.push(row);
+    else out.set(k, [row]);
+  }
+  return out;
+}

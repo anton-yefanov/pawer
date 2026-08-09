@@ -8,7 +8,17 @@
     "scheme": "pawer",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.antonyefanov.pawer",
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "Allow pawer to connect to the development server on your local network.",
+        "NSBonjourServices": [
+          "_expo-development-server._tcp",
+          "_expo-development-server._udp",
+          "_exp._tcp",
+          "_exp._udp"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -31,6 +41,13 @@
           "backgroundColor": "#208AEF",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
+        }
+      ],
+      "expo-sqlite",
+      [
+        "expo-notifications",
+        {
+          "color": "#208AEF"
         }
       ]
     ],

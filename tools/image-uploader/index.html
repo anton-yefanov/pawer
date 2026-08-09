@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pawer — mascot artwork</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="bar">
+        <strong id="counter">Counter: —</strong>
+        <input id="search" type="search" placeholder="Search exercises…" autocomplete="off" />
+        <label><input id="only-incomplete" type="checkbox" /> Only incomplete</label>
+        <span class="spacer"></span>
+        <button id="collapse-all" type="button">Collapse all</button>
+        <button id="build" type="button">Build WebP</button>
+      </div>
+      <p class="spec">
+        Mascot frames must be <b>PNG</b>, <b>square</b>, <b>1200×1200</b>, on a
+        <b>transparent</b> background — and both frames of a pair must share one bounding box.
+        Any other square size is resized to 1200×1200 on upload.
+      </p>
+      <pre id="log" hidden></pre>
+    </header>
+
+    <main id="list"></main>
+
+    <div id="lightbox" hidden>
+      <div class="lightbox-bar">
+        <button id="lightbox-copy" type="button">Copy image</button>
+        <button id="lightbox-close" type="button">Close</button>
+      </div>
+      <img id="lightbox-img" alt="" />
+    </div>
+
+    <input id="file-input" type="file" accept="image/png" hidden />
+    <script src="app.js"></script>
+  </body>
+</html>
