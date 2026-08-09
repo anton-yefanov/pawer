@@ -1,8 +1,8 @@
-import { and, desc, eq, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm';
 
 import { db } from '@/db/client';
 import { newId } from '@/db/id';
-import { sets, workoutExercises, workouts } from '@/db/schema';
+import { personalRecords, sets, workoutExercises, workouts } from '@/db/schema';
 import { recordPersonalRecords } from '@/lib/personal-records';
 
 const touch = () => ({ updatedAt: Date.now() });
@@ -184,7 +184,7 @@ export async function completeUnfinishedSets(workoutId: string): Promise<void> {
 }
 
 /** Sets left empty are noise in history, so they go rather than getting logged as zeroes. */
-export async function finishWorkout(workoutId: string): Promise<void> {
+async function purgeIncompleteSets(workoutId: string): Promise<void> {
   const now = Date.now();
   await db
     .update(sets)
@@ -199,6 +199,11 @@ export async function finishWorkout(workoutId: string): Promise<void> {
         )`
       )
     );
+}
+
+export async function finishWorkout(workoutId: string): Promise<void> {
+  const now = Date.now();
+  await purgeIncompleteSets(workoutId);
 
   await db
     .update(workouts)
@@ -206,6 +211,93 @@ export async function finishWorkout(workoutId: string): Promise<void> {
     .where(eq(workouts.id, workoutId));
 
   await recordPersonalRecords(workoutId);
+}
+
+/**
+ * Saving a finished workout that was reopened for editing. Anything the user
+ * typed counts — they are entering history, not logging live, so a set with
+ * numbers in it is a set they did, ticked or not. `finishedAt` is left alone so
+ * the workout keeps its place in history.
+ */
+export async function saveWorkoutEdits(workoutId: string): Promise<void> {
+  await completeUnfinishedSets(workoutId);
+  await purgeIncompleteSets(workoutId);
+  await db.update(workouts).set(touch()).where(eq(workouts.id, workoutId));
+  await recordPersonalRecords(workoutId);
+}
+
+/**
+ * Unlike `cancelWorkout` this also drops the workout's records: a finished
+ * workout has them, and leaving them behind would keep a deleted session's PRs
+ * standing and counted in history. Records it had beaten stay beaten — restoring
+ * the previous holder would mean recomputing every standing record.
+ */
+export async function deleteWorkout(workoutId: string): Promise<void> {
+  await cancelWorkout(workoutId);
+
+  const deletedAt = Date.now();
+  await db
+    .update(personalRecords)
+    .set({ deletedAt, updatedAt: deletedAt })
+    .where(and(eq(personalRecords.workoutId, workoutId), isNull(personalRecords.deletedAt)));
+}
+
+/**
+ * A fresh session with the same exercises. Sets come back blank and in the same
+ * number, for the reason `startWorkoutFromTemplate` gives: carrying the old
+ * numbers forward would show figures the user hasn't lifted today.
+ */
+export async function repeatWorkout(workoutId: string): Promise<StartWorkoutResult> {
+  const active = await activeWorkoutId();
+  if (active) return { status: 'blocked', workoutId: active };
+
+  const source = await db.select().from(workouts).where(eq(workouts.id, workoutId)).get();
+  if (!source) throw new Error(`No workout ${workoutId}`);
+
+  const planned = await db
+    .select({
+      id: workoutExercises.id,
+      exerciseId: workoutExercises.exerciseId,
+      restSeconds: workoutExercises.restSeconds,
+      setCount: sql<number>`(SELECT COUNT(*) FROM ${sets} s
+        WHERE s.workout_exercise_id = ${workoutExercises.id} AND s.deleted_at IS NULL)`,
+    })
+    .from(workoutExercises)
+    .where(and(eq(workoutExercises.workoutId, workoutId), isNull(workoutExercises.deletedAt)))
+    .orderBy(asc(workoutExercises.position))
+    .all();
+
+  const id = newId();
+  const startedAt = Date.now();
+  await db.insert(workouts).values({
+    id,
+    templateId: source.templateId,
+    name: source.name,
+    startedAt,
+    createdAt: startedAt,
+    updatedAt: startedAt,
+  });
+
+  for (const [position, row] of planned.entries()) {
+    const workoutExerciseId = newId();
+    await db.insert(workoutExercises).values({
+      id: workoutExerciseId,
+      workoutId: id,
+      exerciseId: row.exerciseId,
+      position,
+      restSeconds: row.restSeconds,
+    });
+
+    await db.insert(sets).values(
+      Array.from({ length: Math.max(1, row.setCount) }, (_, index) => ({
+        id: newId(),
+        workoutExerciseId,
+        position: index,
+      }))
+    );
+  }
+
+  return { status: 'started', workoutId: id };
 }
 
 export async function cancelWorkout(workoutId: string): Promise<void> {

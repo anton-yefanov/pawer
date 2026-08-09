@@ -1,21 +1,18 @@
 import { Image } from 'expo-image';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { PrChip } from '@/components/pr-chip';
 import { ThemedText } from '@/components/themed-text';
 import { BigButton } from '@/components/workout/big-button';
+import { ExerciseBreakdown, SummaryStats } from '@/components/workout/workout-recap';
 import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { mascotImage } from '@/lib/mascot-images';
-import { isPrKind, PR_LABELS } from '@/lib/personal-records';
-import { formatWeight, type WeightUnit } from '@/lib/units';
+import { type WeightUnit } from '@/lib/units';
 import {
-  groupBy,
   type WorkoutExerciseRow,
   type WorkoutPrRow,
   type WorkoutSetRow,
 } from '@/lib/workout-queries';
-import { formatElapsed, type WorkoutSummary as Summary } from '@/lib/workout-stats';
+import { type WorkoutSummary as Summary } from '@/lib/workout-stats';
 
 export function WorkoutSummary({
   name,
@@ -34,18 +31,6 @@ export function WorkoutSummary({
   unit: WeightUnit;
   onDone: () => void;
 }) {
-  const theme = useTheme();
-
-  const stats = [
-    ['Duration', formatElapsed(summary.durationMs)],
-    ['Volume', formatWeight(summary.volumeKg, unit)],
-    ['Sets', String(summary.completedSets)],
-    ['Exercises', String(summary.exerciseCount)],
-  ] as const;
-
-  const setsByExercise = groupBy(sets, (set) => set.workoutExerciseId);
-  const recordsByExercise = groupBy(personalRecords, (record) => record.exerciseId);
-
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -57,48 +42,14 @@ export function WorkoutSummary({
           {name}
         </ThemedText>
 
-        <View style={[styles.card, { backgroundColor: theme.surface }]}>
-          {stats.map(([label, value]) => (
-            <View key={label} style={styles.stat}>
-              <ThemedText themeColor="textSecondary">{label}</ThemedText>
-              <ThemedText type="smallBold">{value}</ThemedText>
-            </View>
-          ))}
-        </View>
+        <SummaryStats summary={summary} unit={unit} />
 
-        {exercises.length > 0 && (
-          <View style={[styles.card, styles.exercises, { backgroundColor: theme.surface }]}>
-            {exercises.map((exercise) => {
-              const completed = (setsByExercise.get(exercise.id) ?? []).filter(
-                (set) => set.completed
-              ).length;
-              const records = recordsByExercise.get(exercise.exerciseId) ?? [];
-
-              return (
-                <View key={exercise.id} style={styles.exercise}>
-                  <View style={styles.exerciseHeader}>
-                    <ThemedText type="smallBold" numberOfLines={1} style={styles.exerciseName}>
-                      {exercise.name}
-                    </ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {completed} {completed === 1 ? 'set' : 'sets'}
-                    </ThemedText>
-                  </View>
-
-                  {records.length > 0 && (
-                    <View style={styles.chips}>
-                      {records.map((record) =>
-                        isPrKind(record.kind) ? (
-                          <PrChip key={record.id} label={PR_LABELS[record.kind]} />
-                        ) : null
-                      )}
-                    </View>
-                  )}
-                </View>
-              );
-            })}
-          </View>
-        )}
+        <ExerciseBreakdown
+          exercises={exercises}
+          sets={sets}
+          personalRecords={personalRecords}
+          unit={unit}
+        />
       </ScrollView>
 
       <View style={styles.footer}>
@@ -125,37 +76,6 @@ const styles = StyleSheet.create({
   },
   title: {
     textAlign: 'center',
-  },
-  card: {
-    borderRadius: 14,
-    paddingHorizontal: Spacing.three,
-  },
-  stat: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: 44,
-  },
-  exercises: {
-    paddingVertical: Spacing.two,
-  },
-  exercise: {
-    gap: Spacing.one,
-    paddingVertical: Spacing.two,
-  },
-  exerciseHeader: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    gap: Spacing.two,
-  },
-  exerciseName: {
-    flexShrink: 1,
-  },
-  chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.one,
   },
   footer: {
     padding: Spacing.three,

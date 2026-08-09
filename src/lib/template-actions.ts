@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNull } from 'drizzle-orm';
+import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm';
 
 import { db } from '@/db/client';
 import { newId } from '@/db/id';
@@ -37,6 +37,51 @@ export async function createTemplate({
         templateId: id,
         exerciseId,
         position,
+      })),
+    );
+  }
+
+  return id;
+}
+
+/** `targetSets` is what the user actually logged, not the three a fresh template assumes. */
+export async function createTemplateFromWorkout(workoutId: string): Promise<string> {
+  const workout = await db
+    .select({ name: workouts.name })
+    .from(workouts)
+    .where(eq(workouts.id, workoutId))
+    .get();
+
+  const rows = await db
+    .select({
+      exerciseId: workoutExercises.exerciseId,
+      restSeconds: workoutExercises.restSeconds,
+      completedSets: sql<number>`(SELECT COUNT(*) FROM ${sets} s
+        WHERE s.workout_exercise_id = ${workoutExercises.id}
+          AND s.deleted_at IS NULL AND s.completed = 1)`,
+    })
+    .from(workoutExercises)
+    .where(and(eq(workoutExercises.workoutId, workoutId), isNull(workoutExercises.deletedAt)))
+    .orderBy(asc(workoutExercises.position))
+    .all();
+
+  const id = newId();
+  await db.insert(templates).values({
+    id,
+    name: workout?.name?.trim() || 'Workout',
+    position: await nextPersonalPosition(),
+    isBuiltIn: false,
+  });
+
+  if (rows.length > 0) {
+    await db.insert(templateExercises).values(
+      rows.map((row, position) => ({
+        id: newId(),
+        templateId: id,
+        exerciseId: row.exerciseId,
+        position,
+        targetSets: Math.max(1, row.completedSets),
+        restSeconds: row.restSeconds,
       })),
     );
   }

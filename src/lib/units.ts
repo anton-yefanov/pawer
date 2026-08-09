@@ -44,6 +44,17 @@ export function formatWeight(kg: number | null, unit: WeightUnit): string {
   return `${text} ${unit}`;
 }
 
+/**
+ * Totals rather than a single lift: kilograms roll over into tonnes so a
+ * season's work reads as `26.49 t` instead of `26490 kg`. Pounds have no such
+ * customary unit in the gym, so they stay pounds and only gain separators.
+ */
+export function formatTonnage(kg: number, unit: WeightUnit): string {
+  const value = kgToDisplay(kg, unit);
+  if (unit === 'kg' && value >= 1000) return `${(value / 1000).toFixed(2)} t`;
+  return `${Math.round(value).toLocaleString()} ${unit}`;
+}
+
 /** `2:00`, or `1:20:00` once a duration runs past the hour. */
 export function formatDuration(seconds: number): string {
   const s = Math.max(0, Math.round(seconds));

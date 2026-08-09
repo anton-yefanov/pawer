@@ -14,6 +14,7 @@ import { TemplateSection } from '@/components/templates/template-section';
 import { ThemedText } from '@/components/themed-text';
 import { ActiveWorkoutPrompt } from '@/components/workout/active-workout-prompt';
 import { BigButton } from '@/components/workout/big-button';
+import { ElapsedTime } from '@/components/workout/elapsed-time';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { type Template } from '@/db/schema';
 import { useTheme } from '@/hooks/use-theme';
@@ -144,10 +145,13 @@ export default function StartWorkoutScreen() {
                 In Progress
               </ThemedText>
               <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
-                <ThemedText numberOfLines={1}>{active.name?.trim() || 'Workout'}</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  Started {formatStartTime(active.startedAt)}
-                </ThemedText>
+                <View style={styles.cardText}>
+                  <ThemedText numberOfLines={1}>{active.name?.trim() || 'Workout'}</ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Started {formatStartTime(active.startedAt)}
+                  </ThemedText>
+                </View>
+                <ElapsedTime startedAt={active.startedAt} />
               </View>
               <BigButton title="Resume Workout" onPress={() => open(active.id)} />
             </View>
@@ -230,6 +234,12 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 14,
     padding: Spacing.three,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  cardText: {
+    flex: 1,
     gap: Spacing.half,
   },
 });

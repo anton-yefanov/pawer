@@ -1,4 +1,3 @@
-import { useRouter } from 'expo-router';
 import { Fragment, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
@@ -26,6 +25,7 @@ type Props = {
   defaultRestSeconds: number;
   restingSetId: string | null;
   onComplete: (set: WorkoutSetRow, completed: boolean) => void;
+  onOpenExercise: (exerciseId: string) => void;
 };
 
 export function ExerciseCard({
@@ -36,9 +36,9 @@ export function ExerciseCard({
   defaultRestSeconds,
   restingSetId,
   onComplete,
+  onOpenExercise,
 }: Props) {
   const theme = useTheme();
-  const router = useRouter();
   const [notesOpen, setNotesOpen] = useState(() => (workoutExercise.notes ?? '') !== '');
   const restSeconds = workoutExercise.restSeconds ?? defaultRestSeconds;
   const trackingType = trackingTypeOf(workoutExercise.trackingType);
@@ -49,12 +49,7 @@ export function ExerciseCard({
       <View style={styles.header}>
         <Pressable
           style={styles.title}
-          onPress={() =>
-            router.push({
-              pathname: '/workout/exercise/[id]',
-              params: { id: workoutExercise.exerciseId },
-            })
-          }>
+          onPress={() => onOpenExercise(workoutExercise.exerciseId)}>
           <ThemedText type="smallBold" numberOfLines={1}>
             {workoutExercise.name}
           </ThemedText>

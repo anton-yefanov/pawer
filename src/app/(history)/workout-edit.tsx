@@ -2,19 +2,19 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { WorkoutLogger } from '@/components/workout/workout-logger';
 
-export default function ActiveWorkoutScreen() {
+export default function EditWorkoutScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
 
   return (
     <WorkoutLogger
       id={id}
-      mode="active"
+      mode="edit"
       onOpenExercise={(exerciseId) =>
-        router.push({ pathname: '/workout/exercise/[id]', params: { id: exerciseId } })
+        router.push({ pathname: '/workout-exercise', params: { id: exerciseId } })
       }
-      onAddExercise={() => router.push({ pathname: '/workout/add-exercise', params: { id } })}
-      onOpenTimer={() => router.push({ pathname: '/workout/timer' })}
+      onAddExercise={() => router.push({ pathname: '/workout-add-exercise', params: { id } })}
+      onOpenTimer={() => router.push({ pathname: '/workout-timer' })}
       onDone={() => router.back()}
     />
   );

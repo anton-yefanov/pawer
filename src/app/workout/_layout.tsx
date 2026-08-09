@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 
+import { FULL_SHEET, SHEET } from '@/constants/sheet';
 import { useTheme } from '@/hooks/use-theme';
 
 /**
@@ -13,13 +14,6 @@ import { useTheme } from '@/hooks/use-theme';
 export default function WorkoutLayout() {
   const theme = useTheme();
 
-  const sheet = {
-    presentation: 'formSheet',
-    sheetGrabberVisible: true,
-    sheetCornerRadius: 20,
-    headerLargeTitle: false,
-  } as const;
-
   return (
     <Stack screenOptions={{ headerShown: true, headerTintColor: theme.text }}>
       <Stack.Screen
@@ -30,44 +24,32 @@ export default function WorkoutLayout() {
           contentStyle: { backgroundColor: theme.background },
         }}
       />
-      <Stack.Screen name="active" options={{ ...sheet, sheetAllowedDetents: [1], title: '' }} />
+      <Stack.Screen name="active" options={{ ...FULL_SHEET, title: '' }} />
       {/*
         Both pickers render their own floating search row over the nav bar, so a
         title there would sit on top of it. `headerShown: false` from inside the
         screen doesn't take once the native header exists — the title has to be
         empty here.
       */}
-      <Stack.Screen
-        name="add-exercise"
-        options={{ ...sheet, sheetAllowedDetents: [1], title: '' }}
-      />
+      <Stack.Screen name="add-exercise" options={{ ...FULL_SHEET, title: '' }} />
       <Stack.Screen
         name="timer"
-        options={{ ...sheet, sheetAllowedDetents: [0.4], title: 'Timer' }}
+        options={{ ...SHEET, sheetAllowedDetents: [0.4], title: 'Timer' }}
       />
       <Stack.Screen
         name="exercise/[id]"
-        options={{ ...sheet, sheetAllowedDetents: [0.6, 1], sheetInitialDetentIndex: 0 }}
+        options={{ ...SHEET, sheetAllowedDetents: [0.6, 1], sheetInitialDetentIndex: 0 }}
       />
-      <Stack.Screen
-        name="template/new"
-        options={{ ...sheet, sheetAllowedDetents: [1], title: 'New Template' }}
-      />
-      <Stack.Screen
-        name="template/edit"
-        options={{ ...sheet, sheetAllowedDetents: [1], title: 'Edit Template' }}
-      />
-      <Stack.Screen
-        name="template/add-exercises"
-        options={{ ...sheet, sheetAllowedDetents: [1], title: '' }}
-      />
+      <Stack.Screen name="template/new" options={{ ...FULL_SHEET, title: 'New Template' }} />
+      <Stack.Screen name="template/edit" options={{ ...FULL_SHEET, title: 'Edit Template' }} />
+      <Stack.Screen name="template/add-exercises" options={{ ...FULL_SHEET, title: '' }} />
       <Stack.Screen
         name="template/[id]"
-        options={{ ...sheet, sheetAllowedDetents: [0.6, 1], sheetInitialDetentIndex: 0 }}
+        options={{ ...SHEET, sheetAllowedDetents: [0.6, 1], sheetInitialDetentIndex: 0 }}
       />
       <Stack.Screen
         name="folder/[id]"
-        options={{ ...sheet, sheetAllowedDetents: [0.6, 1], sheetInitialDetentIndex: 0 }}
+        options={{ ...SHEET, sheetAllowedDetents: [0.6, 1], sheetInitialDetentIndex: 0 }}
       />
     </Stack>
   );

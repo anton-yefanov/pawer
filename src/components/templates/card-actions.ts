@@ -20,7 +20,7 @@ export type ConfirmDestructive = (options: {
  * Callers inside a formSheet must pass their own `confirm` — a UIAlertController
  * raised from behind a formSheet never reaches the screen (see dialog.tsx).
  */
-const alertConfirm: ConfirmDestructive = ({ title, body, onConfirm }) =>
+export const alertConfirm: ConfirmDestructive = ({ title, body, onConfirm }) =>
   Alert.alert(title, body, [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Delete', style: 'destructive', onPress: onConfirm },

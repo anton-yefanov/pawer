@@ -8,7 +8,7 @@ import { exercises, personalRecords, sets, workoutExercises, workouts } from '@/
  * `useLiveQuery`, which subscribes and re-runs them on every write.
  */
 
-const VOLUME_TRACKING_TYPES = sql`${exercises.trackingType} IN ('weight_reps', 'weighted_bodyweight')`;
+export const VOLUME_TRACKING_TYPES = sql`${exercises.trackingType} IN ('weight_reps', 'weighted_bodyweight')`;
 
 export function activeWorkoutQuery() {
   return db

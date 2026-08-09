@@ -9,14 +9,14 @@ type Props = {
   title: string;
   onPress: () => void;
   /** `filled` is the primary call to action; `tinted` sits on a card. */
-  variant?: 'filled' | 'tinted';
+  variant?: 'filled' | 'tinted' | 'danger';
   symbol?: SymbolViewProps['name'];
 };
 
 export function BigButton({ title, onPress, variant = 'filled', symbol }: Props) {
   const theme = useTheme();
   const filled = variant === 'filled';
-  const label = filled ? theme.accentContent : theme.accent;
+  const label = filled ? theme.accentContent : variant === 'danger' ? theme.danger : theme.accent;
 
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
