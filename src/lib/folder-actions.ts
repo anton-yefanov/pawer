@@ -1,5 +1,6 @@
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
+import { type CardColor } from '@/constants/card-colors';
 import { db } from '@/db/client';
 import { newId } from '@/db/id';
 import { folders, templates } from '@/db/schema';
@@ -24,6 +25,13 @@ export async function renameFolder(folderId: string, name: string): Promise<void
   await db
     .update(folders)
     .set({ name, ...touch() })
+    .where(eq(folders.id, folderId));
+}
+
+export async function setFolderColor(folderId: string, color: CardColor): Promise<void> {
+  await db
+    .update(folders)
+    .set({ color, ...touch() })
     .where(eq(folders.id, folderId));
 }
 

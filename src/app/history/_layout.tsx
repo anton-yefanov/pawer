@@ -4,9 +4,9 @@ import { FULL_SHEET, SHEET } from '@/constants/sheet';
 import { useTheme } from '@/hooks/use-theme';
 
 /**
- * The workout sheets are duplicated here rather than pushed at `/workout/*`:
- * those belong to the Workout tab's stack, and pushing one from History would
- * switch tabs mid-gesture. Same sibling-sheet rules as workout/_layout.tsx.
+ * The workout sheets are duplicated here rather than pushed at the Workout
+ * tab's paths: those belong to that tab's stack, and pushing one from History
+ * would switch tabs mid-gesture. Same sibling-sheet rules as (workout)/_layout.
  */
 export default function HistoryLayout() {
   const theme = useTheme();
@@ -16,6 +16,7 @@ export default function HistoryLayout() {
       screenOptions={{
         headerShown: true,
         headerTintColor: theme.text,
+        contentStyle: { backgroundColor: theme.background },
       }}>
       <Stack.Screen name="index" options={{ title: 'History', headerLargeTitle: true }} />
       <Stack.Screen
@@ -24,7 +25,11 @@ export default function HistoryLayout() {
       />
       <Stack.Screen name="workout-edit" options={{ ...FULL_SHEET, title: '' }} />
       <Stack.Screen name="workout-active" options={{ ...FULL_SHEET, title: '' }} />
-      <Stack.Screen name="workout-add-exercise" options={{ ...FULL_SHEET, title: '' }} />
+      <Stack.Screen
+        name="workout-add-exercise"
+        options={{ ...FULL_SHEET, title: '', contentStyle: { backgroundColor: theme.surface } }}
+      />
+      <Stack.Screen name="new-exercise" options={FULL_SHEET} />
       <Stack.Screen
         name="workout-timer"
         options={{ ...SHEET, sheetAllowedDetents: [0.4], title: 'Timer' }}

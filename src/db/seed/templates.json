@@ -1,6 +1,7 @@
 [
   {
     "sourceId": "back_and_biceps",
+    "color": "blue",
     "name": "Back & Biceps",
     "position": 0,
     "exercises": [
@@ -14,6 +15,7 @@
   },
   {
     "sourceId": "chest_and_triceps",
+    "color": "red",
     "name": "Chest & Triceps",
     "position": 1,
     "exercises": [
@@ -26,6 +28,7 @@
   },
   {
     "sourceId": "legs",
+    "color": "green",
     "name": "Legs",
     "position": 2,
     "exercises": [
@@ -39,6 +42,7 @@
   },
   {
     "sourceId": "shoulders_and_arms",
+    "color": "purple",
     "name": "Shoulders & Arms",
     "position": 3,
     "exercises": [
@@ -55,6 +59,7 @@
   },
   {
     "sourceId": "push_day",
+    "color": "orange",
     "name": "Push",
     "position": 4,
     "exercises": [
@@ -71,6 +76,7 @@
   },
   {
     "sourceId": "pull_day",
+    "color": "teal",
     "name": "Pull",
     "position": 5,
     "exercises": [
@@ -83,6 +89,7 @@
   },
   {
     "sourceId": "full_body",
+    "color": "pink",
     "name": "Full Body",
     "position": 6,
     "exercises": [

@@ -1,5 +1,8 @@
 import { eq, inArray, sql } from 'drizzle-orm';
 
+import { asCardColor } from '@/constants/card-colors';
+import { buildSearchText } from '@/lib/exercise-search';
+
 import { newId } from './id';
 import type { Database } from './client';
 import { exercises, settings, templateExercises, templates } from './schema';
@@ -14,11 +17,11 @@ import seedTemplateData from './seed/templates.json';
  * scripts/build-exercise-seed.mjs), and template rows keep the id they were
  * first inserted with, so `workouts.template_id` references survive.
  */
-export const SEED_VERSION = 3;
+export const SEED_VERSION = 6;
 
 const SEED_VERSION_KEY = 'seed_version';
 
-/** SQLite caps bound parameters per statement; 14 columns × 100 rows is safe. */
+/** SQLite caps bound parameters per statement; 16 columns × 100 rows is safe. */
 const CHUNK_SIZE = 100;
 
 type SeedExercise = (typeof seedExercises)[number];
@@ -54,7 +57,7 @@ export async function seedIfNeeded(db: Database): Promise<{ seeded: boolean; cou
     const chunk = rows.slice(i, i + CHUNK_SIZE);
     await db
       .insert(exercises)
-      .values(chunk.map((e) => ({ ...e, isCustom: false })))
+      .values(chunk.map((e) => ({ ...e, searchText: buildSearchText(e), isCustom: false })))
       .onConflictDoUpdate({
         target: exercises.sourceId,
         set: {
@@ -69,6 +72,8 @@ export async function seedIfNeeded(db: Database): Promise<{ seeded: boolean; cou
           primaryMuscles: sql`excluded.primary_muscles`,
           secondaryMuscles: sql`excluded.secondary_muscles`,
           instructions: sql`excluded.instructions`,
+          tags: sql`excluded.tags`,
+          searchText: sql`excluded.search_text`,
           deletedAt: null,
           updatedAt: sql`(unixepoch() * 1000)`,
         },
@@ -104,6 +109,7 @@ async function seedTemplates(db: Database): Promise<void> {
         sourceId: template.sourceId,
         name: template.name,
         position: template.position,
+        color: asCardColor(template.color),
         isBuiltIn: true,
       })
       .onConflictDoUpdate({
@@ -111,6 +117,7 @@ async function seedTemplates(db: Database): Promise<void> {
         set: {
           name: sql`excluded.name`,
           position: sql`excluded.position`,
+          color: sql`excluded.color`,
           isBuiltIn: true,
           deletedAt: null,
           updatedAt: sql`(unixepoch() * 1000)`,

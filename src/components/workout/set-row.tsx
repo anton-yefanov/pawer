@@ -1,14 +1,19 @@
+import * as Haptics from 'expo-haptics';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 
 import { ThemedText } from '@/components/themed-text';
+import { SET_TYPE_CELL, SetTypeMenu } from '@/components/workout/set-type-menu';
 import { Spacing } from '@/constants/theme';
 import { useDebouncedWrite } from '@/hooks/use-debounced-write';
 import { useTheme } from '@/hooks/use-theme';
+import { useAutofillWeight } from '@/lib/autofill-weight';
+import { setTypeOf } from '@/lib/set-types';
 import {
   formatPreviousSet,
+  missingRequiredFields,
   TRACKING,
   type SetField,
   type TrackedSet,
@@ -26,29 +31,46 @@ import {
   roundForDisplay,
   type WeightUnit,
 } from '@/lib/units';
-import { deleteSet, updateSetValues } from '@/lib/workout-actions';
+import { deleteSet, setSetType, updateSetValues } from '@/lib/workout-actions';
 import type { PreviousSet, WorkoutSetRow } from '@/lib/workout-queries';
 
-export const SET_COLUMNS = { set: 40, check: 44 } as const;
+export const SET_COLUMNS = { set: SET_TYPE_CELL.width, check: 44 } as const;
 
-/** A lone field spans the space two would share — see the Strong screenshots. */
-export function fieldWidth(field: SetField, fieldCount: number): number {
-  if (fieldCount === 1) return 152;
-  return field === 'weight' || field === 'reps' ? 64 : 76;
+/**
+ * The inputs share one block of fixed total width whatever the tracking type,
+ * so Previous and the input columns land in the same place on every card.
+ */
+const FIELDS_WIDTH = 152;
+
+export function fieldWidth(fieldCount: number): number {
+  return (FIELDS_WIDTH - Spacing.two * (fieldCount - 1)) / fieldCount;
 }
 
 type Props = {
   set: WorkoutSetRow;
-  index: number;
+  label: string;
   previous: PreviousSet | undefined;
   unit: WeightUnit;
   trackingType: TrackingType;
   onComplete: (set: WorkoutSetRow, completed: boolean) => void;
 };
 
-export function SetRow({ set, index, previous, unit, trackingType, onComplete }: Props) {
+export function SetRow({ set, label, previous, unit, trackingType, onComplete }: Props) {
   const theme = useTheme();
   const { fields } = TRACKING[trackingType];
+  const autofillWeight = useAutofillWeight();
+
+  // Cells write through a 400 ms debounce, so `set` lags the keystroke that
+  // just made the set completable; the draft carries it until the write lands.
+  const [draft, setDraft] = useState<Partial<TrackedSet>>({});
+  const [flagged, setFlagged] = useState(false);
+  const flagTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => clearTimeout(flagTimer.current ?? undefined), []);
+
+  const missing = set.completed
+    ? []
+    : missingRequiredFields({ ...set, ...draft }, trackingType);
 
   const previousLabel = previous ? formatPreviousSet(previous, trackingType, unit) : '—';
 
@@ -58,9 +80,12 @@ export function SetRow({ set, index, previous, unit, trackingType, onComplete }:
         styles.row,
         { backgroundColor: set.completed ? theme.successMuted : theme.surface },
       ]}>
-      <View style={[styles.setNumber, { backgroundColor: theme.backgroundElement }]}>
-        <ThemedText type="small">{index + 1}</ThemedText>
-      </View>
+      <SetTypeMenu
+        label={label}
+        setType={setTypeOf(set.setType)}
+        completed={set.completed}
+        onChange={(setType) => setSetType(set.id, setType)}
+      />
 
       <ThemedText
         type="small"
@@ -75,20 +100,52 @@ export function SetRow({ set, index, previous, unit, trackingType, onComplete }:
         return (
           <NumericCell
             key={field}
-            width={fieldWidth(field, fields.length)}
+            width={fieldWidth(fields.length)}
             value={cell.display(set, unit)}
             placeholder={previous ? cell.display(previous, unit) : ''}
             keyboardType={cell.keyboardType}
             maxLength={cell.maxLength}
-            onCommit={(text) => updateSetValues(set.id, cell.parse(text, unit))}
+            highlighted={flagged && missing.includes(field)}
+            completed={set.completed}
+            onEdit={(text) => setDraft((current) => ({ ...current, ...cell.parse(text, unit) }))}
+            onCommit={(text) => {
+              const values = cell.parse(text, unit);
+              const fillWeight =
+                autofillWeight &&
+                field === 'reps' &&
+                values.reps != null &&
+                set.weightKg == null &&
+                fields.includes('weight') &&
+                previous?.weightKg != null;
+              updateSetValues(
+                set.id,
+                fillWeight ? { ...values, weightKg: previous.weightKg } : values,
+              );
+            }}
           />
         );
       })}
 
       <Pressable
-        onPress={() => onComplete(set, !set.completed)}
+        onPress={() => {
+          if (missing.length > 0) {
+            // Rejects instead of no-op'ing on a dev build older than the
+            // expo-haptics install; a missed buzz shouldn't redbox the logger.
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+            setFlagged(true);
+            clearTimeout(flagTimer.current ?? undefined);
+            flagTimer.current = setTimeout(() => setFlagged(false), FLAG_MS);
+            return;
+          }
+          onComplete(set, !set.completed);
+        }}
         accessibilityRole="checkbox"
-        accessibilityState={{ checked: set.completed }}
+        accessibilityState={{ checked: set.completed, disabled: missing.length > 0 }}
+        accessibilityHint={
+          missing.length > 0
+            ? `Enter ${missing.map((field) => FIELD_NAMES[field]).join(' or ')} to complete this set`
+            : undefined
+        }
         style={({ pressed }) => [
           styles.check,
           { backgroundColor: set.completed ? theme.success : theme.backgroundElement },
@@ -97,7 +154,13 @@ export function SetRow({ set, index, previous, unit, trackingType, onComplete }:
         <SymbolView
           name="checkmark"
           size={16}
-          tintColor={set.completed ? theme.accentContent : theme.text}
+          tintColor={
+            set.completed
+              ? theme.accentContent
+              : missing.length > 0
+                ? theme.textSecondary
+                : theme.text
+          }
         />
       </Pressable>
     </View>
@@ -113,15 +176,35 @@ export function SetRow({ set, index, previous, unit, trackingType, onComplete }:
       rightThreshold={40}
       overshootRight={false}
       onSwipeableOpen={(direction) => direction === 'right' && deleteSet(set.id)}
-      renderRightActions={() => (
-        <View style={[styles.delete, { backgroundColor: theme.danger }]}>
+      renderRightActions={(_progress, _translation, swipeable) => (
+        <Pressable
+          onPress={() => {
+            swipeable.close();
+            deleteSet(set.id);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Delete set"
+          style={({ pressed }) => [
+            styles.delete,
+            { backgroundColor: theme.danger },
+            pressed && styles.pressed,
+          ]}>
           <SymbolView name="trash" size={18} tintColor={theme.accentContent} />
-        </View>
+        </Pressable>
       )}>
       {row}
     </ReanimatedSwipeable>
   );
 }
+
+const FLAG_MS = 1500;
+
+const FIELD_NAMES: Record<SetField, string> = {
+  weight: 'weight',
+  reps: 'reps',
+  duration: 'time',
+  distance: 'distance',
+};
 
 type FieldCell = {
   display: (set: TrackedSet, unit: WeightUnit) => string;
@@ -185,12 +268,18 @@ function NumericCell({
   value,
   placeholder,
   width,
+  highlighted,
+  completed,
+  onEdit,
   onCommit,
   ...rest
 }: {
   value: string;
   placeholder: string;
   width: number;
+  highlighted: boolean;
+  completed: boolean;
+  onEdit: (text: string) => void;
   onCommit: (text: string) => void;
 } & React.ComponentProps<typeof TextInput>) {
   const theme = useTheme();
@@ -207,6 +296,7 @@ function NumericCell({
       value={text}
       onChangeText={(next) => {
         setText(next);
+        onEdit(next);
         write.push(next);
       }}
       onFocus={() => {
@@ -220,7 +310,18 @@ function NumericCell({
       placeholderTextColor={theme.textSecondary}
       selectTextOnFocus
       textAlign="center"
-      style={[styles.input, { width, backgroundColor: theme.backgroundElement, color: theme.text }]}
+      style={[
+        styles.input,
+        {
+          width,
+          backgroundColor: highlighted
+            ? theme.dangerHighlight
+            : completed
+              ? theme.successElement
+              : theme.backgroundElement,
+          color: theme.text,
+        },
+      ]}
       {...rest}
     />
   );
@@ -234,13 +335,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.one,
     minHeight: 44,
-  },
-  setNumber: {
-    width: SET_COLUMNS.set,
-    height: 30,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   previous: {
     flex: 1,

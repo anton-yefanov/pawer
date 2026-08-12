@@ -6,7 +6,7 @@ export default function ExercisesScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <ExerciseLibrary />
+      <ExerciseLibrary newExerciseHref="/exercises/new" />
     </>
   );
 }

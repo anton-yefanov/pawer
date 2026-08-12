@@ -15,23 +15,32 @@ export default function WorkoutLayout() {
   const theme = useTheme();
 
   return (
-    <Stack screenOptions={{ headerShown: true, headerTintColor: theme.text }}>
+    <Stack
+      screenOptions={{
+        headerShown: true,
+        headerTintColor: theme.text,
+        contentStyle: { backgroundColor: theme.background },
+      }}>
       <Stack.Screen
         name="index"
-        options={{
-          title: 'Start Workout',
-          headerLargeTitle: true,
-          contentStyle: { backgroundColor: theme.background },
-        }}
+        options={{ title: 'Start Workout', headerLargeTitle: true }}
       />
       <Stack.Screen name="active" options={{ ...FULL_SHEET, title: '' }} />
       {/*
-        Both pickers render their own floating search row over the nav bar, so a
-        title there would sit on top of it. `headerShown: false` from inside the
-        screen doesn't take once the native header exists — the title has to be
-        empty here.
+        Both pickers render their own floating search row, so they want no nav
+        bar at all. It has to be turned off here: `headerShown: false` from
+        inside the screen doesn't take once the native header exists, and an
+        empty-titled header still insets the list under it by its own height.
       */}
-      <Stack.Screen name="add-exercise" options={{ ...FULL_SHEET, title: '' }} />
+      <Stack.Screen
+        name="add-exercise"
+        options={{
+          ...FULL_SHEET,
+          headerShown: false,
+          contentStyle: { backgroundColor: theme.surface },
+        }}
+      />
+      <Stack.Screen name="new-exercise" options={FULL_SHEET} />
       <Stack.Screen
         name="timer"
         options={{ ...SHEET, sheetAllowedDetents: [0.4], title: 'Timer' }}
@@ -42,7 +51,14 @@ export default function WorkoutLayout() {
       />
       <Stack.Screen name="template/new" options={{ ...FULL_SHEET, title: 'New Template' }} />
       <Stack.Screen name="template/edit" options={{ ...FULL_SHEET, title: 'Edit Template' }} />
-      <Stack.Screen name="template/add-exercises" options={{ ...FULL_SHEET, title: '' }} />
+      <Stack.Screen
+        name="template/add-exercises"
+        options={{
+          ...FULL_SHEET,
+          headerShown: false,
+          contentStyle: { backgroundColor: theme.surface },
+        }}
+      />
       <Stack.Screen
         name="template/[id]"
         options={{ ...SHEET, sheetAllowedDetents: [0.6, 1], sheetInitialDetentIndex: 0 }}
@@ -50,6 +66,12 @@ export default function WorkoutLayout() {
       <Stack.Screen
         name="folder/[id]"
         options={{ ...SHEET, sheetAllowedDetents: [0.6, 1], sheetInitialDetentIndex: 0 }}
+      />
+      {/* Same picker presentation as the Settings sheets: the swatch grid draws
+          its own title, so the nav bar would only add empty height. */}
+      <Stack.Screen
+        name="customize"
+        options={{ ...SHEET, sheetAllowedDetents: 'fitToContents', headerShown: false }}
       />
     </Stack>
   );

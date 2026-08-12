@@ -73,7 +73,7 @@ export function TimerPanel() {
 
   return (
     <ScrollView
-      style={{ backgroundColor: theme.surfaceGrouped }}
+      style={{ backgroundColor: theme.background }}
       contentContainerStyle={styles.container}>
       <ThemedText type="title" style={styles.readout}>
         {formatDuration(remaining)}
@@ -89,7 +89,7 @@ export function TimerPanel() {
               styles.preset,
               {
                 backgroundColor:
-                  selected === seconds ? theme.accent : theme.backgroundElement,
+                  selected === seconds ? theme.accent : theme.surface,
                 opacity: running ? 0.4 : pressed ? 0.6 : 1,
               },
             ]}>

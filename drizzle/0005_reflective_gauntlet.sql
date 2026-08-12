@@ -1,0 +1,1 @@
+ALTER TABLE `sets` ADD `set_type` text DEFAULT 'normal' NOT NULL;

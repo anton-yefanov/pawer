@@ -1,6 +1,5 @@
-import { SymbolView } from 'expo-symbols';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { StartTimePicker } from '@/components/workout/start-time-picker';
@@ -12,7 +11,7 @@ import { updateWorkout } from '@/lib/workout-actions';
 
 export function WorkoutDetailsCard({ workout }: { workout: Workout }) {
   const theme = useTheme();
-  const [notesOpen, setNotesOpen] = useState(() => (workout.notes ?? '') !== '');
+  const [openedAt] = useState(() => Date.now());
 
   return (
     <View style={[styles.card, { backgroundColor: theme.surface }]}>
@@ -29,27 +28,20 @@ export function WorkoutDetailsCard({ workout }: { workout: Workout }) {
         <ThemedText>Start Time</ThemedText>
         <StartTimePicker
           value={new Date(workout.startedAt)}
+          max={new Date(workout.finishedAt ?? openedAt)}
           onChange={(next) => updateWorkout(workout.id, { startedAt: next.getTime() })}
         />
       </View>
 
       <View style={[styles.divider, { backgroundColor: theme.backgroundElement }]} />
 
-      {notesOpen ? (
-        <WriteThroughField
-          value={workout.notes ?? ''}
-          placeholder="Notes"
-          multiline
-          autoFocus={(workout.notes ?? '') === ''}
-          style={styles.notesInput}
-          onCommit={(notes) => updateWorkout(workout.id, { notes: notes.trim() || null })}
-        />
-      ) : (
-        <Pressable style={styles.row} onPress={() => setNotesOpen(true)}>
-          <ThemedText themeColor="textSecondary">Notes</ThemedText>
-          <SymbolView name="chevron.right" size={14} tintColor={theme.textSecondary} />
-        </Pressable>
-      )}
+      <WriteThroughField
+        value={workout.notes ?? ''}
+        placeholder="Notes"
+        multiline
+        style={styles.notesInput}
+        onCommit={(notes) => updateWorkout(workout.id, { notes: notes.trim() || null })}
+      />
     </View>
   );
 }
@@ -121,7 +113,8 @@ const styles = StyleSheet.create({
   },
   notesInput: {
     fontSize: 16,
+    lineHeight: 20,
     minHeight: 48,
-    paddingVertical: Spacing.two,
+    paddingVertical: 14,
   },
 });

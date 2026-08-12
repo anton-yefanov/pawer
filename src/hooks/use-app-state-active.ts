@@ -20,3 +20,23 @@ export function useAppStateActive(callback: () => void) {
     return () => sub.remove();
   }, []);
 }
+
+/**
+ * The mirror image, for work that has to happen before iOS suspends JS.
+ * Deliberately not `inactive` — that also fires for a control-centre pull or an
+ * incoming call banner, neither of which means the user has left.
+ */
+export function useAppStateBackground(callback: () => void) {
+  const latest = useRef(callback);
+
+  useEffect(() => {
+    latest.current = callback;
+  });
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'background') latest.current();
+    });
+    return () => sub.remove();
+  }, []);
+}

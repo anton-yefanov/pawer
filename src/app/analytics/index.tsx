@@ -5,11 +5,11 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { DayPicker } from '@/components/analytics/day-picker';
 import { PeriodMenu } from '@/components/analytics/period-menu';
 import { MetricChart } from '@/components/analytics/metric-chart';
-import { StatRows } from '@/components/analytics/stat-rows';
+import { StatRows, type StatBadge } from '@/components/analytics/stat-rows';
 import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { useWeightUnit } from '@/hooks/use-weight-unit';
+import { useWeightUnit } from '@/lib/weight-unit';
 import {
   combineTotals,
   metricSeriesQuery,
@@ -28,6 +28,7 @@ export default function AnalyticsScreen() {
   const [period, setPeriod] = useState<PeriodId>(DEFAULT_PERIOD);
   const [customFrom, setCustomFrom] = useState(() => rangeFor('d30').from);
   const [customTo, setCustomTo] = useState(() => Date.now());
+  const [today] = useState(() => Date.now());
 
   const range = useMemo(
     () => rangeFor(period, { from: new Date(customFrom), to: new Date(customTo) }),
@@ -49,24 +50,28 @@ export default function AnalyticsScreen() {
     [metricRows, range]
   );
 
-  const rows = [
-    ['Workouts', String(totals.workouts)],
-    ['Exercises', String(totals.exerciseEntries)],
-    ['Sets', String(totals.completedSets)],
-    ['Reps', String(totals.reps)],
-    ['Time in gym', formatHoursMinutes(totals.durationMs)],
-    ['Avg duration', formatClock(totals.avgDurationMs)],
-    ['Total tonnage', formatTonnage(totals.volumeKg, unit)],
-    ['Avg tonnage', formatTonnage(totals.avgVolumeKg, unit)],
-    ['Total distance', formatDistance(totals.distanceM, distanceUnitFor(unit))],
-  ] as const;
+  const badges: StatBadge[] = [
+    { label: 'Workouts', value: String(totals.workouts), span: 3, hero: true },
+    { label: 'Total tonnage', value: formatTonnage(totals.volumeKg, unit), span: 3, hero: true },
+    { label: 'Sets', value: String(totals.completedSets), span: 2 },
+    { label: 'Reps', value: String(totals.reps), span: 2 },
+    { label: 'Exercises', value: String(totals.exerciseEntries), span: 2 },
+    { label: 'Time in gym', value: formatHoursMinutes(totals.durationMs), span: 4, hero: true },
+    { label: 'Avg duration', value: formatClock(totals.avgDurationMs), span: 2 },
+    { label: 'Avg tonnage', value: formatTonnage(totals.avgVolumeKg, unit), span: 3 },
+    {
+      label: 'Total distance',
+      value: formatDistance(totals.distanceM, distanceUnitFor(unit)),
+      span: 3,
+    },
+  ];
 
   return (
     <ScrollView
       style={{ backgroundColor: theme.background }}
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic">
-      <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
+      <View style={[styles.card, { backgroundColor: theme.surface }]}>
         <View style={styles.cardRow}>
           <ThemedText themeColor="textSecondary">Period</ThemedText>
           <PeriodMenu value={period} onChange={setPeriod} />
@@ -74,19 +79,22 @@ export default function AnalyticsScreen() {
 
         {period === 'custom' && (
           <>
-            <View style={[styles.divider, { backgroundColor: theme.backgroundSelected }]} />
+            <View style={[styles.divider, { backgroundColor: theme.backgroundElement }]} />
             <View style={styles.cardRow}>
               <ThemedText themeColor="textSecondary">From</ThemedText>
               <DayPicker
                 value={new Date(customFrom)}
+                max={new Date(Math.min(customTo, today))}
                 onChange={(next) => setCustomFrom(next.getTime())}
               />
             </View>
-            <View style={[styles.divider, { backgroundColor: theme.backgroundSelected }]} />
+            <View style={[styles.divider, { backgroundColor: theme.backgroundElement }]} />
             <View style={styles.cardRow}>
               <ThemedText themeColor="textSecondary">To</ThemedText>
               <DayPicker
                 value={new Date(customTo)}
+                min={new Date(customFrom)}
+                max={new Date(today)}
                 onChange={(next) => setCustomTo(next.getTime())}
               />
             </View>
@@ -94,7 +102,7 @@ export default function AnalyticsScreen() {
         )}
       </View>
 
-      <StatRows rows={rows} />
+      <StatRows badges={badges} />
 
       <MetricChart
         title="Total tonnage"

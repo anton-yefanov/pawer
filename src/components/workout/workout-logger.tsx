@@ -11,9 +11,15 @@ import { ConfirmFinish } from '@/components/workout/confirm-finish';
 import { ElapsedTime } from '@/components/workout/elapsed-time';
 import { ExerciseCard } from '@/components/workout/exercise-card';
 import {
+  ExerciseReorderProvider,
+  ReorderDim,
+  type Settle,
+} from '@/components/workout/exercise-reorder';
+import {
   ClockButton,
   CloseButton,
   FinishButton,
+  headerItem,
   HeaderPillButton,
   HeaderSlot,
 } from '@/components/workout/workout-sheet-header';
@@ -21,13 +27,15 @@ import { WorkoutDetailsCard } from '@/components/workout/workout-details-card';
 import { WorkoutSummary } from '@/components/workout/workout-summary';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { useWeightUnit } from '@/hooks/use-weight-unit';
+import { useWeightUnit } from '@/lib/weight-unit';
 import { mascotImage } from '@/lib/mascot-images';
+import { move, sortBy } from '@/lib/order';
 import { DEFAULT_REST_SECONDS, useRestTimer } from '@/lib/rest-timer';
 import {
   cancelWorkout,
   completeUnfinishedSets,
   finishWorkout,
+  reorderWorkoutExercises,
   saveWorkoutEdits,
   setSetCompleted,
 } from '@/lib/workout-actions';
@@ -76,6 +84,15 @@ export function WorkoutLogger({
   const [phase, setPhase] = useState<'logging' | 'summary'>('logging');
   const [confirming, setConfirming] = useState(false);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [reordering, setReordering] = useState(false);
+
+  /**
+   * The order a drag just produced, applied on top of the live rows so the list
+   * re-renders with the exercise in its new slot on release rather than a DB
+   * round-trip later. It never needs clearing: once the write lands, the live
+   * rows already match it and re-sorting is a no-op.
+   */
+  const [order, setOrder] = useState<string[]>([]);
 
   const workout = useLiveQuery(workoutQuery(id), [id]).data?.[0];
   const { data: exercises } = useLiveQuery(workoutExercisesQuery(id), [id]);
@@ -83,10 +100,22 @@ export function WorkoutLogger({
   const { data: previous } = useLiveQuery(previousSetsQuery(id), [id]);
   const { data: records } = useLiveQuery(workoutPersonalRecordsQuery(id), [id]);
 
-  if (!workout) return <View style={{ flex: 1, backgroundColor: theme.surfaceGrouped }} />;
+  if (!workout) return <View style={{ flex: 1, backgroundColor: theme.background }} />;
 
   const setsByExercise = groupBy(sets ?? [], (set) => set.workoutExerciseId);
   const previousByExercise = groupBy(previous ?? [], (row) => row.exerciseId);
+  const ordered = sortBy(exercises ?? [], order);
+
+  const reorder = (from: number, to: number, settle: Settle) => {
+    const ids = move(
+      ordered.map((row) => row.id),
+      from,
+      to,
+    );
+    setOrder(ids);
+    settle();
+    void reorderWorkoutExercises(ids);
+  };
 
   const complete = async (set: WorkoutSetRow, completed: boolean) => {
     await setSetCompleted(set.id, completed);
@@ -123,8 +152,13 @@ export function WorkoutLogger({
   };
 
   const onCancelPressed = () => {
-    if ((exercises ?? []).length > 0) setConfirmingCancel(true);
-    else void cancel();
+    const name = workout.name?.trim() ?? '';
+    const empty =
+      (name === '' || name === 'Workout') &&
+      !workout.notes?.trim() &&
+      (exercises ?? []).length === 0;
+    if (empty) void cancel();
+    else setConfirmingCancel(true);
   };
 
   const onFinishPressed = () => {
@@ -134,12 +168,12 @@ export function WorkoutLogger({
 
   if (phase === 'summary') {
     return (
-      <View style={[styles.page, { backgroundColor: theme.surfaceGrouped }]}>
+      <View style={[styles.page, { backgroundColor: theme.background }]}>
         <Stack.Screen
           options={{
-            headerLeft: () => null,
+            unstable_headerLeftItems: () => [],
             headerTitle: () => null,
-            headerRight: () => null,
+            unstable_headerRightItems: () => [],
           }}
         />
         <WorkoutSummary
@@ -165,15 +199,16 @@ export function WorkoutLogger({
     <>
       <Stack.Screen
         options={{
-          headerLeft: () => (
-            <HeaderSlot>
-              {mode === 'edit' ? (
-                <CloseButton onPress={onDone} />
-              ) : (
-                <ClockButton onPress={onOpenTimer} />
-              )}
-            </HeaderSlot>
-          ),
+          unstable_headerLeftItems: () =>
+            headerItem(
+              <HeaderSlot>
+                {mode === 'edit' ? (
+                  <CloseButton onPress={onDone} />
+                ) : (
+                  <ClockButton onPress={onOpenTimer} />
+                )}
+              </HeaderSlot>
+            ),
           headerTitle: () =>
             mode === 'edit' ? (
               <ThemedText type="smallBold" numberOfLines={1}>
@@ -182,64 +217,82 @@ export function WorkoutLogger({
             ) : (
               <ElapsedTime startedAt={workout.startedAt} />
             ),
-          headerRight: () => (
-            <HeaderSlot>
-              {mode === 'edit' ? (
-                <HeaderPillButton title="Save" onPress={() => void save()} />
-              ) : (
-                <FinishButton onPress={onFinishPressed} />
-              )}
-            </HeaderSlot>
-          ),
+          unstable_headerRightItems: () =>
+            headerItem(
+              <HeaderSlot>
+                {mode === 'edit' ? (
+                  <HeaderPillButton title="Save" onPress={() => void save()} />
+                ) : (
+                  <FinishButton onPress={onFinishPressed} />
+                )}
+              </HeaderSlot>
+            ),
         }}
       />
 
-      <ScrollView
-        style={{ backgroundColor: theme.surfaceGrouped }}
-        contentContainerStyle={styles.content}
-        automaticallyAdjustKeyboardInsets
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="interactive">
-        <Image source={mascotImage(mascot)} style={styles.mascot} contentFit="contain" />
+      <ExerciseReorderProvider
+        count={ordered.length}
+        onReorder={reorder}
+        onReorderingChange={setReordering}>
+        <ScrollView
+          style={{ backgroundColor: theme.background }}
+          contentContainerStyle={styles.content}
+          automaticallyAdjustKeyboardInsets
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          // A lifted row moves with the finger; letting the content scroll under
+          // it at the same time would put it somewhere the drop test can't see.
+          scrollEnabled={!reordering}>
+          <ReorderDim>
+            <Image source={mascotImage(mascot)} style={styles.mascot} contentFit="contain" />
+          </ReorderDim>
 
-        <WorkoutDetailsCard workout={workout} />
+          <ReorderDim>
+            <WorkoutDetailsCard workout={workout} />
+          </ReorderDim>
 
-        {(exercises ?? []).map((workoutExercise) => (
-          <ExerciseCard
-            key={workoutExercise.id}
-            workoutExercise={workoutExercise}
-            sets={setsByExercise.get(workoutExercise.id) ?? []}
-            previous={previousByExercise.get(workoutExercise.exerciseId) ?? []}
-            unit={unit}
-            defaultRestSeconds={DEFAULT_REST_SECONDS}
-            restingSetId={rest.setId}
-            onComplete={complete}
-            onOpenExercise={onOpenExercise}
-          />
-        ))}
+          {ordered.map((workoutExercise, index) => (
+            <ExerciseCard
+              key={workoutExercise.id}
+              workoutExercise={workoutExercise}
+              index={index}
+              sets={setsByExercise.get(workoutExercise.id) ?? []}
+              previous={previousByExercise.get(workoutExercise.exerciseId) ?? []}
+              unit={unit}
+              defaultRestSeconds={DEFAULT_REST_SECONDS}
+              restingSetId={rest.setId}
+              onComplete={complete}
+              onOpenExercise={onOpenExercise}
+            />
+          ))}
 
-        <BigButton
-          title="Add Exercise"
-          symbol="plus.circle"
-          variant="tinted"
-          onPress={onAddExercise}
-        />
+          <ReorderDim>
+            <BigButton
+              title="Add Exercise"
+              symbol="plus.circle"
+              variant="tinted"
+              onPress={onAddExercise}
+            />
+          </ReorderDim>
 
-        {(exercises ?? []).length === 0 && (
-          <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
-            Add an exercise to start logging sets.
-          </ThemedText>
-        )}
+          {ordered.length === 0 && (
+            <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
+              Add an exercise to start logging sets.
+            </ThemedText>
+          )}
 
-        {mode === 'active' && (
-          <BigButton title="Cancel Workout" variant="danger" onPress={onCancelPressed} />
-        )}
-      </ScrollView>
+          {mode === 'active' && (
+            <ReorderDim>
+              <BigButton title="Cancel Workout" variant="danger" onPress={onCancelPressed} />
+            </ReorderDim>
+          )}
+        </ScrollView>
+      </ExerciseReorderProvider>
 
       <ConfirmAlert
         open={confirmingCancel}
         title="Cancel workout?"
-        message="You have unfinished sets."
+        message="Are you sure you want to cancel this workout? All progress will be lost."
         confirmLabel="Cancel workout"
         dismissLabel="Don't cancel"
         onConfirm={() => {

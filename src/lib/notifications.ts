@@ -1,23 +1,37 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-const ANDROID_CHANNEL_ID = 'rest-timer';
+const REST_CHANNEL_ID = 'rest-timer';
+export const REMINDER_CHANNEL_ID = 'workout-reminders';
+
+export const FINISH_REMINDER_DATA_TYPE = 'finish-reminder';
 
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: false,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
+  handleNotification: async (notification) => {
+    // The finish reminder is cancelled whenever the app comes forward, so a
+    // foreground delivery only happens in the resume race — and a "still
+    // working out?" banner over the open workout would be nonsense.
+    const silent = notification.request.content.data?.type === FINISH_REMINDER_DATA_TYPE;
+    return {
+      shouldShowBanner: !silent,
+      shouldShowList: false,
+      shouldPlaySound: !silent,
+      shouldSetBadge: false,
+    };
+  },
 });
 
 if (Platform.OS === 'android') {
-  void Notifications.setNotificationChannelAsync(ANDROID_CHANNEL_ID, {
+  void Notifications.setNotificationChannelAsync(REST_CHANNEL_ID, {
     name: 'Rest timer',
     importance: Notifications.AndroidImportance.HIGH,
     sound: 'default',
     vibrationPattern: [0, 250, 250, 250],
+  });
+  void Notifications.setNotificationChannelAsync(REMINDER_CHANNEL_ID, {
+    name: 'Workout reminders',
+    importance: Notifications.AndroidImportance.DEFAULT,
+    sound: 'default',
   });
 }
 
@@ -45,30 +59,45 @@ export async function ensureNotificationPermission(): Promise<boolean> {
  * seconds of backgrounding, so the notification is the only thing that can fire
  * on time (IMPLEMENTATION_PLAN §3.1).
  */
-export async function scheduleRestNotification(
-  endsAt: number,
-  body: string
-): Promise<string | null> {
+export async function scheduleNotification(input: {
+  title: string;
+  body: string;
+  date: number;
+  channelId: string;
+  interruptionLevel: 'active' | 'timeSensitive';
+  data?: Record<string, unknown>;
+}): Promise<string | null> {
   if (!(await ensureNotificationPermission())) return null;
 
   try {
     return await Notifications.scheduleNotificationAsync({
       content: {
-        title: 'Rest over',
-        body,
+        title: input.title,
+        body: input.body,
         sound: 'default',
-        interruptionLevel: 'timeSensitive',
+        interruptionLevel: input.interruptionLevel,
+        data: input.data,
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: new Date(endsAt),
-        channelId: ANDROID_CHANNEL_ID,
+        date: new Date(input.date),
+        channelId: input.channelId,
       },
     });
   } catch (error) {
-    console.warn('[notifications] failed to schedule rest notification', error);
+    console.warn('[notifications] failed to schedule notification', error);
     return null;
   }
+}
+
+export function scheduleRestNotification(endsAt: number, body: string): Promise<string | null> {
+  return scheduleNotification({
+    title: 'Rest over',
+    body,
+    date: endsAt,
+    channelId: REST_CHANNEL_ID,
+    interruptionLevel: 'timeSensitive',
+  });
 }
 
 export async function cancelScheduledNotification(id: string | null): Promise<void> {
@@ -78,4 +107,23 @@ export async function cancelScheduledNotification(id: string | null): Promise<vo
   } catch (error) {
     console.warn('[notifications] failed to cancel notification', error);
   }
+}
+
+export function addNotificationResponseListener(
+  callback: (response: Notifications.NotificationResponse) => void
+) {
+  return Notifications.addNotificationResponseReceivedListener(callback);
+}
+
+/** The tap that cold-started the app, which the listener above is too late for. */
+export function getLastNotificationResponse() {
+  return Notifications.getLastNotificationResponseAsync();
+}
+
+export function readFinishReminderWorkoutId(
+  response: Notifications.NotificationResponse | null
+): string | null {
+  const data = response?.notification.request.content.data;
+  if (data?.type !== FINISH_REMINDER_DATA_TYPE) return null;
+  return typeof data.workoutId === 'string' ? data.workoutId : null;
 }

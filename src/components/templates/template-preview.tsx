@@ -2,11 +2,21 @@ import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { Image } from 'expo-image';
 import { router, Stack } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import {
+  type ConfirmDestructive,
+  templateActions,
+} from '@/components/templates/card-actions';
+import { CardMenu } from '@/components/templates/card-menu';
 import { ThemedText } from '@/components/themed-text';
 import { ActiveWorkoutPrompt } from '@/components/workout/active-workout-prompt';
 import { BigButton } from '@/components/workout/big-button';
+import {
+  HEADER_CIRCLE_SIZE,
+  headerItem,
+  HeaderSlot,
+} from '@/components/workout/workout-sheet-header';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { exerciseThumbnail } from '@/lib/exercise-images';
@@ -20,10 +30,23 @@ export function TemplatePreview({ id }: { id: string }) {
   const template = templateRows?.[0];
   const [blockedBy, setBlockedBy] = useState<string | null>(null);
 
+  const confirm: ConfirmDestructive = ({ title, body, onConfirm }) =>
+    Alert.alert(title, body, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          onConfirm();
+          router.back();
+        },
+      },
+    ]);
+
   // Pushed, not replaced: swapping one modal route for another makes
   // RNSScreenStack bail out (see workout/_layout.tsx).
   const open = (workoutId: string) =>
-    router.push({ pathname: '/workout/active', params: { id: workoutId } });
+    router.push({ pathname: '/active', params: { id: workoutId } });
 
   const start = async () => {
     const result = await startWorkoutFromTemplate(id);
@@ -36,10 +59,27 @@ export function TemplatePreview({ id }: { id: string }) {
 
   return (
     <>
-      <Stack.Screen options={{ title: template?.name ?? '' }} />
+      <Stack.Screen
+        options={{
+          title: template?.name ?? '',
+          contentStyle: { backgroundColor: theme.surface },
+          unstable_headerRightItems: () =>
+            template
+              ? headerItem(
+                  <HeaderSlot>
+                    <CardMenu
+                      accessibilityLabel={`${template.name} options`}
+                      actions={templateActions(template, confirm)}
+                      size={HEADER_CIRCLE_SIZE}
+                    />
+                  </HeaderSlot>
+                )
+              : [],
+        }}
+      />
 
       <ScrollView
-        style={{ backgroundColor: theme.background }}
+        style={{ backgroundColor: theme.surface }}
         contentContainerStyle={styles.list}
         contentInsetAdjustmentBehavior="automatic">
         {exercises?.map((exercise) => (
@@ -48,12 +88,12 @@ export function TemplatePreview({ id }: { id: string }) {
             style={({ pressed }) => [
               styles.row,
               {
-                backgroundColor: pressed ? theme.backgroundSelected : theme.background,
+                backgroundColor: pressed ? theme.backgroundSelected : theme.surface,
               },
             ]}
             onPress={() =>
               router.push({
-                pathname: '/workout/exercise/[id]',
+                pathname: '/exercise/[id]',
                 params: { id: exercise.exerciseId },
               })
             }>
@@ -76,19 +116,19 @@ export function TemplatePreview({ id }: { id: string }) {
         ))}
       </ScrollView>
 
-      <View style={[styles.footer, { backgroundColor: theme.background }]}>
+      <View style={styles.footer}>
         <BigButton title="Start Workout" onPress={start} />
       </View>
 
-      {blockedBy && (
-        <ActiveWorkoutPrompt
-          onResume={() => {
-            setBlockedBy(null);
-            open(blockedBy);
-          }}
-          onDismiss={() => setBlockedBy(null)}
-        />
-      )}
+      <ActiveWorkoutPrompt
+        open={blockedBy != null}
+        onResume={() => {
+          const id = blockedBy;
+          setBlockedBy(null);
+          if (id) open(id);
+        }}
+        onDismiss={() => setBlockedBy(null)}
+      />
     </>
   );
 }

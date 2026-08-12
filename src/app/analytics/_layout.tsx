@@ -10,6 +10,7 @@ export default function AnalyticsLayout() {
       screenOptions={{
         headerShown: true,
         headerTintColor: theme.text,
+        contentStyle: { backgroundColor: theme.background },
       }}>
       <Stack.Screen name="index" options={{ title: 'Analytics', headerLargeTitle: true }} />
     </Stack>

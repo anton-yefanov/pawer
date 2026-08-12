@@ -33,7 +33,7 @@ export function WorkoutSummary({
 }) {
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <Image source={mascotImage('celebrating')} style={styles.mascot} contentFit="cover" />
         <ThemedText type="subtitle" style={styles.title}>
           Nice work
@@ -59,13 +59,19 @@ export function WorkoutSummary({
   );
 }
 
+const FOOTER_HEIGHT = 50 + Spacing.three * 2;
+
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  scroll: {
     flex: 1,
   },
   content: {
     padding: Spacing.three,
     gap: Spacing.three,
+    paddingBottom: FOOTER_HEIGHT + Spacing.three,
   },
   mascot: {
     // The master is a square canvas letterboxing 4:3 art, so cover into a 4:3
@@ -78,6 +84,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   footer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     padding: Spacing.three,
   },
 });

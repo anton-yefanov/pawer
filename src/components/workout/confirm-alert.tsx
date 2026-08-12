@@ -15,6 +15,7 @@ export function ConfirmAlert({
   title,
   message,
   confirmLabel,
+  confirmRole = 'destructive',
   dismissLabel = 'Cancel',
   onConfirm,
   onDismiss,
@@ -23,6 +24,7 @@ export function ConfirmAlert({
   title: string;
   message: string;
   confirmLabel: string;
+  confirmRole?: 'default' | 'destructive';
   dismissLabel?: string;
   onConfirm: () => void;
   onDismiss: () => void;
@@ -39,7 +41,7 @@ export function ConfirmAlert({
           <Spacer />
         </Alert.Trigger>
         <Alert.Actions>
-          <Button role="destructive" label={confirmLabel} onPress={onConfirm} />
+          <Button role={confirmRole} label={confirmLabel} onPress={onConfirm} />
           <Button role="cancel" label={dismissLabel} onPress={onDismiss} />
         </Alert.Actions>
         <Alert.Message>

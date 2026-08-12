@@ -66,8 +66,13 @@ export function buildSeries<T extends { startedAt: number }>(
     start = end;
   }
 
+  // `rows` can be a render behind `range` — useLiveQuery keeps the previous
+  // result until the new query resolves — so a row may sit outside the buckets.
+  if (points.length === 0) return { bucket, label, points };
+
   let index = 0;
   for (const row of rows) {
+    if (row.startedAt < points[0].start || row.startedAt >= range.to) continue;
     while (index < points.length - 1 && row.startedAt >= points[index].end) index += 1;
     points[index].value += pick(row);
   }

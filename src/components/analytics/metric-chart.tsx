@@ -29,7 +29,7 @@ export function MetricChart({
   const last = series.points[series.points.length - 1];
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
+    <View style={[styles.card, { backgroundColor: theme.surface }]}>
       <View style={styles.header}>
         <ThemedText themeColor="textSecondary">{title}</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">

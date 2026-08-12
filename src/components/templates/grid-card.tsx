@@ -1,34 +1,34 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { type CardColor } from '@/constants/card-colors';
 import { Spacing } from '@/constants/theme';
+import { useCardGradient } from '@/hooks/use-card-gradient';
 import { useTheme } from '@/hooks/use-theme';
 
-/**
- * The shell shared by template and folder cards. `menu` sits outside the
- * pressable, so tapping the ellipsis doesn't also navigate.
- */
+/** The shell shared by template and folder cards. */
 export function GridCard({
   cover,
+  color,
   title,
   subtitle,
   onPress,
-  menu,
   width,
 }: {
   cover: React.ReactNode;
+  color: CardColor | null;
   title: string;
   subtitle?: string;
   onPress: () => void;
-  menu?: React.ReactNode;
   width: number;
 }) {
   const theme = useTheme();
+  const gradient = useCardGradient(color);
 
   return (
     <View style={[styles.card, { width, backgroundColor: theme.surface }]}>
       <Pressable onPress={onPress} style={({ pressed }) => [pressed && styles.pressed]}>
-        <View style={[styles.cover, { backgroundColor: theme.backgroundElement }]}>{cover}</View>
+        <View style={[styles.cover, gradient]}>{cover}</View>
         <View style={styles.body}>
           <ThemedText numberOfLines={1}>{title}</ThemedText>
           {/* Always two lines tall, even when empty: reordering slides cards
@@ -42,7 +42,6 @@ export function GridCard({
           </ThemedText>
         </View>
       </Pressable>
-      {menu && <View style={styles.menu}>{menu}</View>}
     </View>
   );
 }
@@ -92,10 +91,5 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     height: SUBTITLE_LINE * SUBTITLE_LINES,
-  },
-  menu: {
-    position: 'absolute',
-    top: Spacing.one,
-    right: Spacing.one,
   },
 });

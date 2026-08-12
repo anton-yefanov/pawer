@@ -9,9 +9,9 @@ export default function WorkoutDetailsScreen() {
   return (
     <WorkoutDetails
       id={id}
-      onEdit={() => router.push({ pathname: '/workout-edit', params: { id } })}
+      onEdit={() => router.push({ pathname: '/history/workout-edit', params: { id } })}
       onOpenWorkout={(workoutId) =>
-        router.push({ pathname: '/workout-active', params: { id: workoutId } })
+        router.push({ pathname: '/history/workout-active', params: { id: workoutId } })
       }
       onDeleted={() => router.back()}
     />

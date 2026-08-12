@@ -19,6 +19,7 @@ import { BottomTabInset, Spacing } from '@/constants/theme';
 import { type Template } from '@/db/schema';
 import { useTheme } from '@/hooks/use-theme';
 import { moveTemplateToFolder, reorderFolders } from '@/lib/folder-actions';
+import { move, sortBy } from '@/lib/order';
 import { reorderTemplates } from '@/lib/template-actions';
 import {
   foldersQuery,
@@ -74,6 +75,7 @@ export default function StartWorkoutScreen() {
     (folders ?? []).map((folder): FolderCardData => ({
       id: folder.id,
       name: folder.name,
+      color: folder.color,
       templateNames: (byFolder.get(folder.id) ?? []).map((template) => template.name),
     })),
     order.folders,
@@ -121,7 +123,7 @@ export default function StartWorkoutScreen() {
     }
   };
 
-  const open = (id: string) => router.push({ pathname: '/workout/active', params: { id } });
+  const open = (id: string) => router.push({ pathname: '/active', params: { id } });
 
   const startEmpty = async () => {
     const result = await startEmptyWorkout();
@@ -141,10 +143,7 @@ export default function StartWorkoutScreen() {
           scrollEnabled={!dragging}>
           {active ? (
             <View style={styles.section}>
-              <ThemedText type="smallBold" themeColor="textSecondary">
-                In Progress
-              </ThemedText>
-              <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
+              <View style={[styles.card, { backgroundColor: theme.surface }]}>
                 <View style={styles.cardText}>
                   <ThemedText numberOfLines={1}>{active.name?.trim() || 'Workout'}</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
@@ -157,9 +156,6 @@ export default function StartWorkoutScreen() {
             </View>
           ) : (
             <View style={styles.section}>
-              <ThemedText type="smallBold" themeColor="textSecondary">
-                Quick Start
-              </ThemedText>
               <BigButton title="Start an Empty Workout" onPress={startEmpty} />
             </View>
           )}
@@ -176,36 +172,18 @@ export default function StartWorkoutScreen() {
           <TemplateSection title="Templates" templates={builtInCards} />
         </ScrollView>
 
-        {blockedBy && (
-          <ActiveWorkoutPrompt
-            onResume={() => {
-              setBlockedBy(null);
-              open(blockedBy);
-            }}
-            onDismiss={() => setBlockedBy(null)}
-          />
-        )}
+        <ActiveWorkoutPrompt
+          open={blockedBy != null}
+          onResume={() => {
+            const id = blockedBy;
+            setBlockedBy(null);
+            if (id) open(id);
+          }}
+          onDismiss={() => setBlockedBy(null)}
+        />
       </View>
     </TemplateDragProvider>
   );
-}
-
-/** Anything the order doesn't mention keeps its place at the end — a template
- *  created after the last drag has the highest `position` anyway. */
-function sortBy<T extends { id: string }>(items: T[], ids: readonly string[]): T[] {
-  if (ids.length === 0) return items;
-  const rank = new Map(ids.map((id, index) => [id, index]));
-  return [...items].sort(
-    (a, b) =>
-      (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER),
-  );
-}
-
-function move(ids: readonly string[], from: number, to: number): string[] {
-  const next = [...ids];
-  const [moved] = next.splice(from, 1);
-  next.splice(to, 0, moved);
-  return next;
 }
 
 function toCard(template: Template, rows: readonly TemplateCardExercise[]): TemplateCardData {
@@ -214,6 +192,7 @@ function toCard(template: Template, rows: readonly TemplateCardExercise[]): Temp
     name: template.name,
     isBuiltIn: template.isBuiltIn,
     folderId: template.folderId,
+    color: template.color,
     exerciseNames: rows.map((row) => row.name),
     primaryMuscles: rows.flatMap((row) => row.primaryMuscles),
   };

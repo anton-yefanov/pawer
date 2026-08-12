@@ -57,6 +57,7 @@ These are cheap now and painful to retrofit — hold them for every new table:
 - **Weights are kilograms and distances are metres in the database, always.** Pounds and miles exist only between `src/lib/units.ts` and the screen.
 - `personal_records` is append-only: one row per achievement, never updated in place, so a badge stays on the workout that earned it. The standing record is `MAX(value)` per exercise and kind over rows with `deleted_at IS NULL`. `src/lib/personal-records.ts` is the only place that decides what counts as a record.
 - A set's meaning comes from its exercise's `trackingType`, never from which columns happen to be non-null. `src/lib/tracking-types.ts` is the only place that switches on it — columns, headers, "Previous" text, validity and volume all read from `TRACKING` there. Assisted exercises store a *positive* magnitude in `weightKg`; only the displayed sign differs.
+- `exercises.search_text` is derived, never authored: `buildSearchText()` in `src/lib/exercise-search.ts` is the only thing that writes it, and anything inserting or renaming an exercise recomputes it. Its search vocabulary comes from `exercises.tags`, generated for the seed by `scripts/exercise-tags.mjs` — add gym slang and abbreviations to the alias table there, not to exercise names.
 
 ### Assets
 
@@ -64,12 +65,15 @@ Illustrations are never referenced by path from a screen. `src/lib/exercise-imag
 
 Shipped webp is generated from `assets/masters/` by `scripts/build-images.mjs` — edit masters and re-run, never edit `assets/exercises/` or `assets/mascot/` directly. Paired exercise frames must share one bounding box.
 
-`npm run images:web` (`tools/image-uploader/`) is a local dev page for filling the exercise masters: each of the 203 exercises next to its two upstream reference photos, with drop/paste slots that validate against the master spec before writing. Dev-only, never served publicly.
+`npm run images:web` (`tools/image-uploader/`) is a local dev page for filling the exercise masters: each of the 205 exercises next to its two upstream reference photos, with drop/paste slots that validate against the master spec before writing. Dev-only, never served publicly.
 
 ### UI conventions
 
 - Path aliases: `@/*` → `src/*`, `@/assets/*` → `assets/*`.
 - Colors come from `Colors` in `src/constants/theme.ts` via `useTheme()`; no hardcoded hex in components.
+- **A screen is a grey page carrying white cards** — grouped-list style, the same on all tabs and in sheets. `background` is the page (and the stack's `contentStyle`), `surface` is anything raised off it (a card, a list row, a floating control), `backgroundElement` is a fill *inside* a surface (divider, input, chip) and never a card itself. Never invert this for a single screen.
+- The one exception: a screen that is a **full-bleed list of edge-to-edge rows** (the exercise library, a template's exercises) is white throughout — the rows are already `surface`, so the page is too, `contentStyle` included. A grey page there would only show as a band behind the floating search row, the sheet's transparent header and the footer, which is exactly the seam this avoids.
+- A template or folder card's cover is a radial gradient, not a theme token: `templates.color` / `folders.color` hold an id from `src/constants/card-colors.ts` (null means grey), and `useCardGradient()` is the only thing that turns one into a fill. App-shipped templates ship a hue from the seed and keep it; users set their own through the Customize sheet (`src/app/(workout)/customize.tsx`).
 - Tabs are `expo-router/unstable-native-tabs` (`src/components/app-tabs.tsx`), with a `.web.tsx` sibling for web — the `.web.tsx`/`.ts` split is the pattern for platform divergence here.
-- Drag and drop (`src/components/templates/template-drag.tsx`) is hand-rolled on gesture-handler + Reanimated. dnd-kit is DOM-only; `react-native-drax` was tried and dropped — it renders the dragged view into a full-screen overlay positioned from a measured provider offset, which is wrong under a native stack inside native tabs. Here the card stays in the grid and moves by gesture *translation*, so no coordinate space is ever converted. A drop writes to SQLite and `useLiveQuery` re-renders; there is no drag state in React.
+- Drag and drop (`src/components/templates/template-drag.tsx`) is hand-rolled on gesture-handler + Reanimated. dnd-kit is DOM-only; `react-native-drax` was tried and dropped — it renders the dragged view into a full-screen overlay positioned from a measured provider offset, which is wrong under a native stack inside native tabs. Here the card stays in the grid and moves by gesture *translation*, so no coordinate space is ever converted. A drop writes to SQLite and `useLiveQuery` re-renders; there is no drag state in React. `src/components/workout/exercise-reorder.tsx` is the same engine for the exercises inside a workout: a long press on a name folds every exercise's sets away, which is what makes the rows uniform enough for that index arithmetic to hold.
 

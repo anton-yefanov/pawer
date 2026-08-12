@@ -8,6 +8,7 @@ import {
   useTemplateDrag,
   type DragKind,
 } from '@/components/templates/template-drag';
+import { useTheme } from '@/hooks/use-theme';
 
 /** Long enough that a tap opens the card and a scroll flick doesn't lift it. */
 const LIFT_DELAY = 250;
@@ -33,6 +34,7 @@ export function DraggableCell({
 }) {
   const drag = useTemplateDrag();
   const motion = useCellMotion(id, index);
+  const theme = useTheme();
 
   // Carries the outcome from onEnd to onFinalize, which always runs.
   const committed = useSharedValue(false);
@@ -68,7 +70,15 @@ export function DraggableCell({
 
   return (
     <GestureDetector gesture={pan}>
-      <Animated.View ref={cellRef} style={[cardSlot, styles.lift, { width }, motion, highlight]}>
+      <Animated.View
+        ref={cellRef}
+        style={[
+          cardSlot,
+          styles.lift,
+          { width, shadowColor: theme.shadow },
+          motion,
+          highlight,
+        ]}>
         {children}
       </Animated.View>
     </GestureDetector>
@@ -77,7 +87,6 @@ export function DraggableCell({
 
 const styles = StyleSheet.create({
   lift: {
-    shadowColor: '#000',
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
   },

@@ -1,12 +1,12 @@
-import { asc } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { Image } from 'expo-image';
-import { Link } from 'expo-router';
+import { Link, router, type Href } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
+import { CircleButton } from '@/components/circle-button';
 import { ExerciseSearchBar, SEARCH_BAR_CLEARANCE } from '@/components/exercise-search-bar';
 import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, Spacing } from '@/constants/theme';
@@ -16,6 +16,7 @@ import { useTheme } from '@/hooks/use-theme';
 import {
   activeFilterCount,
   exerciseFilterWhere,
+  exerciseSearchOrderBy,
   EQUIPMENT_MENU,
   MUSCLE_MENU,
   NO_FILTERS,
@@ -34,11 +35,18 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export function ExerciseLibrary({
   onSelect,
   selectedIds,
+  newExerciseHref,
+  detailHref,
   bottomInset = BottomTabInset + Spacing.four,
   topInset,
 }: {
   onSelect?: (exercise: Exercise) => void;
   selectedIds?: ReadonlySet<string>;
+  /** Route of this stack's copy of the Add Exercise sheet. */
+  newExerciseHref: Href;
+  /** Route of this stack's copy of the exercise detail sheet. Only used
+   *  alongside `onSelect` — without it the whole row is already the link. */
+  detailHref?: (exercise: Exercise) => Href;
   bottomInset?: number;
   /** Set to 0 inside a sheet, which already clears the notch. */
   topInset?: number;
@@ -53,7 +61,7 @@ export function ExerciseLibrary({
       .select()
       .from(exercises)
       .where(exerciseFilterWhere(filters))
-      .orderBy(asc(exercises.name)),
+      .orderBy(...exerciseSearchOrderBy(filters)),
     [filters.search, filters.muscle, filters.equipment]
   );
 
@@ -69,6 +77,7 @@ export function ExerciseLibrary({
         onFocusChange={setSearchFocused}
         onFilterOpenChange={setFilterOpen}
         focused={searchFocused}
+        newExerciseHref={newExerciseHref}
         topInset={topInset}
       />
 
@@ -77,19 +86,22 @@ export function ExerciseLibrary({
         keyExtractor={(item) => item.id}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
+        // The padding is only the floating row's own height: UIKit contributes
+        // the safe area on top of it, so adding `insets.top` here double-counts
+        // the notch and leaves an empty band under the row.
+        contentInsetAdjustmentBehavior="never"
+        automaticallyAdjustContentInsets={false}
         contentContainerStyle={{
-          // Clears the floating row. The safe-area inset comes from the scroll
-          // view's own `contentInsetAdjustmentBehavior`, so adding it here too
-          // would double-count it.
-          paddingTop: SEARCH_BAR_CLEARANCE + Spacing.two,
+          paddingTop: (topInset ?? 0) + SEARCH_BAR_CLEARANCE + Spacing.two,
           paddingBottom: bottomInset,
         }}
-        style={{ backgroundColor: theme.background }}
+        style={{ backgroundColor: theme.surface }}
         extraData={selectedIds}
         renderItem={({ item }) => (
           <ExerciseRow
             exercise={item}
             onSelect={onSelect}
+            detailHref={detailHref}
             selected={selectedIds?.has(item.id) ?? false}
           />
         )}
@@ -127,10 +139,12 @@ export function ExerciseLibrary({
 function ExerciseRow({
   exercise,
   onSelect,
+  detailHref,
   selected,
 }: {
   exercise: Exercise;
   onSelect?: (exercise: Exercise) => void;
+  detailHref?: (exercise: Exercise) => Href;
   selected: boolean;
 }) {
   const theme = useTheme();
@@ -140,7 +154,7 @@ function ExerciseRow({
     <View
       style={[
         styles.row,
-        { backgroundColor: pressed ? theme.backgroundSelected : theme.background },
+        { backgroundColor: pressed ? theme.backgroundSelected : theme.surface },
       ]}>
       <Image source={exerciseThumbnail(exercise.sourceId)} style={styles.thumb} contentFit="contain" />
       <View style={styles.rowText}>
@@ -152,6 +166,13 @@ function ExerciseRow({
         )}
       </View>
       {selected && <SymbolView name="checkmark" size={20} tintColor={theme.accent} />}
+      {onSelect && detailHref && (
+        <CircleButton
+          symbol="info"
+          label={`About ${exercise.name}`}
+          onPress={() => router.push(detailHref(exercise))}
+        />
+      )}
     </View>
   );
 

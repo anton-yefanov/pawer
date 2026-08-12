@@ -10,6 +10,13 @@ import { exercises, personalRecords, sets, workoutExercises, workouts } from '@/
 
 export const VOLUME_TRACKING_TYPES = sql`${exercises.trackingType} IN ('weight_reps', 'weighted_bodyweight')`;
 
+/**
+ * Warm-ups are logged but never counted — they'd inflate volume and set counts
+ * and could take a personal record. Every aggregate over sets is gated on this;
+ * `countsWork` in src/lib/set-types.ts is the same rule for the JS side.
+ */
+export const WORK_SETS = sql`${sets.setType} <> 'warmup'`;
+
 export function activeWorkoutQuery() {
   return db
     .select()
@@ -17,6 +24,45 @@ export function activeWorkoutQuery() {
     .where(and(isNull(workouts.finishedAt), isNull(workouts.deletedAt)))
     .orderBy(desc(workouts.startedAt))
     .limit(1);
+}
+
+/**
+ * Awaited, not a builder — the finish reminder reads this once as the app goes
+ * to background, outside React.
+ *
+ * `updatedAt` moves on every write to a workout, its exercises or its sets
+ * (including the debounced keystroke writes), so the newest of the three *is*
+ * the last time the user did anything. Nothing needs to track activity in JS.
+ */
+export async function activeWorkoutForReminder() {
+  const workout = await db
+    .select({ id: workouts.id, name: workouts.name, updatedAt: workouts.updatedAt })
+    .from(workouts)
+    .where(and(isNull(workouts.finishedAt), isNull(workouts.deletedAt)))
+    .orderBy(desc(workouts.startedAt))
+    .limit(1)
+    .get();
+  if (!workout) return null;
+
+  const activity = await db
+    .select({
+      exercisesAt: sql<number>`COALESCE(MAX(${workoutExercises.updatedAt}), 0)`,
+      setsAt: sql<number>`COALESCE(MAX(${sets.updatedAt}), 0)`,
+    })
+    .from(workoutExercises)
+    .leftJoin(sets, and(eq(sets.workoutExerciseId, workoutExercises.id), isNull(sets.deletedAt)))
+    .where(and(eq(workoutExercises.workoutId, workout.id), isNull(workoutExercises.deletedAt)))
+    .get();
+
+  return {
+    id: workout.id,
+    name: workout.name,
+    lastActivityAt: Math.max(
+      workout.updatedAt,
+      activity?.exercisesAt ?? 0,
+      activity?.setsAt ?? 0
+    ),
+  };
 }
 
 /**
@@ -38,8 +84,8 @@ export function finishedWorkoutsQuery() {
       startedAt: workouts.startedAt,
       finishedAt: workouts.finishedAt,
       exerciseCount: countDistinct(workoutExercises.id),
-      completedSets: sql<number>`COALESCE(SUM(CASE WHEN ${sets.completed} = 1 THEN 1 ELSE 0 END), 0)`,
-      volumeKg: sql<number>`COALESCE(SUM(CASE WHEN ${sets.completed} = 1 AND ${VOLUME_TRACKING_TYPES} THEN COALESCE(${sets.weightKg}, 0) * COALESCE(${sets.reps}, 0) ELSE 0 END), 0)`,
+      completedSets: sql<number>`COALESCE(SUM(CASE WHEN ${sets.completed} = 1 AND ${WORK_SETS} THEN 1 ELSE 0 END), 0)`,
+      volumeKg: sql<number>`COALESCE(SUM(CASE WHEN ${sets.completed} = 1 AND ${WORK_SETS} AND ${VOLUME_TRACKING_TYPES} THEN COALESCE(${sets.weightKg}, 0) * COALESCE(${sets.reps}, 0) ELSE 0 END), 0)`,
       // A scalar subquery, not a fourth join: joining records in would multiply
       // the set fan-out that COUNT(DISTINCT) above only just contains.
       prCount: sql<number>`(SELECT COUNT(*) FROM ${personalRecords} pr
@@ -93,6 +139,7 @@ export function workoutSetsQuery(workoutId: string) {
       durationSeconds: sets.durationSeconds,
       distanceM: sets.distanceM,
       completed: sets.completed,
+      setType: sets.setType,
     })
     .from(sets)
     .innerJoin(workoutExercises, eq(sets.workoutExerciseId, workoutExercises.id))

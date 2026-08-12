@@ -1,9 +1,10 @@
-import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
 import { db } from '@/db/client';
 import { newId } from '@/db/id';
 import { personalRecords, sets, workoutExercises, workouts } from '@/db/schema';
 import { recordPersonalRecords } from '@/lib/personal-records';
+import type { SetType } from '@/lib/set-types';
 
 const touch = () => ({ updatedAt: Date.now() });
 
@@ -80,6 +81,17 @@ export async function removeWorkoutExercise(workoutExerciseId: string): Promise<
     .where(eq(workoutExercises.id, workoutExerciseId));
 }
 
+/** `position` is rewritten wholesale — gaps left by a soft delete never matter. */
+export async function reorderWorkoutExercises(orderedIds: readonly string[]): Promise<void> {
+  const now = Date.now();
+  for (const [position, id] of orderedIds.entries()) {
+    await db
+      .update(workoutExercises)
+      .set({ position, updatedAt: now })
+      .where(eq(workoutExercises.id, id));
+  }
+}
+
 export async function setWorkoutExerciseNotes(
   workoutExerciseId: string,
   notes: string | null
@@ -102,7 +114,10 @@ export async function setWorkoutExerciseRest(
 
 /**
  * Positions are never renumbered on delete — the number shown in the Set column
- * is the row's index in the live list, so soft deletes leave no visible gap.
+ * is the row's position in the live list, so soft deletes leave no visible gap.
+ *
+ * The last set's values carry forward but its `setType` deliberately does not:
+ * adding a set after a warm-up would otherwise silently log another warm-up.
  */
 export async function addSet(workoutExerciseId: string): Promise<string> {
   const last = await db
@@ -144,6 +159,13 @@ export async function updateSetValues(
   await db
     .update(sets)
     .set({ ...values, ...touch() })
+    .where(eq(sets.id, setId));
+}
+
+export async function setSetType(setId: string, setType: SetType): Promise<void> {
+  await db
+    .update(sets)
+    .set({ setType, ...touch() })
     .where(eq(sets.id, setId));
 }
 
@@ -245,7 +267,9 @@ export async function deleteWorkout(workoutId: string): Promise<void> {
 /**
  * A fresh session with the same exercises. Sets come back blank and in the same
  * number, for the reason `startWorkoutFromTemplate` gives: carrying the old
- * numbers forward would show figures the user hasn't lifted today.
+ * numbers forward would show figures the user hasn't lifted today. Their
+ * `setType` does carry over — a warm-up is part of how the session is run, not a
+ * figure that was lifted.
  */
 export async function repeatWorkout(workoutId: string): Promise<StartWorkoutResult> {
   const active = await activeWorkoutId();
@@ -259,12 +283,25 @@ export async function repeatWorkout(workoutId: string): Promise<StartWorkoutResu
       id: workoutExercises.id,
       exerciseId: workoutExercises.exerciseId,
       restSeconds: workoutExercises.restSeconds,
-      setCount: sql<number>`(SELECT COUNT(*) FROM ${sets} s
-        WHERE s.workout_exercise_id = ${workoutExercises.id} AND s.deleted_at IS NULL)`,
     })
     .from(workoutExercises)
     .where(and(eq(workoutExercises.workoutId, workoutId), isNull(workoutExercises.deletedAt)))
     .orderBy(asc(workoutExercises.position))
+    .all();
+
+  const plannedSets = await db
+    .select({ workoutExerciseId: sets.workoutExerciseId, setType: sets.setType })
+    .from(sets)
+    .where(
+      and(
+        inArray(
+          sets.workoutExerciseId,
+          planned.map((row) => row.id)
+        ),
+        isNull(sets.deletedAt)
+      )
+    )
+    .orderBy(asc(sets.position))
     .all();
 
   const id = newId();
@@ -288,11 +325,15 @@ export async function repeatWorkout(workoutId: string): Promise<StartWorkoutResu
       restSeconds: row.restSeconds,
     });
 
+    const sourceSets = plannedSets.filter((set) => set.workoutExerciseId === row.id);
+    const setTypes = sourceSets.length > 0 ? sourceSets.map((set) => set.setType) : ['normal'];
+
     await db.insert(sets).values(
-      Array.from({ length: Math.max(1, row.setCount) }, (_, index) => ({
+      setTypes.map((setType, index) => ({
         id: newId(),
         workoutExerciseId,
         position: index,
+        setType,
       }))
     );
   }

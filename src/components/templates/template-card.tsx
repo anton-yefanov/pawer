@@ -2,10 +2,9 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
-import { templateActions } from '@/components/templates/card-actions';
-import { CardMenu } from '@/components/templates/card-menu';
 import { DraggableCell } from '@/components/templates/draggable-cell';
 import { CARD_BORDER, cardSlot, GridCard } from '@/components/templates/grid-card';
+import { type CardColor } from '@/constants/card-colors';
 import { templateBucket, templateImage } from '@/lib/template-images';
 
 export type TemplateCardData = {
@@ -13,6 +12,7 @@ export type TemplateCardData = {
   name: string;
   isBuiltIn: boolean;
   folderId: string | null;
+  color: CardColor | null;
   exerciseNames: readonly string[];
   primaryMuscles: readonly string[];
 };
@@ -29,15 +29,10 @@ export function TemplateCard({ template, width, index, draggable = false }: Prop
     <GridCard
       width={width - CARD_BORDER * 2}
       title={template.name}
+      color={template.color}
       subtitle={template.exerciseNames.join(', ')}
       onPress={() =>
-        router.push({ pathname: '/workout/template/[id]', params: { id: template.id } })
-      }
-      menu={
-        <CardMenu
-          accessibilityLabel={`${template.name} options`}
-          actions={templateActions(template)}
-        />
+        router.push({ pathname: '/template/[id]', params: { id: template.id } })
       }
       cover={
         <Image

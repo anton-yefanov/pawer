@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm';
 import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
+import type { CardColor } from '../constants/card-colors';
+
 /**
  * Conventions, per IMPLEMENTATION_PLAN.md §1:
  *
@@ -64,6 +66,19 @@ export const exercises = sqliteTable(
       .notNull()
       .default([]),
     instructions: text('instructions', { mode: 'json' }).$type<string[]>().notNull().default([]),
+
+    /**
+     * Search vocabulary the name lacks — muscles, equipment, gym slang. Authored
+     * by scripts/exercise-tags.mjs; empty on custom exercises.
+     */
+    tags: text('tags', { mode: 'json' }).$type<string[]>().notNull().default([]),
+
+    /**
+     * Flattened haystack for the library search, derived from name + tags +
+     * muscles + equipment. Never authored — `buildSearchText` in
+     * src/lib/exercise-search.ts is the only thing that writes it.
+     */
+    searchText: text('search_text').notNull().default(''),
 
     isCustom: integer('is_custom', { mode: 'boolean' }).notNull().default(false),
 
@@ -131,6 +146,7 @@ export const sets = sqliteTable(
     distanceM: real('distance_m'),
     completed: integer('completed', { mode: 'boolean' }).notNull().default(false),
     completedAt: integer('completed_at'),
+    setType: text('set_type').notNull().default('normal'),
     ...timestamps,
   },
   (t) => [index('sets_workout_exercise_idx').on(t.workoutExerciseId, t.position)]
@@ -141,6 +157,7 @@ export const folders = sqliteTable('folders', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   position: integer('position').notNull().default(0),
+  color: text('color').$type<CardColor>(),
   ...timestamps,
 });
 
@@ -159,6 +176,7 @@ export const templates = sqliteTable(
     lastUsedAt: integer('last_used_at'),
     isBuiltIn: integer('is_built_in', { mode: 'boolean' }).notNull().default(false),
     folderId: text('folder_id').references(() => folders.id),
+    color: text('color').$type<CardColor>(),
     ...timestamps,
   },
   (t) => [

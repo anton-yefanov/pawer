@@ -2,12 +2,7 @@ import { router } from 'expo-router';
 import { Alert } from 'react-native';
 
 import { type CardAction } from '@/components/templates/card-menu';
-import {
-  createFolder,
-  deleteFolder,
-  moveTemplateToFolder,
-  renameFolder,
-} from '@/lib/folder-actions';
+import { createFolder, deleteFolder, moveTemplateToFolder } from '@/lib/folder-actions';
 import { deleteTemplate, duplicateTemplate } from '@/lib/template-actions';
 
 export type ConfirmDestructive = (options: {
@@ -16,10 +11,6 @@ export type ConfirmDestructive = (options: {
   onConfirm: () => void;
 }) => void;
 
-/**
- * Callers inside a formSheet must pass their own `confirm` — a UIAlertController
- * raised from behind a formSheet never reaches the screen (see dialog.tsx).
- */
 export const alertConfirm: ConfirmDestructive = ({ title, body, onConfirm }) =>
   Alert.alert(title, body, [
     { text: 'Cancel', style: 'cancel' },
@@ -50,7 +41,13 @@ export function templateActions(
       label: 'Edit',
       systemImage: 'pencil',
       onPress: () =>
-        router.push({ pathname: '/workout/template/edit', params: { id: template.id } }),
+        router.push({ pathname: '/template/edit', params: { id: template.id } }),
+    },
+    {
+      label: 'Customize',
+      systemImage: 'paintpalette',
+      onPress: () =>
+        router.push({ pathname: '/customize', params: { id: template.id, kind: 'template' } }),
     },
     duplicate,
   ];
@@ -79,28 +76,24 @@ export function templateActions(
   return actions;
 }
 
-export function folderActions(folder: { id: string; name: string }): CardAction[] {
+export function folderActions(
+  folder: { id: string; name: string },
+  {
+    onRename,
+    confirm = alertConfirm,
+  }: { onRename: () => void; confirm?: ConfirmDestructive }
+): CardAction[] {
   return [
     {
       label: 'Rename',
       systemImage: 'pencil',
+      onPress: onRename,
+    },
+    {
+      label: 'Customize',
+      systemImage: 'paintpalette',
       onPress: () =>
-        Alert.prompt(
-          'Rename Folder',
-          undefined,
-          [
-            { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Rename',
-              onPress: (value?: string) => {
-                const name = value?.trim();
-                if (name) void renameFolder(folder.id, name);
-              },
-            },
-          ],
-          'plain-text',
-          folder.name
-        ),
+        router.push({ pathname: '/customize', params: { id: folder.id, kind: 'folder' } }),
     },
     {
       label: 'Delete',
@@ -108,7 +101,7 @@ export function folderActions(folder: { id: string; name: string }): CardAction[
       destructive: true,
       separated: true,
       onPress: () =>
-        alertConfirm({
+        confirm({
           title: `Delete “${folder.name}”?`,
           body: 'The templates inside are kept.',
           onConfirm: () => void deleteFolder(folder.id),

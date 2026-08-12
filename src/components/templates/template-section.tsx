@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
+import { CIRCLE_BUTTON_SIZE, GlassCircle } from '@/components/circle-button';
 import { promptNewFolder } from '@/components/templates/card-actions';
 import { FolderCard, type FolderCardData } from '@/components/templates/folder-card';
 import { slotHeight } from '@/components/templates/grid-card';
@@ -15,7 +16,6 @@ import { useTheme } from '@/hooks/use-theme';
 
 const COLUMNS = 2;
 const GAP = Spacing.two;
-const ADD_SIZE = 34;
 
 type Cell =
   | { kind: 'folder'; key: string; folder: FolderCardData }
@@ -158,14 +158,14 @@ function AddMenu() {
   const theme = useTheme();
 
   return (
-    <View style={[styles.addButton, { backgroundColor: theme.backgroundElement }]}>
-      <Host style={styles.addHost}>
+    <GlassCircle accessibilityLabel="Add">
+      <Host style={styles.addHost} ignoreSafeArea="all">
         <Menu
           modifiers={[buttonStyle('plain')]}
           label={
             <ZStack
               modifiers={[
-                frame({ width: ADD_SIZE, height: ADD_SIZE }),
+                frame({ width: CIRCLE_BUTTON_SIZE, height: CIRCLE_BUTTON_SIZE }),
                 contentShape(shapes.rectangle()),
               ]}>
               <Image systemName="plus" color={theme.text} />
@@ -174,12 +174,12 @@ function AddMenu() {
           <Button
             label="New Template"
             systemImage="doc.badge.plus"
-            onPress={() => router.push('/workout/template/new')}
+            onPress={() => router.push('/template/new')}
           />
           <Button label="New Folder" systemImage="folder.badge.plus" onPress={promptNewFolder} />
         </Menu>
       </Host>
-    </View>
+    </GlassCircle>
   );
 }
 
@@ -192,15 +192,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  addButton: {
-    width: ADD_SIZE,
-    height: ADD_SIZE,
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
   addHost: {
-    width: ADD_SIZE,
-    height: ADD_SIZE,
+    width: CIRCLE_BUTTON_SIZE,
+    height: CIRCLE_BUTTON_SIZE,
   },
   cell: {
     position: 'absolute',

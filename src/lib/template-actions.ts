@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm';
 
+import { type CardColor } from '@/constants/card-colors';
 import { db } from '@/db/client';
 import { newId } from '@/db/id';
 import { sets, templateExercises, templates, workoutExercises, workouts } from '@/db/schema';
@@ -58,7 +59,7 @@ export async function createTemplateFromWorkout(workoutId: string): Promise<stri
       restSeconds: workoutExercises.restSeconds,
       completedSets: sql<number>`(SELECT COUNT(*) FROM ${sets} s
         WHERE s.workout_exercise_id = ${workoutExercises.id}
-          AND s.deleted_at IS NULL AND s.completed = 1)`,
+          AND s.deleted_at IS NULL AND s.completed = 1 AND s.set_type <> 'warmup')`,
     })
     .from(workoutExercises)
     .where(and(eq(workoutExercises.workoutId, workoutId), isNull(workoutExercises.deletedAt)))
@@ -137,6 +138,14 @@ export async function updateTemplate({
   }
 }
 
+/** App-shipped templates keep the color they ship with, so the guard matters. */
+export async function setTemplateColor(templateId: string, color: CardColor): Promise<void> {
+  await db
+    .update(templates)
+    .set({ color, ...touch() })
+    .where(and(eq(templates.id, templateId), eq(templates.isBuiltIn, false)));
+}
+
 /** `position` is rewritten wholesale — gaps from a soft delete never matter. */
 export async function reorderTemplates(orderedIds: readonly string[]): Promise<void> {
   const now = Date.now();
@@ -160,11 +169,12 @@ export async function duplicateTemplate(templateId: string): Promise<string> {
   const id = newId();
   await db.insert(templates).values({
     id,
-    name: `${source.name} Copy`,
+    name: source.name,
     notes: source.notes,
     position: await nextPersonalPosition(),
     isBuiltIn: false,
     folderId: source.isBuiltIn ? null : source.folderId,
+    color: source.color,
   });
 
   if (rows.length > 0) {

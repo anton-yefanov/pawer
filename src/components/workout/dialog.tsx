@@ -19,7 +19,7 @@ export function Dialog({
 }: {
   emoji: string;
   title: string;
-  body: string;
+  body?: string;
   onDismiss: () => void;
   children: React.ReactNode;
 }) {
@@ -27,16 +27,22 @@ export function Dialog({
 
   return (
     <View style={styles.overlay}>
-      <Pressable style={styles.scrim} onPress={onDismiss} accessibilityLabel="Dismiss" />
+      <Pressable
+        style={[styles.scrim, { backgroundColor: theme.scrim }]}
+        onPress={onDismiss}
+        accessibilityLabel="Dismiss"
+      />
 
       <View style={[styles.card, { backgroundColor: theme.surface }]}>
         <ThemedText style={styles.emoji}>{emoji}</ThemedText>
         <ThemedText type="smallBold" style={styles.title}>
           {title}
         </ThemedText>
-        <ThemedText themeColor="textSecondary" style={styles.body}>
-          {body}
-        </ThemedText>
+        {body && (
+          <ThemedText themeColor="textSecondary" style={styles.body}>
+            {body}
+          </ThemedText>
+        )}
 
         {children}
       </View>
@@ -85,7 +91,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
   },
   card: {
     width: '100%',

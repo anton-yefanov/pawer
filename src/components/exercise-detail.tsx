@@ -22,8 +22,8 @@ export function ExerciseDetail({ id }: { id: string }) {
 
   if (!exercise) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <Stack.Screen options={{ title: '' }} />
+      <View style={[styles.container, { backgroundColor: theme.surface }]}>
+        <Stack.Screen options={{ title: '', contentStyle: { backgroundColor: theme.surface } }} />
       </View>
     );
   }
@@ -41,9 +41,11 @@ export function ExerciseDetail({ id }: { id: string }) {
 
   return (
     <ScrollView
-      style={{ backgroundColor: theme.background }}
+      style={{ backgroundColor: theme.surface }}
       contentContainerStyle={styles.container}>
-      <Stack.Screen options={{ title: exercise.name }} />
+      <Stack.Screen
+        options={{ title: exercise.name, contentStyle: { backgroundColor: theme.surface } }}
+      />
 
       <Image source={frameOne} style={styles.image} contentFit="contain" />
 

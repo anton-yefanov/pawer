@@ -1,34 +1,25 @@
-import { Dialog, DialogButton } from '@/components/workout/dialog';
-import { useTheme } from '@/hooks/use-theme';
+import { ConfirmAlert } from '@/components/workout/confirm-alert';
 
 /** Shown when a start action is refused because a session is already running. */
 export function ActiveWorkoutPrompt({
+  open,
   onResume,
   onDismiss,
 }: {
+  open: boolean;
   onResume: () => void;
   onDismiss: () => void;
 }) {
-  const theme = useTheme();
-
   return (
-    <Dialog
-      emoji="🏋️"
+    <ConfirmAlert
+      open={open}
       title="Workout in Progress"
-      body="You already have a workout going. Finish or cancel it before starting another."
-      onDismiss={onDismiss}>
-      <DialogButton
-        label="Open Workout"
-        background={theme.accent}
-        color={theme.accentContent}
-        onPress={onResume}
-      />
-      <DialogButton
-        label="Not Now"
-        background={theme.backgroundElement}
-        color={theme.text}
-        onPress={onDismiss}
-      />
-    </Dialog>
+      message="You already have a workout going. Finish or cancel it before starting another."
+      confirmLabel="Open Workout"
+      confirmRole="default"
+      dismissLabel="Not Now"
+      onConfirm={onResume}
+      onDismiss={onDismiss}
+    />
   );
 }

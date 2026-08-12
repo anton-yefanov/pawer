@@ -5,6 +5,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { isPrKind, PR_LABELS } from '@/lib/personal-records';
+import { isWorkSet } from '@/lib/set-types';
 import { formatPreviousSet, trackingTypeOf } from '@/lib/tracking-types';
 import { formatWeight, type WeightUnit } from '@/lib/units';
 import {
@@ -64,7 +65,9 @@ export function ExerciseBreakdown({
   return (
     <View style={[styles.card, styles.exercises, { backgroundColor: theme.surface }]}>
       {exercises.map((exercise) => {
-        const logged = (setsByExercise.get(exercise.id) ?? []).filter((set) => set.completed);
+        const logged = (setsByExercise.get(exercise.id) ?? []).filter(
+          (set) => set.completed && isWorkSet(set)
+        );
         const records = (recordsByExercise.get(exercise.exerciseId) ?? []).filter((record) =>
           isPrKind(record.kind)
         );

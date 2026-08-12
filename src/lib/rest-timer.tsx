@@ -12,6 +12,8 @@ export const DEFAULT_REST_SECONDS = 90;
 type RestState = {
   setId: string;
   endsAt: number;
+  /** What the countdown started from, so the progress bar has a denominator. */
+  total: number;
   notificationId: string | null;
 };
 
@@ -20,6 +22,8 @@ type RestTimer = {
   /** Seconds left, recomputed from wall-clock. */
   remaining: number;
   total: number;
+  /** Epoch ms the countdown ends at, for anything animating continuously. */
+  endsAt: number | null;
   start: (input: { setId: string; seconds: number; exerciseName: string }) => Promise<void>;
   adjust: (deltaSeconds: number) => Promise<void>;
   cancel: () => Promise<void>;
@@ -34,7 +38,6 @@ const RestTimerContext = createContext<RestTimer | null>(null);
  */
 export function RestTimerProvider({ children }: { children: ReactNode }) {
   const [rest, setRest] = useState<RestState | null>(null);
-  const [total, setTotal] = useState(0);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -78,7 +81,8 @@ export function RestTimerProvider({ children }: { children: ReactNode }) {
   const value: RestTimer = {
     setId: rest?.setId ?? null,
     remaining,
-    total,
+    total: rest?.total ?? 0,
+    endsAt: rest?.endsAt ?? null,
 
     start: async ({ setId, seconds, exerciseName }) => {
       await cancelScheduledNotification(rest?.notificationId ?? null);
@@ -89,8 +93,7 @@ export function RestTimerProvider({ children }: { children: ReactNode }) {
       }
       const endsAt = Date.now() + seconds * 1000;
       const notificationId = await scheduleRestNotification(endsAt, `Next set: ${exerciseName}`);
-      const next = { setId, endsAt, notificationId };
-      setTotal(seconds);
+      const next = { setId, endsAt, total: seconds, notificationId };
       setNow(Date.now());
       setRest(next);
       await setSetting(db, STATE_KEY, JSON.stringify(next));
@@ -101,7 +104,12 @@ export function RestTimerProvider({ children }: { children: ReactNode }) {
       await cancelScheduledNotification(rest.notificationId);
       const endsAt = Math.max(Date.now(), rest.endsAt + deltaSeconds * 1000);
       const notificationId = await scheduleRestNotification(endsAt, 'Next set');
-      const next = { ...rest, endsAt, notificationId };
+      const next = {
+        ...rest,
+        endsAt,
+        total: Math.max(1, rest.total + deltaSeconds),
+        notificationId,
+      };
       setRest(next);
       await setSetting(db, STATE_KEY, JSON.stringify(next));
     },

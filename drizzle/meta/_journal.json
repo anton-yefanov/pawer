@@ -36,6 +36,27 @@
       "when": 1786292551723,
       "tag": "0004_dizzy_ultimatum",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1786381722712,
+      "tag": "0005_reflective_gauntlet",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1786543252368,
+      "tag": "0006_cold_iron_monger",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1786555631427,
+      "tag": "0007_slow_terror",
+      "breakpoints": true
     }
   ]
 }

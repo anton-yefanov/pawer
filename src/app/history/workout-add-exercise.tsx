@@ -4,7 +4,7 @@ import { ExerciseLibrary } from '@/components/exercise-library';
 import { Spacing } from '@/constants/theme';
 import { addExerciseToWorkout } from '@/lib/workout-actions';
 
-export default function AddExerciseScreen() {
+export default function HistoryAddExerciseScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
 
@@ -14,6 +14,8 @@ export default function AddExerciseScreen() {
       <ExerciseLibrary
         bottomInset={Spacing.four}
         topInset={0}
+        newExerciseHref="/history/new-exercise"
+        detailHref={(exercise) => ({ pathname: '/history/workout-exercise', params: { id: exercise.id } })}
         onSelect={async (exercise) => {
           await addExerciseToWorkout(id, exercise.id);
           router.back();

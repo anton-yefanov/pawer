@@ -48,6 +48,28 @@ export const TRACKING: Record<TrackingType, Config> = {
   distance_duration: { fields: ['distance', 'duration'], weightSign: '', countsVolume: false },
 };
 
+export const TRACKING_LABELS: Record<TrackingType, { title: string; examples: string }> = {
+  weight_reps: { title: 'Weight, Reps', examples: 'Bench Press, Dumbbell Row, Cable Crossovers' },
+  weighted_bodyweight: { title: 'Bodyweight + Weight, Reps', examples: 'Weighted Dips, Pull Up' },
+  assisted_bodyweight: {
+    title: 'Assisted Bodyweight, Reps',
+    examples: 'Assisted Dips, Assisted Chin Up',
+  },
+  bodyweight_reps: { title: 'Reps', examples: 'Push Ups, Bodyweight Squat' },
+  duration: { title: 'Time', examples: 'Front Plank, Wall Sits' },
+  distance_duration: { title: 'Distance, Time', examples: 'Running, Rowing, Cycling' },
+};
+
+/** Order and grouping of the exercise-type picker. */
+export const TRACKING_SECTIONS: { title: string; types: readonly TrackingType[] }[] = [
+  { title: 'Strength', types: ['weight_reps'] },
+  {
+    title: 'Bodyweight',
+    types: ['weighted_bodyweight', 'assisted_bodyweight', 'bodyweight_reps', 'duration'],
+  },
+  { title: 'Cardio', types: ['distance_duration'] },
+];
+
 /**
  * `exercises.tracking_type` is plain text, and a row written by an older build
  * has to degrade to something renderable rather than to no columns at all.
@@ -97,20 +119,30 @@ export function formatPreviousSet(
   }
 }
 
-/** A set worth counting: the field that defines the effort carries a value. */
-export function isValidSet(set: TrackedSet, type: TrackingType): boolean {
+/**
+ * The fields that define the effort and are still empty. Weight is never
+ * required — a blank weight column means bodyweight, not an unfinished set —
+ * and cardio needs only one of its two.
+ */
+export function missingRequiredFields(set: TrackedSet, type: TrackingType): SetField[] {
+  const hasReps = set.reps != null && set.reps > 0;
+  const hasDuration = set.durationSeconds != null && set.durationSeconds > 0;
+  const hasDistance = set.distanceM != null && set.distanceM > 0;
+
   switch (type) {
     case 'weight_reps':
     case 'weighted_bodyweight':
     case 'assisted_bodyweight':
     case 'bodyweight_reps':
-      return set.reps != null && set.reps > 0;
+      return hasReps ? [] : ['reps'];
     case 'duration':
-      return set.durationSeconds != null && set.durationSeconds > 0;
+      return hasDuration ? [] : ['duration'];
     case 'distance_duration':
-      return (
-        (set.durationSeconds != null && set.durationSeconds > 0) ||
-        (set.distanceM != null && set.distanceM > 0)
-      );
+      return hasDistance || hasDuration ? [] : ['distance', 'duration'];
   }
+}
+
+/** A set worth counting: the field that defines the effort carries a value. */
+export function isValidSet(set: TrackedSet, type: TrackingType): boolean {
+  return missingRequiredFields(set, type).length === 0;
 }

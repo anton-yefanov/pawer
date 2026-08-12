@@ -4,14 +4,13 @@ import { StyleSheet, View } from 'react-native';
 
 import { ExerciseLibrary } from '@/components/exercise-library';
 import { BigButton } from '@/components/workout/big-button';
+import { SHEET_TOP_INSET } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { addDraftExercises } from '@/lib/template-draft';
 
 const FOOTER_HEIGHT = 50 + Spacing.three * 2;
 
 export default function AddTemplateExercisesScreen() {
-  const theme = useTheme();
   const [picked, setPicked] = useState<readonly string[]>([]);
   // Stable identity so the list's `extraData` only changes on a real toggle.
   const pickedSet = useMemo(() => new Set(picked), [picked]);
@@ -31,12 +30,17 @@ export default function AddTemplateExercisesScreen() {
       <ExerciseLibrary
         onSelect={(exercise) => toggle(exercise.id)}
         selectedIds={pickedSet}
-        topInset={0}
+        newExerciseHref="/new-exercise"
+        detailHref={(exercise) => ({
+          pathname: '/exercise/[id]',
+          params: { id: exercise.id },
+        })}
+        topInset={SHEET_TOP_INSET}
         bottomInset={FOOTER_HEIGHT + Spacing.three}
       />
 
       {picked.length > 0 && (
-        <View style={[styles.footer, { backgroundColor: theme.background }]}>
+        <View style={styles.footer}>
           <BigButton title={`Add ${picked.length}`} onPress={confirm} />
         </View>
       )}

@@ -1,4 +1,5 @@
 import type { MascotState } from '@/lib/mascot-images';
+import { isWorkSet } from '@/lib/set-types';
 import { isValidSet, TRACKING, trackingTypeOf, type TrackingType } from '@/lib/tracking-types';
 import { formatDuration } from '@/lib/units';
 import type { WorkoutExerciseRow, WorkoutSetRow } from '@/lib/workout-queries';
@@ -63,7 +64,8 @@ export function totalVolumeKg(
   tracking: TrackingByExercise
 ): number {
   return sets.reduce((sum, set) => {
-    if (!set.completed || !TRACKING[typeOf(set, tracking)].countsVolume) return sum;
+    if (!set.completed || !isWorkSet(set) || !TRACKING[typeOf(set, tracking)].countsVolume)
+      return sum;
     return sum + (set.weightKg ?? 0) * (set.reps ?? 0);
   }, 0);
 }
@@ -83,7 +85,7 @@ export function summarise(
   return {
     durationMs: (workout.finishedAt ?? Date.now()) - workout.startedAt,
     volumeKg: totalVolumeKg(sets, trackingByExercise(workoutExercises)),
-    completedSets: sets.filter((set) => set.completed).length,
+    completedSets: sets.filter((set) => set.completed && isWorkSet(set)).length,
     exerciseCount: workoutExercises.length,
   };
 }

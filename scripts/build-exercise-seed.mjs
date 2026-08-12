@@ -16,6 +16,8 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { tagsFor, unknownAliasIds } from './exercise-tags.mjs';
+
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SOURCE = resolve(process.argv[2] ?? resolve(ROOT, '../free-exercise-db'));
 const OUT = resolve(ROOT, 'src/db/seed/exercises.json');
@@ -61,7 +63,11 @@ const CATEGORY = new Set([
 const TRACKING_OVERRIDES = new Map(
   Object.entries({
     duration: ['Rope_Jumping', 'Battling_Ropes'],
-    assisted_bodyweight: ['Band_Assisted_Pull-Up'],
+    assisted_bodyweight: [
+      'Band_Assisted_Pull-Up',
+      'x_Assisted_Pull-Up_Machine',
+      'x_Assisted_Chin-Up_Machine',
+    ],
     weighted_bodyweight: [
       'Pullups',
       'Chin-Up',
@@ -84,6 +90,49 @@ const TRACKING_OVERRIDES = new Map(
     ],
   }).flatMap(([type, ids]) => ids.map((id) => [id, type]))
 );
+
+/**
+ * Exercises upstream is missing, in the upstream record shape. Their ids are
+ * namespaced with an `x_` prefix so an upstream slug can never collide with one.
+ */
+const ADDITIONS = [
+  {
+    id: 'x_Assisted_Pull-Up_Machine',
+    name: 'Assisted Pull-Up (Machine)',
+    force: 'pull',
+    level: 'beginner',
+    mechanic: 'compound',
+    equipment: 'machine',
+    category: 'strength',
+    primaryMuscles: ['lats'],
+    secondaryMuscles: ['biceps', 'forearms', 'middle back', 'shoulders'],
+    instructions: [
+      'Set the assistance weight on the stack. More weight means more help, so a lighter setting is the harder one.',
+      'Take a wide overhand grip on the bar and kneel or stand on the pad, letting it carry your weight. Keep your chest up and your torso close to vertical. This is your starting position.',
+      'Pull yourself up by driving your elbows down and back until your chin clears the bar, squeezing the lats at the top.',
+      'Lower yourself under control until your arms are fully extended, breathing in on the way down.',
+      'Repeat for the prescribed amount of repetitions.',
+    ],
+  },
+  {
+    id: 'x_Assisted_Chin-Up_Machine',
+    name: 'Assisted Chin-Up (Machine)',
+    force: 'pull',
+    level: 'beginner',
+    mechanic: 'compound',
+    equipment: 'machine',
+    category: 'strength',
+    primaryMuscles: ['lats'],
+    secondaryMuscles: ['biceps', 'forearms', 'middle back'],
+    instructions: [
+      'Set the assistance weight on the stack. More weight means more help, so a lighter setting is the harder one.',
+      'Take an underhand grip slightly inside shoulder width and kneel or stand on the pad, letting it carry your weight. This is your starting position.',
+      'Pull your torso up until your head reaches the level of the bar, concentrating on the biceps and keeping the elbows close to your body.',
+      'Squeeze at the top, then lower yourself slowly until your arms are fully extended.',
+      'Repeat for the prescribed amount of repetitions.',
+    ],
+  },
+];
 
 const TRACKING_TYPE = new Set([
   'weight_reps',
@@ -111,7 +160,7 @@ if (!Array.isArray(raw) || raw.length === 0) {
 const seen = new Set();
 const problems = [];
 
-const exercises = raw
+const exercises = [...raw, ...ADDITIONS]
   .map((e) => {
     if (!e.id) problems.push(`missing id: ${e.name}`);
     if (seen.has(e.id)) problems.push(`duplicate id: ${e.id}`);
@@ -141,6 +190,7 @@ const exercises = raw
       primaryMuscles: e.primaryMuscles ?? [],
       secondaryMuscles: e.secondaryMuscles ?? [],
       instructions: e.instructions ?? [],
+      tags: tagsFor(e),
       // `images` is deliberately dropped: upstream ships stock photos, we ship
       // our own mascot illustrations keyed by sourceId.
     };
@@ -149,6 +199,10 @@ const exercises = raw
 
 for (const id of TRACKING_OVERRIDES.keys()) {
   if (!seen.has(id)) problems.push(`tracking override for unknown exercise "${id}"`);
+}
+
+for (const id of unknownAliasIds(seen)) {
+  problems.push(`search alias for unknown exercise "${id}"`);
 }
 
 if (problems.length > 0) {

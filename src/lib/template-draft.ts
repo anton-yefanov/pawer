@@ -1,5 +1,7 @@
 import { useSyncExternalStore } from 'react';
 
+import { move } from '@/lib/order';
+
 /**
  * The in-progress New Template. It lives outside React because the exercise
  * picker is a sibling sheet route, not a child of the template screen, so there
@@ -57,6 +59,11 @@ export function addDraftExercises(exerciseIds: readonly string[]): void {
   const added = exerciseIds.filter((id) => !existing.has(id));
   if (added.length === 0) return;
   draft = { ...draft, exerciseIds: [...draft.exerciseIds, ...added] };
+  emit();
+}
+
+export function moveDraftExercise(from: number, to: number): void {
+  draft = { ...draft, exerciseIds: move(draft.exerciseIds, from, to) };
   emit();
 }
 

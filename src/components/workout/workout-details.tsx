@@ -9,11 +9,15 @@ import { ThemedText } from '@/components/themed-text';
 import { ActiveWorkoutPrompt } from '@/components/workout/active-workout-prompt';
 import { ConfirmAlert } from '@/components/workout/confirm-alert';
 import { ExerciseBreakdown, SummaryStats } from '@/components/workout/workout-recap';
-import { HeaderSlot } from '@/components/workout/workout-sheet-header';
+import {
+  HEADER_CIRCLE_SIZE,
+  headerItem,
+  HeaderSlot,
+} from '@/components/workout/workout-sheet-header';
 import { workoutActions } from '@/components/workout/workout-menu-actions';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { useWeightUnit } from '@/hooks/use-weight-unit';
+import { useWeightUnit } from '@/lib/weight-unit';
 import {
   workoutExercisesQuery,
   workoutPersonalRecordsQuery,
@@ -46,7 +50,7 @@ export function WorkoutDetails({
   const [pending, setPending] = useState<Pending | null>(null);
   const [blockedBy, setBlockedBy] = useState<string | null>(null);
 
-  if (!workout) return <View style={{ flex: 1, backgroundColor: theme.surfaceGrouped }} />;
+  if (!workout) return <View style={{ flex: 1, backgroundColor: theme.background }} />;
 
   const confirm: ConfirmDestructive = (options) => setPending(options);
 
@@ -65,16 +69,21 @@ export function WorkoutDetails({
       <Stack.Screen
         options={{
           title: workout.name?.trim() || 'Workout',
-          headerRight: () => (
-            <HeaderSlot>
-              <CardMenu accessibilityLabel="Workout options" actions={actions} />
-            </HeaderSlot>
-          ),
+          unstable_headerRightItems: () =>
+            headerItem(
+              <HeaderSlot>
+                <CardMenu
+                  accessibilityLabel="Workout options"
+                  actions={actions}
+                  size={HEADER_CIRCLE_SIZE}
+                />
+              </HeaderSlot>
+            ),
         }}
       />
 
       <ScrollView
-        style={{ backgroundColor: theme.surfaceGrouped }}
+        style={{ backgroundColor: theme.background }}
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic">
         <ThemedText type="small" themeColor="textSecondary">
@@ -104,15 +113,15 @@ export function WorkoutDetails({
         onDismiss={() => setPending(null)}
       />
 
-      {blockedBy && (
-        <ActiveWorkoutPrompt
-          onResume={() => {
-            setBlockedBy(null);
-            onOpenWorkout(blockedBy);
-          }}
-          onDismiss={() => setBlockedBy(null)}
-        />
-      )}
+      <ActiveWorkoutPrompt
+        open={blockedBy != null}
+        onResume={() => {
+          const id = blockedBy;
+          setBlockedBy(null);
+          if (id) onOpenWorkout(id);
+        }}
+        onDismiss={() => setBlockedBy(null)}
+      />
     </>
   );
 }

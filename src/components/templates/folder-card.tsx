@@ -4,16 +4,16 @@ import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
 import { useAnimatedStyle } from 'react-native-reanimated';
 
-import { folderActions } from '@/components/templates/card-actions';
-import { CardMenu } from '@/components/templates/card-menu';
 import { DraggableCell } from '@/components/templates/draggable-cell';
 import { CARD_BORDER, GridCard } from '@/components/templates/grid-card';
 import { useTemplateDrag } from '@/components/templates/template-drag';
+import { type CardColor } from '@/constants/card-colors';
 import { useTheme } from '@/hooks/use-theme';
 
 export type FolderCardData = {
   id: string;
   name: string;
+  color: CardColor | null;
   templateNames: readonly string[];
 };
 
@@ -49,6 +49,7 @@ export function FolderCard({
       <GridCard
         width={width - CARD_BORDER * 2}
         title={folder.name}
+        color={folder.color}
         subtitle={
           folder.templateNames.length > 0
             ? folder.templateNames.join(', ')
@@ -56,12 +57,9 @@ export function FolderCard({
         }
         onPress={() =>
           router.push({
-            pathname: '/workout/folder/[id]',
+            pathname: '/folder/[id]',
             params: { id: folder.id },
           })
-        }
-        menu={
-          <CardMenu accessibilityLabel={`${folder.name} options`} actions={folderActions(folder)} />
         }
         cover={<SymbolView name="folder.fill" size={44} tintColor={theme.textSecondary} />}
       />

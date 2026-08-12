@@ -3,7 +3,7 @@ import { and, asc, count, countDistinct, eq, gte, isNotNull, isNull, lt, sql } f
 import { db } from '@/db/client';
 import { exercises, sets, workoutExercises, workouts } from '@/db/schema';
 import type { DateRange } from '@/lib/analytics-period';
-import { VOLUME_TRACKING_TYPES } from '@/lib/workout-queries';
+import { VOLUME_TRACKING_TYPES, WORK_SETS } from '@/lib/workout-queries';
 
 /**
  * Query *builders*, handed to `useLiveQuery` like the ones in
@@ -43,7 +43,7 @@ export function workoutTotalsQuery(range: DateRange) {
 }
 
 export function setTotalsQuery(range: DateRange) {
-  const completed = sql`${sets.completed} = 1`;
+  const completed = sql`${sets.completed} = 1 AND ${WORK_SETS}`;
 
   return db
     .select({
@@ -86,7 +86,7 @@ export type MetricRow = {
  * disagree with the range bounds.
  */
 export function metricSeriesQuery(range: DateRange) {
-  const completed = sql`${sets.completed} = 1`;
+  const completed = sql`${sets.completed} = 1 AND ${WORK_SETS}`;
 
   return db
     .select({
