@@ -313,6 +313,23 @@ main {
   color: var(--accent);
 }
 
+.prompt {
+  width: 100%;
+  min-width: 0;
+  resize: none;
+  background: #0f1114;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 6px;
+  font: 11px/1.35 ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+
+.prompt:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
 .card.collapsed .grid {
   display: none;
 }

@@ -44,6 +44,60 @@ function cell(label, slot, mascot) {
   return el;
 }
 
+const CHARACTER_SPEC = `Reproduce the mascot exactly as shown in CHARACTER REFERENCE: the same light orange-and-white fur and markings; forehead and cheek stripes; striped orange tail; feline head, ears, white muzzle, amber eyes, whiskers, and calm confident expression; muscular athletic anatomy and established head-to-body proportions; white tank top with dark edging; dark green athletic shorts with white piping and drawstring; white crew socks with two green stripes; and white-and-gray athletic shoes. Match the model sheet's clean hand-drawn linework, warm colors, subtle cel shading, and level of detail. Do not redesign, simplify, darken, exaggerate, or change the mascot's face, markings, outfit, muscularity, or proportions.`;
+
+function exercisePrompt(e, index) {
+  const frame = index + 1;
+  const phase = frame === 1 ? 'first photographed position' : 'second photographed position';
+  const equipment = e.equipment && e.equipment !== 'body only' ? e.equipment : 'no separate equipment';
+  const instructions = e.instructions.map((step, i) => `${i + 1}. ${step}`).join('\n');
+
+  return `Create one square 1:1 full-body illustration of the cat mascot performing the exact ${e.name} position shown in EXERCISE REFERENCE ${frame}.
+
+REFERENCE PRIORITY:
+1. CHARACTER REFERENCE controls the mascot's exact identity, anatomy, clothing, colors, markings, and illustration style.
+2. EXERCISE REFERENCE ${frame} controls the exact pose, movement phase, body orientation, camera angle, grip, equipment geometry, contact points, and framing. It is the ${phase}; do not substitute the other endpoint of the repetition.
+
+POSE — REPRODUCE PRECISELY:
+Study EXERCISE REFERENCE ${frame} closely and reproduce every visible joint angle and spatial relationship: head direction; neck and spine alignment; torso lean or rotation; shoulder position; left and right upper-arm, elbow, forearm, wrist, and hand positions; hip height and rotation; left and right thigh, knee, lower-leg, ankle, and foot positions; stance width; balance; and all body-to-equipment contact points. Preserve any intentional asymmetry or unilateral action. Do not mirror the pose, average it with the other exercise frame, or invent a more generic ${e.name} pose. Keep the anatomy stable, believable, and mechanically correct.
+
+EXERCISE CONTEXT:
+Exercise: ${e.name}
+Reference frame: ${frame} of 2 (${phase})
+Equipment: ${equipment}
+Primary muscles: ${e.primaryMuscles.join(', ') || 'not specified'}
+Secondary muscles: ${e.secondaryMuscles.join(', ') || 'none'}
+Movement instructions for resolving details that are obscured in the photo:
+${instructions}
+
+CHARACTER CONSISTENCY — HIGHEST PRIORITY:
+${CHARACTER_SPEC}
+
+EQUIPMENT AND CONTACTS:
+Include exactly the exercise equipment visible and necessary in EXERCISE REFERENCE ${frame}. Match its functional type, orientation, attachment points, supports, pads, handles, bar path, cables, bands, plates, bench angle, or platform placement as applicable. Every hand, foot, knee, hip, back, or shoulder contact must connect logically—nothing may pass through, float away from, or sit behind the wrong body part. Do not add unrelated equipment, extra weights, extra handles, or extra limbs.
+
+TAIL:
+The tail must emerge anatomically from the base of the spine beneath the shorts' waistband, never from the middle of the back. Place it naturally where it remains visible if possible without intersecting the body, floor, bench, machine, cable, bar, weights, or other equipment. The tail must not change the exercise pose or balance.
+
+COMPOSITION:
+Show one complete mascot and all equipment needed to make this exact position unmistakable. Keep the same viewpoint as EXERCISE REFERENCE ${frame}; do not force a frontal view when the reference is side, rear, three-quarter, high, or low angle. Fit ears, tail, shoes, hands, weights, and essential equipment inside a square canvas with comfortable margins. Use a transparent background. No gym environment, people, spotters, text, logos, arrows, borders, motion trails, anatomy overlays, or instructional graphics. Create one finished illustration only—not multiple poses or a character sheet.
+
+Before finalizing, compare the result directly with EXERCISE REFERENCE ${frame}: verify the movement endpoint, silhouette, joint angles, grip and stance, gaze and torso direction, camera angle, equipment contacts and geometry, complete framing, correct tail attachment, and unchanged mascot design.`;
+}
+
+function originalCell(e, index) {
+  const el = cell(`original ${index + 1}`, originalSlot(e, index));
+  const prompt = document.createElement('textarea');
+  prompt.className = 'prompt';
+  prompt.rows = 4;
+  prompt.value = exercisePrompt(e, index);
+  prompt.setAttribute('aria-label', `${e.name} reference ${index + 1} image-generation prompt`);
+  prompt.spellcheck = false;
+  prompt.addEventListener('click', (event) => event.stopPropagation());
+  el.append(prompt);
+  return el;
+}
+
 function originalSlot(e, index) {
   const slot = document.createElement('div');
   slot.className = 'slot original';
@@ -142,8 +196,8 @@ function card(e) {
   const grid = document.createElement('div');
   grid.className = 'grid';
   grid.append(
-    cell('original 1', originalSlot(e, 0)),
-    cell('original 2', originalSlot(e, 1)),
+    originalCell(e, 0),
+    originalCell(e, 1),
     cell('mascot 1', mascotSlot(e, 1), true),
     cell('mascot 2', mascotSlot(e, 2), true),
   );
