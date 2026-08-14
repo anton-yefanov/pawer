@@ -148,7 +148,12 @@ function mascotSlot(e, frame) {
 
   slot.addEventListener('click', () => {
     setFocus(slot);
-    pickFile(e, frame);
+    if (mtime) {
+      const img = slot.querySelector('img');
+      openLightbox(img.src, img.alt);
+    } else {
+      pickFile(e, frame);
+    }
   });
   slot.addEventListener('focus', () => setFocus(slot));
   slot.addEventListener('dragover', (ev) => {
