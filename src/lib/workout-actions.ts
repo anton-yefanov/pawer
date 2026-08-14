@@ -62,9 +62,12 @@ export async function addExerciseToWorkout(
     .get();
 
   const id = newId();
-  await db
-    .insert(workoutExercises)
-    .values({ id, workoutId, exerciseId, position: (last?.position ?? -1) + 1 });
+  await db.insert(workoutExercises).values({
+    id,
+    workoutId,
+    exerciseId,
+    position: (last?.position ?? -1) + 1,
+  });
   await addSet(id);
   return id;
 }
@@ -166,6 +169,13 @@ export async function setSetType(setId: string, setType: SetType): Promise<void>
   await db
     .update(sets)
     .set({ setType, ...touch() })
+    .where(eq(sets.id, setId));
+}
+
+export async function setSetNotes(setId: string, notes: string | null): Promise<void> {
+  await db
+    .update(sets)
+    .set({ notes, ...touch() })
     .where(eq(sets.id, setId));
 }
 
@@ -290,7 +300,10 @@ export async function repeatWorkout(workoutId: string): Promise<StartWorkoutResu
     .all();
 
   const plannedSets = await db
-    .select({ workoutExerciseId: sets.workoutExerciseId, setType: sets.setType })
+    .select({
+      workoutExerciseId: sets.workoutExerciseId,
+      setType: sets.setType,
+    })
     .from(sets)
     .where(
       and(

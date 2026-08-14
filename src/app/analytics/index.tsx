@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { DayPicker } from '@/components/analytics/day-picker';
-import { PeriodMenu } from '@/components/analytics/period-menu';
+import { PeriodPicker } from '@/components/analytics/period-picker';
 import { MetricChart } from '@/components/analytics/metric-chart';
 import { StatRows, type StatBadge } from '@/components/analytics/stat-rows';
 import { ThemedText } from '@/components/themed-text';
@@ -52,13 +52,31 @@ export default function AnalyticsScreen() {
 
   const badges: StatBadge[] = [
     { label: 'Workouts', value: String(totals.workouts), span: 3, hero: true },
-    { label: 'Total tonnage', value: formatTonnage(totals.volumeKg, unit), span: 3, hero: true },
+    {
+      label: 'Total tonnage',
+      value: formatTonnage(totals.volumeKg, unit),
+      span: 3,
+      hero: true,
+    },
     { label: 'Sets', value: String(totals.completedSets), span: 2 },
     { label: 'Reps', value: String(totals.reps), span: 2 },
     { label: 'Exercises', value: String(totals.exerciseEntries), span: 2 },
-    { label: 'Time in gym', value: formatHoursMinutes(totals.durationMs), span: 4, hero: true },
-    { label: 'Avg duration', value: formatClock(totals.avgDurationMs), span: 2 },
-    { label: 'Avg tonnage', value: formatTonnage(totals.avgVolumeKg, unit), span: 3 },
+    {
+      label: 'Time in gym',
+      value: formatHoursMinutes(totals.durationMs),
+      span: 4,
+      hero: true,
+    },
+    {
+      label: 'Avg duration',
+      value: formatClock(totals.avgDurationMs),
+      span: 2,
+    },
+    {
+      label: 'Avg tonnage',
+      value: formatTonnage(totals.avgVolumeKg, unit),
+      span: 3,
+    },
     {
       label: 'Total distance',
       value: formatDistance(totals.distanceM, distanceUnitFor(unit)),
@@ -72,10 +90,7 @@ export default function AnalyticsScreen() {
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic">
       <View style={[styles.card, { backgroundColor: theme.surface }]}>
-        <View style={styles.cardRow}>
-          <ThemedText themeColor="textSecondary">Period</ThemedText>
-          <PeriodMenu value={period} onChange={setPeriod} />
-        </View>
+        <PeriodPicker value={period} onChange={setPeriod} />
 
         {period === 'custom' && (
           <>

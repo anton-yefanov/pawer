@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import * as haptics from '@/lib/haptics';
 
 export const ROW_HEIGHT = 56;
 
@@ -51,7 +52,10 @@ export function DisclosureRow({
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        haptics.tap();
+        onPress();
+      }}
       style={({ pressed }) => [
         groupedStyles.row,
         pressed && { backgroundColor: theme.backgroundSelected },
@@ -89,7 +93,10 @@ export function PickRow({
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        haptics.select();
+        onPress();
+      }}
       style={({ pressed }) => [
         groupedStyles.row,
         pressed && { backgroundColor: theme.backgroundSelected },

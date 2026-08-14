@@ -6,6 +6,7 @@ import { PrChip } from '@/components/pr-chip';
 import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import * as haptics from '@/lib/haptics';
 import { useWeightUnit } from '@/lib/weight-unit';
 import { formatWeight, type WeightUnit } from '@/lib/units';
 import { finishedWorkoutsQuery, type HistoryRow } from '@/lib/workout-queries';
@@ -28,7 +29,12 @@ export default function HistoryScreen() {
         <HistoryCard
           workout={item}
           unit={unit}
-          onOpen={() => router.push({ pathname: '/history/workout-details', params: { id: item.id } })}
+          onOpen={() =>
+            router.push({
+              pathname: '/history/workout-details',
+              params: { id: item.id },
+            })
+          }
         />
       )}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -61,7 +67,10 @@ function HistoryCard({
 
   return (
     <Pressable
-      onPress={onOpen}
+      onPress={() => {
+        haptics.tap();
+        onOpen();
+      }}
       style={({ pressed }) => [
         styles.card,
         { backgroundColor: theme.surface },

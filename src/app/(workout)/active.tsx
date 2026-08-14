@@ -14,7 +14,6 @@ export default function ActiveWorkoutScreen() {
         router.push({ pathname: '/exercise/[id]', params: { id: exerciseId } })
       }
       onAddExercise={() => router.push({ pathname: '/add-exercise', params: { id } })}
-      onOpenTimer={() => router.push({ pathname: '/timer' })}
       onDone={() => router.back()}
     />
   );

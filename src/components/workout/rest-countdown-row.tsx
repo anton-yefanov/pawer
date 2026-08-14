@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, type Ref } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
@@ -12,10 +12,11 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useAppStateActive } from '@/hooks/use-app-state-active';
 import { useTheme } from '@/hooks/use-theme';
+import * as haptics from '@/lib/haptics';
 import { useRestTimer } from '@/lib/rest-timer';
 import { formatDuration } from '@/lib/units';
 
-export function RestCountdownRow() {
+export function RestCountdownRow({ ref }: { ref?: Ref<View> }) {
   const theme = useTheme();
   const rest = useRestTimer();
 
@@ -33,16 +34,26 @@ export function RestCountdownRow() {
   // scaleX rather than a percentage width: a percentage on an absolute child
   // resolves against the row's *content* box, so a full bar stopped short of
   // the padding on each end.
-  const fill = useAnimatedStyle(() => ({ transform: [{ scaleX: progress.value }] }));
+  const fill = useAnimatedStyle(() => ({
+    transform: [{ scaleX: progress.value }],
+  }));
+
+  // `adjust` is a no-op once the rest has already run out; buzzing then would
+  // claim something happened.
+  const adjust = (delta: number) => {
+    if (rest.setId == null) return;
+    haptics.tap();
+    void rest.adjust(delta);
+  };
 
   return (
-    <View style={[styles.row, { backgroundColor: theme.backgroundElement }]}>
+    <View ref={ref} style={[styles.row, { backgroundColor: theme.backgroundElement }]}>
       <Animated.View
         pointerEvents="none"
         style={[styles.fill, fill, { backgroundColor: theme.accent }]}
       />
 
-      <Pressable onPress={() => rest.adjust(-15)} hitSlop={Spacing.two} style={styles.adjust}>
+      <Pressable onPress={() => adjust(-15)} hitSlop={Spacing.two} style={styles.adjust}>
         <ThemedText type="small" themeColor="accent">
           −15
         </ThemedText>
@@ -52,13 +63,19 @@ export function RestCountdownRow() {
         {formatDuration(rest.remaining)}
       </ThemedText>
 
-      <Pressable onPress={() => rest.adjust(15)} hitSlop={Spacing.two} style={styles.adjust}>
+      <Pressable onPress={() => adjust(15)} hitSlop={Spacing.two} style={styles.adjust}>
         <ThemedText type="small" themeColor="accent">
           +15
         </ThemedText>
       </Pressable>
 
-      <Pressable onPress={() => rest.cancel()} hitSlop={Spacing.two} style={styles.adjust}>
+      <Pressable
+        onPress={() => {
+          haptics.tap();
+          void rest.cancel();
+        }}
+        hitSlop={Spacing.two}
+        style={styles.adjust}>
         <ThemedText type="small" themeColor="textSecondary">
           Skip
         </ThemedText>

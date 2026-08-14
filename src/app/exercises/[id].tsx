@@ -4,5 +4,5 @@ import { ExerciseDetail } from '@/components/exercise-detail';
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <ExerciseDetail id={id} />;
+  return <ExerciseDetail id={id} editHref={{ pathname: '/exercises/edit', params: { id } }} />;
 }

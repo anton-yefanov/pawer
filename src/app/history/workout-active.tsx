@@ -20,7 +20,6 @@ export default function HistoryActiveWorkoutScreen() {
         router.push({ pathname: '/history/workout-exercise', params: { id: exerciseId } })
       }
       onAddExercise={() => router.push({ pathname: '/history/workout-add-exercise', params: { id } })}
-      onOpenTimer={() => router.push({ pathname: '/history/workout-timer' })}
       onDone={() => router.back()}
     />
   );

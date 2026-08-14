@@ -1,7 +1,7 @@
-import { and, asc, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 
 import { db } from '@/db/client';
-import { exercises, folders, templateExercises, templates } from '@/db/schema';
+import { exercises, folders, templateExercises, templates, templateSets } from '@/db/schema';
 
 /** Query *builders*, same contract as workout-queries.ts — nothing here is awaited. */
 
@@ -53,10 +53,13 @@ export function templateExercisesQuery(templateId: string) {
       id: templateExercises.id,
       exerciseId: templateExercises.exerciseId,
       position: templateExercises.position,
-      targetSets: templateExercises.targetSets,
-      targetReps: templateExercises.targetReps,
+      notes: templateExercises.notes,
+      restSeconds: templateExercises.restSeconds,
+      setCount: sql<number>`(SELECT COUNT(*) FROM ${templateSets} ts
+        WHERE ts.template_exercise_id = ${templateExercises.id} AND ts.deleted_at IS NULL)`,
       name: exercises.name,
       sourceId: exercises.sourceId,
+      trackingType: exercises.trackingType,
       primaryMuscles: exercises.primaryMuscles,
     })
     .from(templateExercises)
@@ -65,5 +68,31 @@ export function templateExercisesQuery(templateId: string) {
     .orderBy(asc(templateExercises.position));
 }
 
+export function templateSetsQuery(templateId: string) {
+  return db
+    .select({
+      id: templateSets.id,
+      templateExerciseId: templateSets.templateExerciseId,
+      position: templateSets.position,
+      weightKg: templateSets.weightKg,
+      reps: templateSets.reps,
+      durationSeconds: templateSets.durationSeconds,
+      distanceM: templateSets.distanceM,
+      setType: templateSets.setType,
+      notes: templateSets.notes,
+    })
+    .from(templateSets)
+    .innerJoin(templateExercises, eq(templateSets.templateExerciseId, templateExercises.id))
+    .where(
+      and(
+        eq(templateExercises.templateId, templateId),
+        isNull(templateExercises.deletedAt),
+        isNull(templateSets.deletedAt),
+      ),
+    )
+    .orderBy(asc(templateSets.position));
+}
+
 export type TemplateCardExercise = Awaited<ReturnType<typeof templateCardExercisesQuery>>[number];
 export type TemplateExerciseRow = Awaited<ReturnType<typeof templateExercisesQuery>>[number];
+export type TemplateSetRow = Awaited<ReturnType<typeof templateSetsQuery>>[number];

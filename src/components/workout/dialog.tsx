@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import * as haptics from '@/lib/haptics';
 
 /**
  * An in-sheet dialog, rendered inside the screen rather than through
@@ -15,15 +17,24 @@ export function Dialog({
   title,
   body,
   onDismiss,
+  feedback = 'warn',
   children,
 }: {
   emoji: string;
   title: string;
   body?: string;
   onDismiss: () => void;
+  /** `tap` for a dialog the user asked for, like a rename prompt. */
+  feedback?: 'warn' | 'tap';
   children: React.ReactNode;
 }) {
   const theme = useTheme();
+
+  // Mounted conditionally rather than toggled, so mount *is* the appearance.
+  useEffect(() => {
+    if (feedback === 'warn') haptics.warn();
+    else haptics.tap();
+  }, [feedback]);
 
   return (
     <View style={styles.overlay}>
@@ -63,7 +74,10 @@ export function DialogButton({
 }) {
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        haptics.tap();
+        onPress();
+      }}
       style={({ pressed }) => [
         styles.button,
         { backgroundColor: background },

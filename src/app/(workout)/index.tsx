@@ -19,6 +19,7 @@ import { BottomTabInset, Spacing } from '@/constants/theme';
 import { type Template } from '@/db/schema';
 import { useTheme } from '@/hooks/use-theme';
 import { moveTemplateToFolder, reorderFolders } from '@/lib/folder-actions';
+import * as haptics from '@/lib/haptics';
 import { move, sortBy } from '@/lib/order';
 import { reorderTemplates } from '@/lib/template-actions';
 import {
@@ -66,7 +67,10 @@ export default function StartWorkoutScreen() {
    * home and then jumping. It never needs clearing: once the write lands, the
    * live rows already match it and re-sorting is a no-op.
    */
-  const [order, setOrder] = useState<{ folders: string[]; templates: string[] }>({
+  const [order, setOrder] = useState<{
+    folders: string[];
+    templates: string[];
+  }>({
     folders: [],
     templates: [],
   });
@@ -127,8 +131,12 @@ export default function StartWorkoutScreen() {
 
   const startEmpty = async () => {
     const result = await startEmptyWorkout();
-    if (result.status === 'blocked') setBlockedBy(result.workoutId);
-    else open(result.workoutId);
+    if (result.status === 'blocked') {
+      setBlockedBy(result.workoutId);
+      return;
+    }
+    haptics.press();
+    open(result.workoutId);
   };
 
   return (

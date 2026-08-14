@@ -5,10 +5,7 @@ import { CircleButton, GlassCircle } from '@/components/circle-button';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-
-export function ClockButton({ onPress }: { onPress: () => void }) {
-  return <CircleButton symbol="alarm" label="Timer" onPress={onPress} />;
-}
+import * as haptics from '@/lib/haptics';
 
 export function CloseButton({ onPress }: { onPress: () => void }) {
   return <CircleButton symbol="xmark" symbolSize={18} label="Close" onPress={onPress} />;
@@ -33,6 +30,7 @@ export function HeaderConfirmButton({
       symbolSize={20}
       label="Save"
       disabled={disabled}
+      feedback="press"
       tintColor={disabled ? undefined : theme.accent}
       symbolColor={disabled ? theme.textSecondary : theme.accentContent}
       onPress={onPress}
@@ -54,8 +52,16 @@ export function HeaderPillButton({
   return (
     <GlassCircle tintColor={theme.accent} style={styles.finish}>
       <Pressable
-        onPress={onPress}
-        disabled={disabled}
+        onPress={() => {
+          if (disabled) {
+            haptics.reject();
+            return;
+          }
+          haptics.press();
+          onPress();
+        }}
+        accessibilityRole="button"
+        accessibilityState={{ disabled }}
         style={[styles.finishContent, disabled && styles.disabled]}>
         <ThemedText style={[styles.finishLabel, { color: theme.accentContent }]}>{title}</ThemedText>
       </Pressable>

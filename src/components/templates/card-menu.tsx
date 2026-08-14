@@ -4,6 +4,7 @@ import type { SFSymbol } from 'sf-symbols-typescript';
 
 import { CIRCLE_BUTTON_SIZE, GlassCircle } from '@/components/circle-button';
 import { useTheme } from '@/hooks/use-theme';
+import * as haptics from '@/lib/haptics';
 
 export type CardAction = {
   label: string;
@@ -52,7 +53,12 @@ export function CardMenu({
               label={action.label}
               systemImage={action.systemImage}
               role={action.destructive ? 'destructive' : undefined}
-              onPress={action.onPress}
+              // Even the destructive rows only tap: each one raises a confirm,
+              // and that presentation is what carries the warning buzz.
+              onPress={() => {
+                haptics.tap();
+                action.onPress();
+              }}
             />,
           ])}
         </Menu>

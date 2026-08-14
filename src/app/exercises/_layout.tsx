@@ -23,9 +23,14 @@ export default function ExercisesLayout() {
       />
       {/* Title and header buttons change per step, so the screen sets them. */}
       <Stack.Screen name="new" options={FULL_SHEET} />
+      <Stack.Screen name="edit" options={FULL_SHEET} />
       <Stack.Screen
         name="[id]"
-        options={{ ...SHEET, sheetAllowedDetents: [0.6, 1], sheetInitialDetentIndex: 0 }}
+        options={{
+          ...SHEET,
+          sheetAllowedDetents: [0.6, 1],
+          sheetInitialDetentIndex: 0,
+        }}
       />
     </Stack>
   );

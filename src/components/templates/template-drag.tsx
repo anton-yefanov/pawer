@@ -1,11 +1,14 @@
 import { createContext, useContext, useEffect, useMemo, useRef, type RefObject } from 'react';
 import { type View } from 'react-native';
 import {
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
+
+import * as haptics from '@/lib/haptics';
 
 /**
  * Drag a template onto a folder to file it, or past its neighbours to reorder.
@@ -31,7 +34,13 @@ const IDLE = -1;
 
 export type DragKind = 'folder' | 'template';
 
-type Frame = { id: string; x: number; y: number; width: number; height: number };
+type Frame = {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
 
 type Grid = {
   /** Window coordinates of the grid's top-left corner. */
@@ -103,7 +112,10 @@ export function TemplateDragProvider({
   children: React.ReactNode;
 }) {
   const folders = useRef(new Map<string, RefObject<View | null>>()).current;
-  const gridRef = useRef<{ ref: RefObject<View | null>; meta: GridMeta } | null>(null);
+  const gridRef = useRef<{
+    ref: RefObject<View | null>;
+    meta: GridMeta;
+  } | null>(null);
 
   const frames = useSharedValue<Frame[]>([]);
   const grid = useSharedValue<Grid>(NO_GRID);
@@ -114,6 +126,10 @@ export function TemplateDragProvider({
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
   const settling = useSharedValue(0);
+  // Mirrors exercise-reorder: the tick only fires when the target actually
+  // changes, not on every frame of the pan.
+  const lastSlot = useSharedValue(IDLE);
+  const lastFolder = useSharedValue('');
 
   // Held in a ref so the context value stays stable: the callbacks close over
   // the live template order, which changes on every write.
@@ -191,6 +207,9 @@ export function TemplateDragProvider({
         translateX.value = 0;
         translateY.value = 0;
         settling.value = 0;
+        lastSlot.value = index;
+        lastFolder.value = '';
+        runOnJS(haptics.press)();
       },
 
       moveDrag: (x, y, absoluteX, absoluteY, kind) => {
@@ -202,7 +221,19 @@ export function TemplateDragProvider({
         // folder is going in, not going next to it.
         const overFolder = kind === 'template' ? frameAt(frames.value, absoluteX, absoluteY) : '';
         hoveredFolderId.value = overFolder;
-        dropIndex.value = overFolder === '' ? slotAt(grid.value, absoluteX, absoluteY, kind) : IDLE;
+        const slot = overFolder === '' ? slotAt(grid.value, absoluteX, absoluteY, kind) : IDLE;
+
+        // Crossing into a folder is its own event, so it ticks even though the
+        // slot went idle in the same move.
+        if (overFolder !== lastFolder.value) {
+          lastFolder.value = overFolder;
+          if (overFolder !== '') runOnJS(haptics.tap)();
+        } else if (slot !== lastSlot.value) {
+          runOnJS(haptics.tap)();
+        }
+        lastSlot.value = slot;
+
+        dropIndex.value = slot;
       },
 
       /**
@@ -228,8 +259,14 @@ export function TemplateDragProvider({
         });
       },
 
-      drop: (templateId, folderId) => callbacks.current.onDrop(templateId, folderId, settle),
-      reorder: (kind, from, to) => callbacks.current.onReorder(kind, from, to, settle),
+      drop: (templateId, folderId) => {
+        haptics.complete();
+        callbacks.current.onDrop(templateId, folderId, settle);
+      },
+      reorder: (kind, from, to) => {
+        haptics.complete();
+        callbacks.current.onReorder(kind, from, to, settle);
+      },
       setDragging: (dragging) => callbacks.current.onDraggingChange(dragging),
     };
     // Shared values and the two registries are stable for the provider's

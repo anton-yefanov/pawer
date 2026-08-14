@@ -1,4 +1,3 @@
-import * as Haptics from 'expo-haptics';
 import { createContext, useContext, useEffect, useMemo, useRef } from 'react';
 import Animated, {
   runOnJS,
@@ -9,6 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Spacing } from '@/constants/theme';
+import * as haptics from '@/lib/haptics';
 
 /**
  * Long-press an exercise name and the whole logger folds down to a column of
@@ -130,7 +130,7 @@ export function ExerciseReorderProvider({
         progress.value = withTiming(1, { duration: COLLAPSE }, (finished) => {
           if (finished) ready.value = 1;
         });
-        runOnJS(liftHaptic)();
+        runOnJS(haptics.press)();
       },
 
       /**
@@ -146,7 +146,7 @@ export function ExerciseReorderProvider({
         const slot = Math.min(Math.max(raw, 0), rowCount.value - 1);
         if (slot !== lastSlot.value) {
           lastSlot.value = slot;
-          runOnJS(tickHaptic)();
+          runOnJS(haptics.tap)();
         }
         dropIndex.value = slot;
       },
@@ -258,12 +258,4 @@ export function ReorderDim({ children }: { children: React.ReactNode }) {
   const dim = useAnimatedStyle(() => ({ opacity: 1 - progress.value * 0.7 }));
 
   return <Animated.View style={dim}>{children}</Animated.View>;
-}
-
-function liftHaptic() {
-  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-}
-
-function tickHaptic() {
-  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 }

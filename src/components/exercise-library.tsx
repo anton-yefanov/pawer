@@ -23,6 +23,7 @@ import {
   type ExerciseFilters,
 } from '@/lib/exercise-filters';
 import { exerciseThumbnail } from '@/lib/exercise-images';
+import * as haptics from '@/lib/haptics';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -176,7 +177,16 @@ function ExerciseRow({
     </View>
   );
 
-  if (onSelect) return <Pressable onPress={() => onSelect(exercise)}>{body}</Pressable>;
+  if (onSelect)
+    return (
+      <Pressable
+        onPress={() => {
+          haptics.select();
+          onSelect(exercise);
+        }}>
+        {body}
+      </Pressable>
+    );
 
   return (
     <Link href={{ pathname: '/exercises/[id]', params: { id: exercise.id } }} asChild>
@@ -184,7 +194,7 @@ function ExerciseRow({
         `Link asChild` clones its child and overwrites `style`, so the row
         layout has to live on an inner View rather than on the Pressable.
       */}
-      <Pressable>{body}</Pressable>
+      <Pressable onPress={haptics.tap}>{body}</Pressable>
     </Link>
   );
 }

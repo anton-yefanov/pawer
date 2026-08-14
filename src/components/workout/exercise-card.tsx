@@ -1,13 +1,6 @@
 import { SymbolView } from 'expo-symbols';
-import { Fragment, useState } from 'react';
-import {
-  Keyboard,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  View,
-  type LayoutChangeEvent,
-} from 'react-native';
+import { Fragment, useRef, useState, type Ref } from 'react';
+import { Keyboard, Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   interpolate,
@@ -25,20 +18,17 @@ import {
   useRowMotion,
 } from '@/components/workout/exercise-reorder';
 import { ExerciseMenu } from '@/components/workout/exercise-menu';
+import { NoteInput } from '@/components/workout/note-input';
 import { RestCountdownRow } from '@/components/workout/rest-countdown-row';
 import { fieldWidth, SET_COLUMNS, SetRow } from '@/components/workout/set-row';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import * as haptics from '@/lib/haptics';
+import type { LoggedExercise, LoggedSet, LoggingActions } from '@/lib/logging-model';
 import { setLabels } from '@/lib/set-types';
 import { headerLabel, TRACKING, trackingTypeOf } from '@/lib/tracking-types';
 import { formatDuration, type WeightUnit } from '@/lib/units';
-import {
-  addSet,
-  removeWorkoutExercise,
-  setWorkoutExerciseNotes,
-  setWorkoutExerciseRest,
-} from '@/lib/workout-actions';
-import type { PreviousSet, WorkoutExerciseRow, WorkoutSetRow } from '@/lib/workout-queries';
+import type { PreviousSet } from '@/lib/workout-queries';
 
 /** Long enough that a tap opens the exercise and a scroll flick doesn't lift it. */
 const LIFT_DELAY = 250;
@@ -46,40 +36,49 @@ const LIFT_DELAY = 250;
 const dismissKeyboard = () => Keyboard.dismiss();
 
 type Props = {
-  workoutExercise: WorkoutExerciseRow;
+  exercise: LoggedExercise;
   index: number;
-  sets: readonly WorkoutSetRow[];
+  sets: readonly LoggedSet[];
   previous: readonly PreviousSet[];
   unit: WeightUnit;
   defaultRestSeconds: number;
-  restingSetId: string | null;
-  onComplete: (set: WorkoutSetRow, completed: boolean) => void;
+  actions: LoggingActions;
   onOpenExercise: (exerciseId: string) => void;
+  /** Both logger-only: a template has nothing to tick and nothing resting. */
+  onComplete?: (set: LoggedSet, completed: boolean) => void;
+  restingSetId?: string | null;
+  /** Only the one card holding the resting set ever attaches it. */
+  restRowRef?: Ref<View>;
 };
 
 export function ExerciseCard({
-  workoutExercise,
+  exercise,
   index,
   sets,
   previous,
   unit,
   defaultRestSeconds,
-  restingSetId,
-  onComplete,
+  actions,
   onOpenExercise,
+  onComplete,
+  restingSetId,
+  restRowRef,
 }: Props) {
   const theme = useTheme();
-  const [notesOpen, setNotesOpen] = useState(() => (workoutExercise.notes ?? '') !== '');
+  const [notesOpen, setNotesOpen] = useState(() => (exercise.notes ?? '') !== '');
+  // Blurring the input on removal fires onEndEditing with the text still in it,
+  // which would write the note straight back.
+  const removingNote = useRef(false);
   const [headerHeight, setHeaderHeight] = useState(0);
   const [bodyHeight, setBodyHeight] = useState(0);
-  const restSeconds = workoutExercise.restSeconds ?? defaultRestSeconds;
-  const trackingType = trackingTypeOf(workoutExercise.trackingType);
+  const restSeconds = exercise.restSeconds ?? defaultRestSeconds;
+  const trackingType = trackingTypeOf(exercise.trackingType);
   const { fields } = TRACKING[trackingType];
   const labels = setLabels(sets);
 
   const reorder = useExerciseReorder();
-  const motion = useRowMotion(workoutExercise.id, index);
-  const lift = useLiftShadow(workoutExercise.id);
+  const motion = useRowMotion(exercise.id, index);
+  const lift = useLiftShadow(exercise.id);
   const { progress } = reorder;
 
   // Carries the outcome from onEnd to onFinalize, which always runs.
@@ -88,7 +87,7 @@ export function ExerciseCard({
   const pan = Gesture.Pan()
     .activateAfterLongPress(LIFT_DELAY)
     .onStart(() => {
-      reorder.beginDrag(workoutExercise.id, index);
+      reorder.beginDrag(exercise.id, index);
       runOnJS(reorder.setReordering)(true);
       runOnJS(dismissKeyboard)();
     })
@@ -143,22 +142,38 @@ export function ExerciseCard({
           <View style={styles.header} onLayout={(event) => measure(event, setHeaderHeight)}>
             <Pressable
               style={styles.title}
-              onPress={() => onOpenExercise(workoutExercise.exerciseId)}>
+              onPress={() => {
+                haptics.tap();
+                onOpenExercise(exercise.exerciseId);
+              }}>
               <ThemedText type="smallBold" numberOfLines={1}>
-                {workoutExercise.name}
+                {exercise.name}
               </ThemedText>
             </Pressable>
 
             <Animated.View style={menuFade}>
               <ExerciseMenu
-                restSeconds={workoutExercise.restSeconds}
+                restSeconds={exercise.restSeconds}
                 defaultRestSeconds={defaultRestSeconds}
-                onAddNote={() => setNotesOpen(true)}
-                onChangeRest={(seconds) => setWorkoutExerciseRest(workoutExercise.id, seconds)}
+                hasNote={notesOpen}
+                onToggleNote={() => {
+                  if (!notesOpen) {
+                    removingNote.current = false;
+                    setNotesOpen(true);
+                    return;
+                  }
+                  removingNote.current = true;
+                  setNotesOpen(false);
+                  actions.setExerciseNotes(exercise.id, null);
+                }}
+                onChangeRest={(seconds) => actions.setExerciseRest(exercise.id, seconds)}
                 // No confirmation step: the menu row is already marked destructive by
                 // SwiftUI, and a system alert raised from inside a formSheet never
-                // reaches the screen.
-                onRemove={() => removeWorkoutExercise(workoutExercise.id)}
+                // reaches the screen. The warning buzz stands in for it.
+                onRemove={() => {
+                  haptics.warn();
+                  actions.removeExercise(exercise.id);
+                }}
               />
             </Animated.View>
 
@@ -173,16 +188,15 @@ export function ExerciseCard({
         <View onLayout={(event) => measure(event, setBodyHeight)}>
           <View style={[styles.card, { backgroundColor: theme.surface }]}>
             {notesOpen && (
-              <TextInput
-                defaultValue={workoutExercise.notes ?? ''}
-                onEndEditing={(event) =>
-                  setWorkoutExerciseNotes(workoutExercise.id, event.nativeEvent.text.trim() || null)
-                }
+              <NoteInput
+                value={exercise.notes ?? ''}
+                onCommit={(next) => {
+                  if (removingNote.current) return;
+                  actions.setExerciseNotes(exercise.id, next.trim() || null);
+                }}
                 placeholder="Notes"
-                placeholderTextColor={theme.textSecondary}
-                multiline
-                autoFocus={(workoutExercise.notes ?? '') === ''}
-                style={[styles.notes, { color: theme.text }]}
+                autoFocus={(exercise.notes ?? '') === ''}
+                style={styles.notes}
               />
             )}
 
@@ -198,11 +212,14 @@ export function ExerciseCard({
                   key={field}
                   type="small"
                   themeColor="textSecondary"
-                  style={{ width: fieldWidth(fields.length), textAlign: 'center' }}>
+                  style={{
+                    width: fieldWidth(fields.length),
+                    textAlign: 'center',
+                  }}>
                   {headerLabel(field, trackingType, unit)}
                 </ThemedText>
               ))}
-              <View style={styles.columnCheck} />
+              {onComplete && <View style={styles.columnCheck} />}
             </View>
 
             {sets.map((set, position) => (
@@ -213,17 +230,22 @@ export function ExerciseCard({
                   previous={previous[position]}
                   unit={unit}
                   trackingType={trackingType}
+                  actions={actions}
                   onComplete={onComplete}
                 />
-                {restingSetId === set.id && <RestCountdownRow />}
+                {restingSetId === set.id && <RestCountdownRow ref={restRowRef} />}
               </Fragment>
             ))}
 
             <Pressable
-              onPress={() => addSet(workoutExercise.id)}
+              onPress={() => {
+                haptics.tap();
+                actions.addSet(exercise.id);
+              }}
               style={({ pressed }) => [styles.addSet, pressed && styles.pressed]}>
               <ThemedText type="small" themeColor="textSecondary">
-                + Add set{restSeconds > 0 ? ` (${formatDuration(restSeconds)})` : ''}
+                + Add set
+                {restSeconds > 0 ? ` (${formatDuration(restSeconds)})` : ''}
               </ThemedText>
             </Pressable>
           </View>
@@ -266,10 +288,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   notes: {
-    fontSize: 14,
     paddingHorizontal: Spacing.three,
     paddingBottom: Spacing.two,
-    minHeight: 32,
   },
   columns: {
     flexDirection: 'row',

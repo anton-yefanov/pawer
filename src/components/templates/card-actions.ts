@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 
 import { type CardAction } from '@/components/templates/card-menu';
 import { createFolder, deleteFolder, moveTemplateToFolder } from '@/lib/folder-actions';
+import * as haptics from '@/lib/haptics';
 import { deleteTemplate, duplicateTemplate } from '@/lib/template-actions';
 
 export type ConfirmDestructive = (options: {
@@ -11,11 +12,13 @@ export type ConfirmDestructive = (options: {
   onConfirm: () => void;
 }) => void;
 
-export const alertConfirm: ConfirmDestructive = ({ title, body, onConfirm }) =>
+export const alertConfirm: ConfirmDestructive = ({ title, body, onConfirm }) => {
+  haptics.warn();
   Alert.alert(title, body, [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Delete', style: 'destructive', onPress: onConfirm },
   ]);
+};
 
 export type TemplateMenuTarget = {
   id: string;
@@ -26,7 +29,7 @@ export type TemplateMenuTarget = {
 
 export function templateActions(
   template: TemplateMenuTarget,
-  confirm: ConfirmDestructive = alertConfirm
+  confirm: ConfirmDestructive = alertConfirm,
 ): CardAction[] {
   const duplicate: CardAction = {
     label: 'Duplicate',
@@ -41,13 +44,19 @@ export function templateActions(
       label: 'Edit',
       systemImage: 'pencil',
       onPress: () =>
-        router.push({ pathname: '/template/edit', params: { id: template.id } }),
+        router.push({
+          pathname: '/template/edit',
+          params: { id: template.id },
+        }),
     },
     {
       label: 'Customize',
       systemImage: 'paintpalette',
       onPress: () =>
-        router.push({ pathname: '/customize', params: { id: template.id, kind: 'template' } }),
+        router.push({
+          pathname: '/customize',
+          params: { id: template.id, kind: 'template' },
+        }),
     },
     duplicate,
   ];
@@ -78,10 +87,7 @@ export function templateActions(
 
 export function folderActions(
   folder: { id: string; name: string },
-  {
-    onRename,
-    confirm = alertConfirm,
-  }: { onRename: () => void; confirm?: ConfirmDestructive }
+  { onRename, confirm = alertConfirm }: { onRename: () => void; confirm?: ConfirmDestructive },
 ): CardAction[] {
   return [
     {
@@ -93,7 +99,10 @@ export function folderActions(
       label: 'Customize',
       systemImage: 'paintpalette',
       onPress: () =>
-        router.push({ pathname: '/customize', params: { id: folder.id, kind: 'folder' } }),
+        router.push({
+          pathname: '/customize',
+          params: { id: folder.id, kind: 'folder' },
+        }),
     },
     {
       label: 'Delete',
@@ -124,6 +133,6 @@ export function promptNewFolder(): void {
         },
       },
     ],
-    'plain-text'
+    'plain-text',
   );
 }

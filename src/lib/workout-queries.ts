@@ -36,7 +36,11 @@ export function activeWorkoutQuery() {
  */
 export async function activeWorkoutForReminder() {
   const workout = await db
-    .select({ id: workouts.id, name: workouts.name, updatedAt: workouts.updatedAt })
+    .select({
+      id: workouts.id,
+      name: workouts.name,
+      updatedAt: workouts.updatedAt,
+    })
     .from(workouts)
     .where(and(isNull(workouts.finishedAt), isNull(workouts.deletedAt)))
     .orderBy(desc(workouts.startedAt))
@@ -140,6 +144,7 @@ export function workoutSetsQuery(workoutId: string) {
       distanceM: sets.distanceM,
       completed: sets.completed,
       setType: sets.setType,
+      notes: sets.notes,
     })
     .from(sets)
     .innerJoin(workoutExercises, eq(sets.workoutExerciseId, workoutExercises.id))
@@ -163,7 +168,11 @@ export function workoutSetsQuery(workoutId: string) {
  * subquery is deliberate: an abandoned session where the exercise was added but
  * never logged would otherwise mask the last real numbers.
  */
-export function previousSetsQuery(currentWorkoutId: string) {
+export function previousSetsQuery(currentWorkoutId: string | null) {
+  // Null in the template editor, which has no session of its own to exclude.
+  const excludeCurrent = currentWorkoutId == null ? undefined : ne(workouts.id, currentWorkoutId);
+  const excludeInner = currentWorkoutId == null ? sql`` : sql`AND w2.id <> ${currentWorkoutId}`;
+
   return db
     .select({
       exerciseId: workoutExercises.exerciseId,
@@ -182,7 +191,7 @@ export function previousSetsQuery(currentWorkoutId: string) {
         isNull(workoutExercises.deletedAt),
         isNull(workouts.deletedAt),
         isNotNull(workouts.finishedAt),
-        ne(workouts.id, currentWorkoutId),
+        excludeCurrent,
         eq(sets.completed, true),
         sql`${workouts.finishedAt} = (
           SELECT MAX(w2.finished_at)
@@ -190,7 +199,7 @@ export function previousSetsQuery(currentWorkoutId: string) {
           JOIN ${workoutExercises} we2 ON we2.workout_id = w2.id
           JOIN ${sets} s2 ON s2.workout_exercise_id = we2.id
           WHERE we2.exercise_id = ${workoutExercises.exerciseId}
-            AND w2.id <> ${currentWorkoutId}
+            ${excludeInner}
             AND w2.finished_at IS NOT NULL
             AND w2.deleted_at IS NULL
             AND we2.deleted_at IS NULL

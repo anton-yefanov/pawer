@@ -20,6 +20,7 @@ import {
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { exerciseThumbnail } from '@/lib/exercise-images';
+import * as haptics from '@/lib/haptics';
 import { startWorkoutFromTemplate } from '@/lib/template-actions';
 import { templateExercisesQuery, templateQuery } from '@/lib/template-queries';
 
@@ -54,6 +55,7 @@ export function TemplatePreview({ id }: { id: string }) {
       setBlockedBy(result.workoutId);
       return;
     }
+    haptics.press();
     open(result.workoutId);
   };
 
@@ -104,7 +106,7 @@ export function TemplatePreview({ id }: { id: string }) {
             />
             <View style={styles.rowText}>
               <ThemedText numberOfLines={1}>
-                {exercise.targetSets} × {exercise.name}
+                {Math.max(1, exercise.setCount)} × {exercise.name}
               </ThemedText>
               {exercise.primaryMuscles[0] && (
                 <ThemedText type="small" themeColor="textSecondary" style={styles.muscle}>

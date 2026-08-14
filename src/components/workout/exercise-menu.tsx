@@ -46,7 +46,8 @@ const fromWheelDate = (date: Date) => date.getHours() * 60 + date.getMinutes();
 type Props = {
   restSeconds: number | null;
   defaultRestSeconds: number;
-  onAddNote: () => void;
+  hasNote: boolean;
+  onToggleNote: () => void;
   onChangeRest: (seconds: number | null) => void;
   onRemove: () => void;
 };
@@ -63,7 +64,8 @@ type Props = {
 export function ExerciseMenu({
   restSeconds,
   defaultRestSeconds,
-  onAddNote,
+  hasNote,
+  onToggleNote,
   onChangeRest,
   onRemove,
 }: Props) {
@@ -95,7 +97,11 @@ export function ExerciseMenu({
                   <Image systemName="ellipsis" color={theme.textSecondary} />
                 </ZStack>
               }>
-              <Button systemImage="note.text" label="Add note" onPress={onAddNote} />
+              <Button
+                systemImage={hasNote ? 'text.badge.minus' : 'note.text'}
+                label={hasNote ? 'Remove note' : 'Add note'}
+                onPress={onToggleNote}
+              />
 
               <Menu label="Rest timers" systemImage="timer">
                 <Picker

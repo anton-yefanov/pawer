@@ -9,8 +9,8 @@ export function sortBy<T extends { id: string }>(items: T[], ids: readonly strin
   );
 }
 
-export function move(ids: readonly string[], from: number, to: number): string[] {
-  const next = [...ids];
+export function move<T>(items: readonly T[], from: number, to: number): T[] {
+  const next = [...items];
   const [moved] = next.splice(from, 1);
   next.splice(to, 0, moved);
   return next;

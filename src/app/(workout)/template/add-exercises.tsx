@@ -41,7 +41,7 @@ export default function AddTemplateExercisesScreen() {
 
       {picked.length > 0 && (
         <View style={styles.footer}>
-          <BigButton title={`Add ${picked.length}`} onPress={confirm} />
+          <BigButton title={`Add ${picked.length}`} onPress={confirm} feedback="complete" />
         </View>
       )}
     </>

@@ -41,13 +41,14 @@ export default function WorkoutLayout() {
         }}
       />
       <Stack.Screen name="new-exercise" options={FULL_SHEET} />
-      <Stack.Screen
-        name="timer"
-        options={{ ...SHEET, sheetAllowedDetents: [0.4], title: 'Timer' }}
-      />
+      <Stack.Screen name="exercise/edit" options={FULL_SHEET} />
       <Stack.Screen
         name="exercise/[id]"
-        options={{ ...SHEET, sheetAllowedDetents: [0.6, 1], sheetInitialDetentIndex: 0 }}
+        options={{
+          ...SHEET,
+          sheetAllowedDetents: [0.6, 1],
+          sheetInitialDetentIndex: 0,
+        }}
       />
       <Stack.Screen name="template/new" options={{ ...FULL_SHEET, title: 'New Template' }} />
       <Stack.Screen name="template/edit" options={{ ...FULL_SHEET, title: 'Edit Template' }} />
@@ -59,19 +60,37 @@ export default function WorkoutLayout() {
           contentStyle: { backgroundColor: theme.surface },
         }}
       />
+      {/* Explicit radius, so the sheet stays pinned to the edges instead of
+          taking iOS 26's floating inset appearance below full height. The
+          floating sheet is composited offscreen (mask + shadow), and a
+          UIVisualEffectView inside one can't sample a backdrop — every glass
+          control in the sheet falls back to a flat fill until the full detent. */}
       <Stack.Screen
         name="template/[id]"
-        options={{ ...SHEET, sheetAllowedDetents: [0.6, 1], sheetInitialDetentIndex: 0 }}
+        options={{
+          ...SHEET,
+          sheetCornerRadius: 38,
+          sheetAllowedDetents: [0.6, 1],
+          sheetInitialDetentIndex: 0,
+        }}
       />
       <Stack.Screen
         name="folder/[id]"
-        options={{ ...SHEET, sheetAllowedDetents: [0.6, 1], sheetInitialDetentIndex: 0 }}
+        options={{
+          ...SHEET,
+          sheetAllowedDetents: [0.6, 1],
+          sheetInitialDetentIndex: 0,
+        }}
       />
       {/* Same picker presentation as the Settings sheets: the swatch grid draws
           its own title, so the nav bar would only add empty height. */}
       <Stack.Screen
         name="customize"
-        options={{ ...SHEET, sheetAllowedDetents: 'fitToContents', headerShown: false }}
+        options={{
+          ...SHEET,
+          sheetAllowedDetents: 'fitToContents',
+          headerShown: false,
+        }}
       />
     </Stack>
   );

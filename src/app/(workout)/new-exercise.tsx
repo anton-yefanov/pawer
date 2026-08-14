@@ -1,5 +1,5 @@
-import { CreateExerciseSheet } from '@/components/exercises/create-exercise-sheet';
+import { ExerciseFormSheet } from '@/components/exercises/exercise-form-sheet';
 
 export default function NewExerciseScreen() {
-  return <CreateExerciseSheet />;
+  return <ExerciseFormSheet />;
 }

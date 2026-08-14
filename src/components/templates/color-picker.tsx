@@ -7,6 +7,7 @@ import { SHEET_BOTTOM_INSET, SHEET_TOP_INSET } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useCardGradient } from '@/hooks/use-card-gradient';
 import { useTheme } from '@/hooks/use-theme';
+import * as haptics from '@/lib/haptics';
 
 export function ColorPicker({
   selected,
@@ -48,7 +49,10 @@ function Swatch({
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        haptics.select();
+        onPress();
+      }}
       accessibilityRole="button"
       accessibilityLabel={color}
       accessibilityState={{ selected }}

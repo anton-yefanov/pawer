@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { groupedStyles } from '@/components/grouped-list';
 import { ThemedText } from '@/components/themed-text';
+import * as haptics from '@/lib/haptics';
 
 const SWITCH = { width: 51, height: 31 } as const;
 
@@ -23,7 +24,10 @@ export function ToggleRow({ label, value, onChange }: Props) {
       <Host style={styles.switch}>
         <Toggle
           isOn={value}
-          onIsOnChange={onChange}
+          onIsOnChange={(next) => {
+            haptics.select();
+            onChange(next);
+          }}
           modifiers={[toggleStyle('switch'), labelsHidden()]}
         />
       </Host>

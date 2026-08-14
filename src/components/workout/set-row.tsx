@@ -1,15 +1,18 @@
-import * as Haptics from 'expo-haptics';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 
 import { ThemedText } from '@/components/themed-text';
+import { DurationCell } from '@/components/workout/duration-cell';
+import { NoteInput } from '@/components/workout/note-input';
 import { SET_TYPE_CELL, SetTypeMenu } from '@/components/workout/set-type-menu';
 import { Spacing } from '@/constants/theme';
 import { useDebouncedWrite } from '@/hooks/use-debounced-write';
 import { useTheme } from '@/hooks/use-theme';
 import { useAutofillWeight } from '@/lib/autofill-weight';
+import * as haptics from '@/lib/haptics';
+import type { LoggedSet, LoggingActions } from '@/lib/logging-model';
 import { setTypeOf } from '@/lib/set-types';
 import {
   formatPreviousSet,
@@ -23,16 +26,13 @@ import {
   displayToKg,
   displayToMeters,
   distanceUnitFor,
-  formatDuration,
   kgToDisplay,
   metersToDisplay,
   parseDecimalInput,
-  parseDurationInput,
   roundForDisplay,
   type WeightUnit,
 } from '@/lib/units';
-import { deleteSet, setSetType, updateSetValues } from '@/lib/workout-actions';
-import type { PreviousSet, WorkoutSetRow } from '@/lib/workout-queries';
+import type { PreviousSet } from '@/lib/workout-queries';
 
 export const SET_COLUMNS = { set: SET_TYPE_CELL.width, check: 44 } as const;
 
@@ -47,15 +47,17 @@ export function fieldWidth(fieldCount: number): number {
 }
 
 type Props = {
-  set: WorkoutSetRow;
+  set: LoggedSet;
   label: string;
   previous: PreviousSet | undefined;
   unit: WeightUnit;
   trackingType: TrackingType;
-  onComplete: (set: WorkoutSetRow, completed: boolean) => void;
+  actions: LoggingActions;
+  /** Omitted in the template editor: a planned set has nothing to tick. */
+  onComplete?: (set: LoggedSet, completed: boolean) => void;
 };
 
-export function SetRow({ set, label, previous, unit, trackingType, onComplete }: Props) {
+export function SetRow({ set, label, previous, unit, trackingType, actions, onComplete }: Props) {
   const theme = useTheme();
   const { fields } = TRACKING[trackingType];
   const autofillWeight = useAutofillWeight();
@@ -65,37 +67,62 @@ export function SetRow({ set, label, previous, unit, trackingType, onComplete }:
   const [draft, setDraft] = useState<Partial<TrackedSet>>({});
   const [flagged, setFlagged] = useState(false);
   const flagTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [noteOpen, setNoteOpen] = useState(() => (set.notes ?? '') !== '');
+  // Blurring the input on removal fires onEndEditing with the text still in it,
+  // which would write the note straight back.
+  const removingNote = useRef(false);
+
+  const hasNote = noteOpen || (set.notes ?? '') !== '';
+
+  const toggleNote = () => {
+    if (hasNote) {
+      removingNote.current = true;
+      setNoteOpen(false);
+      actions.setSetNotes(set.id, null);
+      return;
+    }
+    removingNote.current = false;
+    setNoteOpen(true);
+  };
 
   useEffect(() => () => clearTimeout(flagTimer.current ?? undefined), []);
 
-  const missing = set.completed
-    ? []
-    : missingRequiredFields({ ...set, ...draft }, trackingType);
+  const completable = onComplete != null;
+  const missing =
+    !completable || set.completed ? [] : missingRequiredFields({ ...set, ...draft }, trackingType);
 
   const previousLabel = previous ? formatPreviousSet(previous, trackingType, unit) : '—';
 
   const row = (
     <View
-      style={[
-        styles.row,
-        { backgroundColor: set.completed ? theme.successMuted : theme.surface },
-      ]}>
+      style={[styles.row, { backgroundColor: set.completed ? theme.successMuted : theme.surface }]}>
       <SetTypeMenu
         label={label}
         setType={setTypeOf(set.setType)}
         completed={set.completed}
-        onChange={(setType) => setSetType(set.id, setType)}
+        onChange={(setType) => actions.setSetType(set.id, setType)}
       />
 
-      <ThemedText
-        type="small"
-        themeColor="textSecondary"
-        numberOfLines={1}
-        style={styles.previous}>
+      <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={styles.previous}>
         {previousLabel}
       </ThemedText>
 
       {fields.map((field) => {
+        if (field === 'duration') {
+          return (
+            <DurationCell
+              key={field}
+              width={fieldWidth(fields.length)}
+              seconds={set.durationSeconds}
+              placeholder={previous?.durationSeconds ?? null}
+              highlighted={flagged && missing.includes(field)}
+              completed={set.completed}
+              onEdit={(value) => setDraft((current) => ({ ...current, durationSeconds: value }))}
+              onCommit={(value) => actions.updateSetValues(set.id, { durationSeconds: value })}
+            />
+          );
+        }
+
         const cell = FIELDS[field];
         return (
           <NumericCell
@@ -117,7 +144,7 @@ export function SetRow({ set, label, previous, unit, trackingType, onComplete }:
                 set.weightKg == null &&
                 fields.includes('weight') &&
                 previous?.weightKg != null;
-              updateSetValues(
+              actions.updateSetValues(
                 set.id,
                 fillWeight ? { ...values, weightKg: previous.weightKg } : values,
               );
@@ -126,74 +153,131 @@ export function SetRow({ set, label, previous, unit, trackingType, onComplete }:
         );
       })}
 
-      <Pressable
-        onPress={() => {
-          if (missing.length > 0) {
-            // Rejects instead of no-op'ing on a dev build older than the
-            // expo-haptics install; a missed buzz shouldn't redbox the logger.
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-            setFlagged(true);
-            clearTimeout(flagTimer.current ?? undefined);
-            flagTimer.current = setTimeout(() => setFlagged(false), FLAG_MS);
-            return;
+      {onComplete && (
+        <Pressable
+          onPress={() => {
+            if (missing.length > 0) {
+              haptics.reject();
+              setFlagged(true);
+              clearTimeout(flagTimer.current ?? undefined);
+              flagTimer.current = setTimeout(() => setFlagged(false), FLAG_MS);
+              return;
+            }
+            // Unticking is a correction, not an achievement.
+            if (set.completed) haptics.select();
+            else haptics.complete();
+            onComplete(set, !set.completed);
+          }}
+          accessibilityRole="checkbox"
+          accessibilityState={{
+            checked: set.completed,
+            disabled: missing.length > 0,
+          }}
+          accessibilityHint={
+            missing.length > 0
+              ? `Enter ${missing.map((field) => FIELD_NAMES[field]).join(' or ')} to complete this set`
+              : undefined
           }
-          onComplete(set, !set.completed);
-        }}
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: set.completed, disabled: missing.length > 0 }}
-        accessibilityHint={
-          missing.length > 0
-            ? `Enter ${missing.map((field) => FIELD_NAMES[field]).join(' or ')} to complete this set`
-            : undefined
-        }
-        style={({ pressed }) => [
-          styles.check,
-          { backgroundColor: set.completed ? theme.success : theme.backgroundElement },
-          pressed && styles.pressed,
-        ]}>
-        <SymbolView
-          name="checkmark"
-          size={16}
-          tintColor={
-            set.completed
-              ? theme.accentContent
-              : missing.length > 0
-                ? theme.textSecondary
-                : theme.text
-          }
-        />
-      </Pressable>
+          style={({ pressed }) => [
+            styles.check,
+            {
+              backgroundColor: set.completed ? theme.success : theme.backgroundElement,
+            },
+            pressed && styles.pressed,
+          ]}>
+          <SymbolView
+            name="checkmark"
+            size={16}
+            tintColor={
+              set.completed
+                ? theme.accentContent
+                : missing.length > 0
+                  ? theme.textSecondary
+                  : theme.text
+            }
+          />
+        </Pressable>
+      )}
     </View>
+  );
+
+  const note = noteOpen && (
+    <NoteInput
+      value={set.notes ?? ''}
+      onCommit={(next) => {
+        if (removingNote.current) return;
+        actions.setSetNotes(set.id, next.trim() || null);
+      }}
+      placeholder="Note"
+      minHeight={28}
+      autoFocus={(set.notes ?? '') === ''}
+      style={[styles.note, { backgroundColor: set.completed ? theme.successMuted : theme.surface }]}
+    />
   );
 
   // RNGH's web implementation isn't worth the weight here; other platforms get
   // the swipe target as a plain trailing button instead.
-  if (Platform.OS !== 'ios' && Platform.OS !== 'android') return row;
+  if (Platform.OS !== 'ios' && Platform.OS !== 'android') {
+    return (
+      <>
+        {row}
+        {note}
+      </>
+    );
+  }
 
   return (
-    <ReanimatedSwipeable
-      friction={2}
-      rightThreshold={40}
-      overshootRight={false}
-      onSwipeableOpen={(direction) => direction === 'right' && deleteSet(set.id)}
-      renderRightActions={(_progress, _translation, swipeable) => (
-        <Pressable
-          onPress={() => {
-            swipeable.close();
-            deleteSet(set.id);
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Delete set"
-          style={({ pressed }) => [
-            styles.delete,
-            { backgroundColor: theme.danger },
-            pressed && styles.pressed,
-          ]}>
-          <SymbolView name="trash" size={18} tintColor={theme.accentContent} />
-        </Pressable>
-      )}>
-      {row}
-    </ReanimatedSwipeable>
+    <>
+      <ReanimatedSwipeable
+        friction={2}
+        leftThreshold={40}
+        rightThreshold={40}
+        overshootLeft={false}
+        overshootRight={false}
+        renderLeftActions={(_progress, _translation, swipeable) => (
+          <Pressable
+            onPress={() => {
+              haptics.tap();
+              swipeable.close();
+              toggleNote();
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={hasNote ? 'Remove note' : 'Add note'}
+            style={({ pressed }) => [
+              styles.action,
+              { backgroundColor: theme.accent },
+              pressed && styles.pressed,
+            ]}>
+            <SymbolView
+              name={hasNote ? 'text.badge.minus' : 'note.text'}
+              size={18}
+              tintColor={theme.accentContent}
+            />
+          </Pressable>
+        )}
+        renderRightActions={(_progress, _translation, swipeable) => (
+          <Pressable
+            // Deleting a set has no confirmation step, so the buzz is the only
+            // acknowledgement the swipe gets.
+            onPress={() => {
+              haptics.warn();
+              swipeable.close();
+              actions.deleteSet(set.id);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Delete set"
+            style={({ pressed }) => [
+              styles.action,
+              { backgroundColor: theme.danger },
+              pressed && styles.pressed,
+            ]}>
+            <SymbolView name="trash" size={18} tintColor={theme.accentContent} />
+          </Pressable>
+        )}>
+        {row}
+      </ReanimatedSwipeable>
+      {note}
+    </>
   );
 }
 
@@ -208,12 +292,13 @@ const FIELD_NAMES: Record<SetField, string> = {
 
 type FieldCell = {
   display: (set: TrackedSet, unit: WeightUnit) => string;
-  parse: (text: string, unit: WeightUnit) => Parameters<typeof updateSetValues>[1];
+  parse: (text: string, unit: WeightUnit) => Partial<TrackedSet>;
   keyboardType: React.ComponentProps<typeof TextInput>['keyboardType'];
   maxLength: number;
 };
 
-const FIELDS: Record<SetField, FieldCell> = {
+/** Time is picked, not typed — `DurationCell` handles that field instead. */
+const FIELDS: Record<Exclude<SetField, 'duration'>, FieldCell> = {
   weight: {
     display: (set, unit) =>
       set.weightKg == null ? '' : String(roundForDisplay(kgToDisplay(set.weightKg, unit), unit)),
@@ -232,12 +317,6 @@ const FIELDS: Record<SetField, FieldCell> = {
     },
     keyboardType: 'number-pad',
     maxLength: 3,
-  },
-  duration: {
-    display: (set) => (set.durationSeconds == null ? '' : formatDuration(set.durationSeconds)),
-    parse: (text) => ({ durationSeconds: parseDurationInput(text) }),
-    keyboardType: 'number-pad',
-    maxLength: 8,
   },
   distance: {
     display: (set, unit) => {
@@ -353,10 +432,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  delete: {
+  action: {
     width: 72,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  note: {
+    paddingHorizontal: Spacing.three,
+    paddingBottom: Spacing.one,
   },
   pressed: {
     opacity: 0.6,

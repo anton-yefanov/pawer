@@ -67,6 +67,9 @@ export const exercises = sqliteTable(
       .default([]),
     instructions: text('instructions', { mode: 'json' }).$type<string[]>().notNull().default([]),
 
+    /** Free text, custom exercises only — the seed ships numbered `instructions` instead. */
+    description: text('description'),
+
     /**
      * Search vocabulary the name lacks — muscles, equipment, gym slang. Authored
      * by scripts/exercise-tags.mjs; empty on custom exercises.
@@ -147,6 +150,7 @@ export const sets = sqliteTable(
     completed: integer('completed', { mode: 'boolean' }).notNull().default(false),
     completedAt: integer('completed_at'),
     setType: text('set_type').notNull().default('normal'),
+    notes: text('notes'),
     ...timestamps,
   },
   (t) => [index('sets_workout_exercise_idx').on(t.workoutExerciseId, t.position)]
@@ -196,13 +200,31 @@ export const templateExercises = sqliteTable(
       .notNull()
       .references(() => exercises.id),
     position: integer('position').notNull(),
-    /** How many empty sets to pre-fill when starting from this template. */
-    targetSets: integer('target_sets').notNull().default(3),
-    targetReps: integer('target_reps'),
+    notes: text('notes'),
     restSeconds: integer('rest_seconds'),
     ...timestamps,
   },
   (t) => [index('template_exercises_template_idx').on(t.templateId, t.position)]
+);
+
+/** A planned set. Same column meanings as `sets`, minus everything about doing it. */
+export const templateSets = sqliteTable(
+  'template_sets',
+  {
+    id: text('id').primaryKey(),
+    templateExerciseId: text('template_exercise_id')
+      .notNull()
+      .references(() => templateExercises.id),
+    position: integer('position').notNull(),
+    weightKg: real('weight_kg'),
+    reps: integer('reps'),
+    durationSeconds: integer('duration_seconds'),
+    distanceM: real('distance_m'),
+    setType: text('set_type').notNull().default('normal'),
+    notes: text('notes'),
+    ...timestamps,
+  },
+  (t) => [index('template_sets_template_exercise_idx').on(t.templateExerciseId, t.position)],
 );
 
 /**

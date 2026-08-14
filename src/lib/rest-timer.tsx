@@ -3,6 +3,7 @@ import { createContext, use, useEffect, useState, type ReactNode } from 'react';
 import { db } from '@/db/client';
 import { getSetting, setSetting } from '@/db/seed';
 import { useAppStateActive } from '@/hooks/use-app-state-active';
+import * as haptics from '@/lib/haptics';
 import { cancelScheduledNotification, scheduleRestNotification } from '@/lib/notifications';
 
 const STATE_KEY = 'rest_timer';
@@ -58,6 +59,10 @@ export function RestTimerProvider({ children }: { children: ReactNode }) {
     const id = setInterval(() => {
       const time = Date.now();
       if (time >= rest.endsAt) {
+        // Only the live path buzzes. Expiring while backgrounded comes through
+        // `useAppStateActive` below, and the scheduled notification already
+        // announced it — a buzz on return would be a second, late alarm.
+        haptics.complete();
         setRest(null);
         void clearStored();
       } else {

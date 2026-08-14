@@ -10,7 +10,7 @@ export default function NewTemplateScreen() {
   return (
     <TemplateEditor
       title="New Template"
-      onSave={({ name, exerciseIds }) => createTemplate({ name, exerciseIds }).then(() => undefined)}
+      onSave={({ name, exercises }) => createTemplate({ name, exercises }).then(() => undefined)}
     />
   );
 }

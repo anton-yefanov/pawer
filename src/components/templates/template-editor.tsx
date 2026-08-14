@@ -1,18 +1,13 @@
 import { inArray } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { Image } from 'expo-image';
 import { router, Stack } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, TextInput } from 'react-native';
 
-import {
-  DraggableExerciseRow,
-  ExerciseRowReorderProvider,
-  ROW_HEIGHT,
-} from '@/components/templates/exercise-row-drag';
 import { ThemedText } from '@/components/themed-text';
 import { BigButton } from '@/components/workout/big-button';
+import { ExerciseCard } from '@/components/workout/exercise-card';
+import { ExerciseReorderProvider, ReorderDim } from '@/components/workout/exercise-reorder';
 import {
   CloseButton,
   headerItem,
@@ -23,17 +18,44 @@ import { Spacing } from '@/constants/theme';
 import { db } from '@/db/client';
 import { exercises } from '@/db/schema';
 import { useTheme } from '@/hooks/use-theme';
-import { exerciseThumbnail } from '@/lib/exercise-images';
+import * as haptics from '@/lib/haptics';
+import type { LoggingActions } from '@/lib/logging-model';
+import { DEFAULT_REST_SECONDS } from '@/lib/rest-timer';
 import {
+  addDraftSet,
+  deleteDraftSet,
   moveDraftExercise,
   removeDraftExercise,
   resetDraft,
+  setDraftExerciseNotes,
+  setDraftExerciseRest,
   setDraftName,
+  setDraftSetNotes,
+  setDraftSetType,
+  updateDraftSetValues,
   useTemplateDraft,
   type TemplateDraft,
 } from '@/lib/template-draft';
+import { useWeightUnit } from '@/lib/weight-unit';
+import { groupBy, previousSetsQuery } from '@/lib/workout-queries';
 
-/** Shared by the New and Edit routes — they differ only in what Save does. */
+/** Module scope keeps the identity stable without a hook. */
+const DRAFT_ACTIONS: LoggingActions = {
+  addSet: addDraftSet,
+  removeExercise: removeDraftExercise,
+  setExerciseNotes: setDraftExerciseNotes,
+  setExerciseRest: setDraftExerciseRest,
+  updateSetValues: updateDraftSetValues,
+  setSetType: setDraftSetType,
+  setSetNotes: setDraftSetNotes,
+  deleteSet: deleteDraftSet,
+};
+
+/**
+ * The same grid the logger uses, minus everything about doing the workout: no
+ * checkbox, no rest countdown, no elapsed time. Shared by the New and Edit
+ * routes — they differ only in what Save does.
+ */
 export function TemplateEditor({
   title,
   onSave,
@@ -43,26 +65,28 @@ export function TemplateEditor({
 }) {
   const theme = useTheme();
   const draft = useTemplateDraft();
+  const unit = useWeightUnit();
   const [reordering, setReordering] = useState(false);
 
   // Which exercises are in the draft, not what order they are in: reordering
   // asks SQLite for the same rows back, and the refetch it costs lands a frame
   // after the drop.
-  const membership = [...draft.exerciseIds].sort().join(',');
+  const exerciseIds = draft.exercises.map((row) => row.exerciseId);
+  const membership = [...exerciseIds].sort().join(',');
 
   const { data } = useLiveQuery(
     db
       .select()
       .from(exercises)
       // An empty `IN ()` is not valid SQLite, so an id that matches nothing stands in.
-      .where(inArray(exercises.id, draft.exerciseIds.length > 0 ? [...draft.exerciseIds] : [''])),
+      .where(inArray(exercises.id, exerciseIds.length > 0 ? exerciseIds : [''])),
     [membership],
   );
 
-  // The query returns rows in whatever order SQLite picks; the draft is ordered.
+  const { data: previous } = useLiveQuery(previousSetsQuery(null), []);
+  const previousByExercise = groupBy(previous ?? [], (row) => row.exerciseId);
+
   const byId = new Map((data ?? []).map((row) => [row.id, row]));
-  const picked = draft.exerciseIds.map((id) => byId.get(id)).filter((row) => row !== undefined);
-  const pickedIds = picked.map((exercise) => exercise.id);
 
   const name = draft.name.trim();
 
@@ -77,7 +101,7 @@ export function TemplateEditor({
       <Stack.Screen
         options={{
           title,
-          contentStyle: { backgroundColor: theme.surface },
+          contentStyle: { backgroundColor: theme.background },
           unstable_headerLeftItems: () =>
             headerItem(
               <HeaderSlot>
@@ -93,56 +117,80 @@ export function TemplateEditor({
         }}
       />
 
-      <ExerciseRowReorderProvider
-        ids={pickedIds}
-        onReorder={moveDraftExercise}
+      <ExerciseReorderProvider
+        count={draft.exercises.length}
+        onReorder={(from, to, settle) => {
+          moveDraftExercise(from, to);
+          settle();
+          haptics.complete();
+        }}
         onReorderingChange={setReordering}>
         <ScrollView
-          style={{ backgroundColor: theme.surface }}
+          style={{ backgroundColor: theme.background }}
           contentContainerStyle={styles.content}
+          automaticallyAdjustKeyboardInsets
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
           // A lifted row moves with the finger; letting the content scroll under
           // it at the same time would put it somewhere the drop test can't see.
           scrollEnabled={!reordering}>
-          <TextInput
-            value={draft.name}
-            onChangeText={setDraftName}
-            placeholder="New Template"
-            placeholderTextColor={theme.textSecondary}
-            style={[styles.name, { color: theme.text }]}
-            returnKeyType="done"
-          />
+          <ReorderDim>
+            <TextInput
+              value={draft.name}
+              onChangeText={setDraftName}
+              placeholder="New Template"
+              placeholderTextColor={theme.textSecondary}
+              style={[styles.name, { color: theme.text }]}
+              returnKeyType="done"
+            />
+          </ReorderDim>
 
-          {picked.map((exercise, index) => (
-            <DraggableExerciseRow key={exercise.id} id={exercise.id} index={index}>
-              <View style={styles.row}>
-                <Image
-                  source={exerciseThumbnail(exercise.sourceId)}
-                  style={styles.thumb}
-                  contentFit="contain"
-                />
-                <ThemedText style={styles.rowName} numberOfLines={1}>
-                  {exercise.name}
-                </ThemedText>
-                <Pressable
-                  onPress={() => removeDraftExercise(exercise.id)}
-                  accessibilityLabel={`Remove ${exercise.name}`}
-                  hitSlop={Spacing.two}>
-                  <SymbolView name="minus.circle.fill" size={22} tintColor={theme.danger} />
-                </Pressable>
-              </View>
-            </DraggableExerciseRow>
-          ))}
+          {draft.exercises.map((row, index) => {
+            const exercise = byId.get(row.exerciseId);
+            if (!exercise) return null;
+            return (
+              <ExerciseCard
+                key={row.id}
+                exercise={{
+                  id: row.id,
+                  exerciseId: row.exerciseId,
+                  name: exercise.name,
+                  trackingType: exercise.trackingType,
+                  notes: row.notes,
+                  restSeconds: row.restSeconds,
+                }}
+                index={index}
+                sets={row.sets.map((set) => ({ ...set, completed: false }))}
+                previous={previousByExercise.get(row.exerciseId) ?? []}
+                unit={unit}
+                defaultRestSeconds={DEFAULT_REST_SECONDS}
+                actions={DRAFT_ACTIONS}
+                onOpenExercise={(exerciseId) =>
+                  router.push({
+                    pathname: '/exercise/[id]',
+                    params: { id: exerciseId },
+                  })
+                }
+              />
+            );
+          })}
 
-          <BigButton
-            title="Add Exercises"
-            variant="tinted"
-            symbol="plus"
-            onPress={() => router.push('/template/add-exercises')}
-          />
+          <ReorderDim>
+            <BigButton
+              title="Add Exercises"
+              variant="tinted"
+              symbol="plus"
+              onPress={() => router.push('/template/add-exercises')}
+            />
+          </ReorderDim>
+
+          {draft.exercises.length === 0 && (
+            <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
+              Add an exercise to plan its sets.
+            </ThemedText>
+          )}
         </ScrollView>
-      </ExerciseRowReorderProvider>
+      </ExerciseReorderProvider>
     </>
   );
 }
@@ -150,6 +198,7 @@ export function TemplateEditor({
 const styles = StyleSheet.create({
   content: {
     padding: Spacing.three,
+    paddingBottom: 240,
     gap: Spacing.three,
   },
   name: {
@@ -158,18 +207,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     fontWeight: '600',
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
-    // Fixed, because the drag maps an index to a slot by arithmetic on it.
-    height: ROW_HEIGHT,
-  },
-  thumb: {
-    width: ROW_HEIGHT,
-    height: ROW_HEIGHT,
-  },
-  rowName: {
-    flex: 1,
+  hint: {
+    textAlign: 'center',
   },
 });

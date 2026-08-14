@@ -17,13 +17,14 @@ import { ExerciseFacetMenu } from '@/components/exercise-filter-menu';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { ExerciseFilters, FacetMenu } from '@/lib/exercise-filters';
+import * as haptics from '@/lib/haptics';
 
 const SEARCH_BAR_HEIGHT = 48;
 const TOP_GAP = Spacing.one;
 const GAP = Spacing.two;
 
 /** Both facet menus in one capsule: two square halves plus the rule between
- *  them. Anything narrower clips a half, since the capsule clips its children. */
+ *  them. Anything narrower clips a half. */
 const FILTER_PAIR_WIDTH = SEARCH_BAR_HEIGHT * 2 + StyleSheet.hairlineWidth;
 
 /** Room for "Cancel" at 17pt plus its leading gap. Fixed so the label never
@@ -36,7 +37,10 @@ const CANCEL_WIDTH = 62;
  * end and capsules wider than their resting size on the other. The curve is
  * UIKit's standard ease-out for bar transitions.
  */
-const TIMING = { duration: 260, easing: Easing.bezier(0.32, 0.72, 0, 1) } as const;
+const TIMING = {
+  duration: 260,
+  easing: Easing.bezier(0.32, 0.72, 0, 1),
+} as const;
 
 /**
  * The transition runs in two halves that never overlap: the filter capsule
@@ -171,34 +175,36 @@ export function ExerciseSearchBar({
     <View style={[styles.container, { top: (topInset ?? insets.top) + TOP_GAP }]}>
       <GlassContainer spacing={GAP} style={styles.glassRow}>
         <AnimatedGlassView isInteractive style={[styles.filters, fallback, filtersStyle]}>
-          <View style={styles.filterContent}>
-            <ExerciseFacetMenu
-              title="Muscle"
-              anyLabel="Any muscle"
-              systemName="figure.strengthtraining.traditional"
-              menu={muscles}
-              value={filters.muscle}
-              onChange={(muscle) => onChange({ ...filters, muscle })}
-              onOpenChange={onFilterOpenChange}
-              restingTint={theme.text}
-              size={SEARCH_BAR_HEIGHT}
-            />
-          </View>
-          {/* Inset top and bottom so the rule reads as a separator between two
-              segments rather than a cut through the capsule. */}
-          <View style={[styles.divider, { backgroundColor: theme.textSecondary }]} />
-          <View style={styles.filterContent}>
-            <ExerciseFacetMenu
-              title="Equipment"
-              anyLabel="Any equipment"
-              systemName="dumbbell"
-              menu={equipment}
-              value={filters.equipment}
-              onChange={(value) => onChange({ ...filters, equipment: value })}
-              onOpenChange={onFilterOpenChange}
-              restingTint={theme.text}
-              size={SEARCH_BAR_HEIGHT}
-            />
+          <View style={styles.clip}>
+            <View style={styles.filterContent}>
+              <ExerciseFacetMenu
+                title="Muscle"
+                anyLabel="Any muscle"
+                systemName="figure.strengthtraining.traditional"
+                menu={muscles}
+                value={filters.muscle}
+                onChange={(muscle) => onChange({ ...filters, muscle })}
+                onOpenChange={onFilterOpenChange}
+                restingTint={theme.text}
+                size={SEARCH_BAR_HEIGHT}
+              />
+            </View>
+            {/* Inset top and bottom so the rule reads as a separator between two
+                segments rather than a cut through the capsule. */}
+            <View style={[styles.divider, { backgroundColor: theme.textSecondary }]} />
+            <View style={styles.filterContent}>
+              <ExerciseFacetMenu
+                title="Equipment"
+                anyLabel="Any equipment"
+                systemName="dumbbell"
+                menu={equipment}
+                value={filters.equipment}
+                onChange={(value) => onChange({ ...filters, equipment: value })}
+                onOpenChange={onFilterOpenChange}
+                restingTint={theme.text}
+                size={SEARCH_BAR_HEIGHT}
+              />
+            </View>
           </View>
         </AnimatedGlassView>
 
@@ -226,13 +232,18 @@ export function ExerciseSearchBar({
         </GlassView>
 
         <AnimatedGlassView isInteractive style={[styles.plus, fallback, plusStyle]}>
-          <Pressable
-            style={styles.filterContent}
-            onPress={() => router.push(newExerciseHref)}
-            accessibilityRole="button"
-            accessibilityLabel="New exercise">
-            <SymbolView name="plus" size={22} tintColor={theme.text} />
-          </Pressable>
+          <View style={styles.clip}>
+            <Pressable
+              style={styles.filterContent}
+              onPress={() => {
+                haptics.tap();
+                router.push(newExerciseHref);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="New exercise">
+              <SymbolView name="plus" size={22} tintColor={theme.text} />
+            </Pressable>
+          </View>
         </AnimatedGlassView>
       </GlassContainer>
     </View>
@@ -253,7 +264,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: GAP,
   },
+  // A glass capsule must never clip itself: `overflow: 'hidden'` sets
+  // `clipsToBounds` on the host view, and UIGlassEffect's interactive stretch
+  // draws *outside* those bounds — clipped, the glass deforms inside an invisible
+  // box under a finger instead of flowing past it. The clipping the collapse
+  // animation needs happens one level in, on `clip`.
   filters: {
+    height: SEARCH_BAR_HEIGHT,
+    borderRadius: SEARCH_BAR_HEIGHT / 2,
+  },
+  clip: {
     height: SEARCH_BAR_HEIGHT,
     borderRadius: SEARCH_BAR_HEIGHT / 2,
     overflow: 'hidden',
@@ -268,7 +288,6 @@ const styles = StyleSheet.create({
   plus: {
     height: SEARCH_BAR_HEIGHT,
     borderRadius: SEARCH_BAR_HEIGHT / 2,
-    overflow: 'hidden',
   },
   filterContent: {
     width: SEARCH_BAR_HEIGHT,

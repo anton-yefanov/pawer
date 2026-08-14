@@ -23,6 +23,7 @@ import { db } from '@/db/client';
 import { templates } from '@/db/schema';
 import { useTheme } from '@/hooks/use-theme';
 import { renameFolder } from '@/lib/folder-actions';
+import * as haptics from '@/lib/haptics';
 import { folderQuery, templateCardExercisesQuery } from '@/lib/template-queries';
 import { groupBy } from '@/lib/workout-queries';
 
@@ -99,9 +100,13 @@ export default function FolderScreen() {
           <View key={template.id} style={styles.row}>
             <Pressable
               style={({ pressed }) => [styles.rowText, pressed && styles.pressed]}
-              onPress={() =>
-                router.push({ pathname: '/template/[id]', params: { id: template.id } })
-              }>
+              onPress={() => {
+                haptics.tap();
+                router.push({
+                  pathname: '/template/[id]',
+                  params: { id: template.id },
+                });
+              }}>
               <ThemedText numberOfLines={1}>{template.name}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
                 {(byTemplate.get(template.id) ?? []).map((row) => row.name).join(', ')}
@@ -116,7 +121,7 @@ export default function FolderScreen() {
       </ScrollView>
 
       {renaming !== null && (
-        <Dialog emoji="📁" title="Rename Folder" onDismiss={() => setRenaming(null)}>
+        <Dialog emoji="📁" title="Rename Folder" feedback="tap" onDismiss={() => setRenaming(null)}>
           <TextInput
             value={renaming}
             onChangeText={setRenaming}

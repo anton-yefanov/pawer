@@ -1,12 +1,50 @@
-import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
 import { type CardColor } from '@/constants/card-colors';
 import { db } from '@/db/client';
 import { newId } from '@/db/id';
-import { sets, templateExercises, templates, workoutExercises, workouts } from '@/db/schema';
+import {
+  sets,
+  templateExercises,
+  templates,
+  templateSets,
+  workoutExercises,
+  workouts,
+} from '@/db/schema';
+import { type SetType } from '@/lib/set-types';
+import { type TrackedSet } from '@/lib/tracking-types';
 import { activeWorkoutId, type StartWorkoutResult } from '@/lib/workout-actions';
 
+/** What the editor hands back on Save. Ids are minted client-side and reused as row ids. */
+export type TemplateSetInput = TrackedSet & {
+  id: string;
+  setType: SetType;
+  notes: string | null;
+};
+
+export type TemplateExerciseInput = {
+  id: string;
+  exerciseId: string;
+  restSeconds: number | null;
+  notes: string | null;
+  sets: readonly TemplateSetInput[];
+};
+
 const touch = () => ({ updatedAt: Date.now() });
+
+function setValues(set: TemplateSetInput, templateExerciseId: string, position: number) {
+  return {
+    id: set.id,
+    templateExerciseId,
+    position,
+    weightKg: set.weightKg,
+    reps: set.reps,
+    durationSeconds: set.durationSeconds,
+    distanceM: set.distanceM,
+    setType: set.setType,
+    notes: set.notes,
+  };
+}
 
 async function nextPersonalPosition(): Promise<number> {
   const last = await db
@@ -21,31 +59,41 @@ async function nextPersonalPosition(): Promise<number> {
 
 export async function createTemplate({
   name,
-  exerciseIds,
+  exercises,
 }: {
   name: string;
-  exerciseIds: readonly string[];
+  exercises: readonly TemplateExerciseInput[];
 }): Promise<string> {
   const id = newId();
-  await db
-    .insert(templates)
-    .values({ id, name, position: await nextPersonalPosition(), isBuiltIn: false });
+  await db.insert(templates).values({
+    id,
+    name,
+    position: await nextPersonalPosition(),
+    isBuiltIn: false,
+  });
 
-  if (exerciseIds.length > 0) {
+  if (exercises.length > 0) {
     await db.insert(templateExercises).values(
-      exerciseIds.map((exerciseId, position) => ({
-        id: newId(),
+      exercises.map((row, position) => ({
+        id: row.id,
         templateId: id,
-        exerciseId,
+        exerciseId: row.exerciseId,
         position,
+        notes: row.notes,
+        restSeconds: row.restSeconds,
       })),
     );
+
+    const planned = exercises.flatMap((row) =>
+      row.sets.map((set, position) => setValues(set, row.id, position)),
+    );
+    if (planned.length > 0) await db.insert(templateSets).values(planned);
   }
 
   return id;
 }
 
-/** `targetSets` is what the user actually logged, not the three a fresh template assumes. */
+/** The plan is what the user actually logged, warm-ups and all — set types are first class. */
 export async function createTemplateFromWorkout(workoutId: string): Promise<string> {
   const workout = await db
     .select({ name: workouts.name })
@@ -55,15 +103,36 @@ export async function createTemplateFromWorkout(workoutId: string): Promise<stri
 
   const rows = await db
     .select({
+      id: workoutExercises.id,
       exerciseId: workoutExercises.exerciseId,
+      notes: workoutExercises.notes,
       restSeconds: workoutExercises.restSeconds,
-      completedSets: sql<number>`(SELECT COUNT(*) FROM ${sets} s
-        WHERE s.workout_exercise_id = ${workoutExercises.id}
-          AND s.deleted_at IS NULL AND s.completed = 1 AND s.set_type <> 'warmup')`,
     })
     .from(workoutExercises)
     .where(and(eq(workoutExercises.workoutId, workoutId), isNull(workoutExercises.deletedAt)))
     .orderBy(asc(workoutExercises.position))
+    .all();
+
+  const logged = await db
+    .select({
+      workoutExerciseId: sets.workoutExerciseId,
+      weightKg: sets.weightKg,
+      reps: sets.reps,
+      durationSeconds: sets.durationSeconds,
+      distanceM: sets.distanceM,
+      setType: sets.setType,
+    })
+    .from(sets)
+    .innerJoin(workoutExercises, eq(sets.workoutExerciseId, workoutExercises.id))
+    .where(
+      and(
+        eq(workoutExercises.workoutId, workoutId),
+        isNull(workoutExercises.deletedAt),
+        isNull(sets.deletedAt),
+        eq(sets.completed, true),
+      ),
+    )
+    .orderBy(asc(sets.position))
     .all();
 
   const id = newId();
@@ -75,65 +144,122 @@ export async function createTemplateFromWorkout(workoutId: string): Promise<stri
   });
 
   if (rows.length > 0) {
+    const ids = new Map(rows.map((row) => [row.id, newId()]));
+
     await db.insert(templateExercises).values(
       rows.map((row, position) => ({
-        id: newId(),
+        id: ids.get(row.id)!,
         templateId: id,
         exerciseId: row.exerciseId,
         position,
-        targetSets: Math.max(1, row.completedSets),
+        notes: row.notes,
         restSeconds: row.restSeconds,
       })),
     );
+
+    const planned = rows.flatMap((row) => {
+      const templateExerciseId = ids.get(row.id)!;
+      const own = logged.filter((set) => set.workoutExerciseId === row.id);
+      // An exercise the user opened but never completed a set of still deserves a row.
+      if (own.length === 0) return [{ id: newId(), templateExerciseId, position: 0 }];
+      return own.map((set, position) => ({
+        id: newId(),
+        templateExerciseId,
+        position,
+        weightKg: set.weightKg,
+        reps: set.reps,
+        durationSeconds: set.durationSeconds,
+        distanceM: set.distanceM,
+        setType: set.setType,
+      }));
+    });
+    await db.insert(templateSets).values(planned);
   }
 
   return id;
 }
 
 /**
- * Reconciles the exercise list against `exerciseIds` rather than replacing it,
- * so a row the user kept holds on to its `targetSets` / `targetReps` / rest.
+ * Reconciles by row id rather than replacing, so a row the user kept keeps its
+ * identity — which is also what lets the same exercise appear twice.
  */
 export async function updateTemplate({
   id,
   name,
-  exerciseIds,
+  exercises,
 }: {
   id: string;
   name: string;
-  exerciseIds: readonly string[];
+  exercises: readonly TemplateExerciseInput[];
 }): Promise<void> {
   const now = Date.now();
   await db.update(templates).set({ name, updatedAt: now }).where(eq(templates.id, id));
 
-  const existing = await db
-    .select({ id: templateExercises.id, exerciseId: templateExercises.exerciseId })
+  const existingExercises = await db
+    .select({ id: templateExercises.id })
     .from(templateExercises)
     .where(and(eq(templateExercises.templateId, id), isNull(templateExercises.deletedAt)))
     .all();
 
-  const kept = new Map(existing.map((row) => [row.exerciseId, row.id]));
-  const wanted = new Set(exerciseIds);
+  const existingSets = await db
+    .select({ id: templateSets.id })
+    .from(templateSets)
+    .innerJoin(templateExercises, eq(templateSets.templateExerciseId, templateExercises.id))
+    .where(and(eq(templateExercises.templateId, id), isNull(templateSets.deletedAt)))
+    .all();
 
-  for (const row of existing) {
-    if (wanted.has(row.exerciseId)) continue;
+  const keptExercises = new Set(exercises.map((row) => row.id));
+  const keptSets = new Set(exercises.flatMap((row) => row.sets.map((set) => set.id)));
+
+  const goneExercises = existingExercises
+    .map((row) => row.id)
+    .filter((rowId) => !keptExercises.has(rowId));
+  if (goneExercises.length > 0) {
     await db
       .update(templateExercises)
       .set({ deletedAt: now, updatedAt: now })
-      .where(eq(templateExercises.id, row.id));
+      .where(inArray(templateExercises.id, goneExercises));
   }
 
-  for (const [position, exerciseId] of exerciseIds.entries()) {
-    const rowId = kept.get(exerciseId);
-    if (rowId) {
-      await db
-        .update(templateExercises)
-        .set({ position, updatedAt: now })
-        .where(eq(templateExercises.id, rowId));
+  const goneSets = existingSets.map((row) => row.id).filter((setId) => !keptSets.has(setId));
+  if (goneSets.length > 0) {
+    await db
+      .update(templateSets)
+      .set({ deletedAt: now, updatedAt: now })
+      .where(inArray(templateSets.id, goneSets));
+  }
+
+  const hadExercise = new Set(existingExercises.map((row) => row.id));
+  const hadSet = new Set(existingSets.map((row) => row.id));
+
+  for (const [position, row] of exercises.entries()) {
+    const values = {
+      position,
+      notes: row.notes,
+      restSeconds: row.restSeconds,
+      updatedAt: now,
+    };
+    if (hadExercise.has(row.id)) {
+      await db.update(templateExercises).set(values).where(eq(templateExercises.id, row.id));
     } else {
-      await db
-        .insert(templateExercises)
-        .values({ id: newId(), templateId: id, exerciseId, position });
+      await db.insert(templateExercises).values({
+        id: row.id,
+        templateId: id,
+        exerciseId: row.exerciseId,
+        ...values,
+      });
+    }
+
+    for (const [setPosition, set] of row.sets.entries()) {
+      const setRow = setValues(set, row.id, setPosition);
+      if (hadSet.has(set.id)) {
+        await db
+          .update(templateSets)
+          .set({ ...setRow, updatedAt: now })
+          .where(eq(templateSets.id, set.id));
+      } else {
+        await db.insert(templateSets).values(setRow);
+      }
     }
   }
 }
@@ -178,17 +304,49 @@ export async function duplicateTemplate(templateId: string): Promise<string> {
   });
 
   if (rows.length > 0) {
+    const ids = new Map(rows.map((row) => [row.id, newId()]));
+
     await db.insert(templateExercises).values(
       rows.map((row, position) => ({
-        id: newId(),
+        id: ids.get(row.id)!,
         templateId: id,
         exerciseId: row.exerciseId,
         position,
-        targetSets: row.targetSets,
-        targetReps: row.targetReps,
+        notes: row.notes,
         restSeconds: row.restSeconds,
       })),
     );
+
+    const planned = await db
+      .select()
+      .from(templateSets)
+      .where(
+        and(
+          inArray(
+            templateSets.templateExerciseId,
+            rows.map((row) => row.id),
+          ),
+          isNull(templateSets.deletedAt),
+        ),
+      )
+      .orderBy(asc(templateSets.position))
+      .all();
+
+    if (planned.length > 0) {
+      await db.insert(templateSets).values(
+        planned.map((set) => ({
+          id: newId(),
+          templateExerciseId: ids.get(set.templateExerciseId)!,
+          position: set.position,
+          weightKg: set.weightKg,
+          reps: set.reps,
+          durationSeconds: set.durationSeconds,
+          distanceM: set.distanceM,
+          setType: set.setType,
+          notes: set.notes,
+        })),
+      );
+    }
   }
 
   return id;
@@ -205,6 +363,13 @@ export async function deleteTemplate(templateId: string): Promise<void> {
 
   const deletedAt = Date.now();
   await db
+    .update(templateSets)
+    .set({ deletedAt, updatedAt: deletedAt })
+    .where(
+      sql`${templateSets.templateExerciseId} IN (
+        SELECT id FROM ${templateExercises} WHERE template_id = ${templateId})`,
+    );
+  await db
     .update(templateExercises)
     .set({ deletedAt, updatedAt: deletedAt })
     .where(eq(templateExercises.templateId, templateId));
@@ -215,9 +380,8 @@ export async function deleteTemplate(templateId: string): Promise<void> {
 }
 
 /**
- * Sets are inserted blank rather than through `addSet`, which copies the
- * previous set's weight and reps — carrying numbers forward here would show the
- * user figures they never logged for this session.
+ * The planned numbers are copied in as-is: they are the user's own plan for this
+ * session, not readings carried over from a previous one.
  */
 export async function startWorkoutFromTemplate(templateId: string): Promise<StartWorkoutResult> {
   const active = await activeWorkoutId();
@@ -231,14 +395,29 @@ export async function startWorkoutFromTemplate(templateId: string): Promise<Star
 
   const planned = await db
     .select({
+      id: templateExercises.id,
       exerciseId: templateExercises.exerciseId,
-      position: templateExercises.position,
-      targetSets: templateExercises.targetSets,
+      notes: templateExercises.notes,
       restSeconds: templateExercises.restSeconds,
     })
     .from(templateExercises)
     .where(and(eq(templateExercises.templateId, templateId), isNull(templateExercises.deletedAt)))
     .orderBy(asc(templateExercises.position))
+    .all();
+
+  const plannedSets = await db
+    .select()
+    .from(templateSets)
+    .where(
+      and(
+        inArray(
+          templateSets.templateExerciseId,
+          planned.length > 0 ? planned.map((row) => row.id) : [''],
+        ),
+        isNull(templateSets.deletedAt),
+      ),
+    )
+    .orderBy(asc(templateSets.position))
     .all();
 
   const workoutId = newId();
@@ -259,16 +438,26 @@ export async function startWorkoutFromTemplate(templateId: string): Promise<Star
       workoutId,
       exerciseId: row.exerciseId,
       position,
+      notes: row.notes,
       restSeconds: row.restSeconds,
     });
 
-    const count = Math.max(1, row.targetSets);
+    const own = plannedSets.filter((set) => set.templateExerciseId === row.id);
+    // A template saved with every set deleted — and every un-backfilled one from
+    // before templates had planned sets — still opens with something to log into.
     await db.insert(sets).values(
-      Array.from({ length: count }, (_, index) => ({
-        id: newId(),
-        workoutExerciseId,
-        position: index,
-      })),
+      own.length === 0
+        ? [{ id: newId(), workoutExerciseId, position: 0 }]
+        : own.map((set, index) => ({
+            id: newId(),
+            workoutExerciseId,
+            position: index,
+            weightKg: set.weightKg,
+            reps: set.reps,
+            durationSeconds: set.durationSeconds,
+            distanceM: set.distanceM,
+            setType: set.setType,
+          })),
     );
   }
 

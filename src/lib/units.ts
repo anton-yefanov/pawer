@@ -87,26 +87,3 @@ export function parseDecimalInput(input: string): number | null {
   const value = Number(normalised);
   return Number.isFinite(value) && value >= 0 ? value : null;
 }
-
-/**
- * Time is typed as bare digits filling in from the right, the way a stopwatch
- * field behaves: `130` is 1:30, `45` is 0:45, `12000` is 1:20:00. Anything with
- * a separator already in it is read as `[hh:]mm:ss`.
- */
-export function parseDurationInput(input: string): number | null {
-  const trimmed = input.trim();
-  if (trimmed === '') return null;
-
-  if (trimmed.includes(':')) {
-    const parts = trimmed.split(':').map((part) => Number(part.replace(/\D/g, '') || 0));
-    if (parts.some((part) => !Number.isFinite(part))) return null;
-    return parts.reduce((total, part) => total * 60 + part, 0);
-  }
-
-  const digits = trimmed.replace(/\D/g, '');
-  if (digits === '') return null;
-  const seconds = Number(digits.slice(-2));
-  const minutes = Number(digits.slice(-4, -2) || 0);
-  const hours = Number(digits.slice(0, -4) || 0);
-  return hours * 3600 + minutes * 60 + seconds;
-}

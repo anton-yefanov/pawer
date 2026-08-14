@@ -48,7 +48,11 @@ export default function AddExerciseScreen() {
         // No entering animation: a Reanimated layout animation on the wrapper
         // stops the native glass view inside from drawing at all.
         <View style={[styles.footer, { paddingBottom: Spacing.three + SHEET_BOTTOM_INSET }]}>
-          <BigButton title={`Add Exercise${picked.length > 1 ? 's' : ''}`} onPress={confirm} />
+          <BigButton
+            title={`Add Exercise${picked.length > 1 ? 's' : ''}`}
+            onPress={confirm}
+            feedback="complete"
+          />
         </View>
       )}
     </>

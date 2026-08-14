@@ -1,5 +1,8 @@
 import { Alert, Button, Host, Spacer, Text } from '@expo/ui/swift-ui';
+import { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
+
+import * as haptics from '@/lib/haptics';
 
 /**
  * A real system alert raised from inside a formSheet. `Alert.alert` presents from
@@ -29,6 +32,14 @@ export function ConfirmAlert({
   onConfirm: () => void;
   onDismiss: () => void;
 }) {
+  // The alert is presented declaratively, so its arrival is the only thing to
+  // hook — there is no press to hang the buzz off.
+  useEffect(() => {
+    if (!open) return;
+    if (confirmRole === 'destructive') haptics.warn();
+    else haptics.tap();
+  }, [open, confirmRole]);
+
   return (
     <Host style={styles.host}>
       <Alert

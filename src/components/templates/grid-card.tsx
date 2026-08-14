@@ -5,6 +5,7 @@ import { type CardColor } from '@/constants/card-colors';
 import { Spacing } from '@/constants/theme';
 import { useCardGradient } from '@/hooks/use-card-gradient';
 import { useTheme } from '@/hooks/use-theme';
+import * as haptics from '@/lib/haptics';
 
 /** The shell shared by template and folder cards. */
 export function GridCard({
@@ -27,7 +28,12 @@ export function GridCard({
 
   return (
     <View style={[styles.card, { width, backgroundColor: theme.surface }]}>
-      <Pressable onPress={onPress} style={({ pressed }) => [pressed && styles.pressed]}>
+      <Pressable
+        onPress={() => {
+          haptics.tap();
+          onPress();
+        }}
+        style={({ pressed }) => [pressed && styles.pressed]}>
         <View style={[styles.cover, gradient]}>{cover}</View>
         <View style={styles.body}>
           <ThemedText numberOfLines={1}>{title}</ThemedText>
