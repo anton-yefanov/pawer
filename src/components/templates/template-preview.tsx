@@ -1,5 +1,4 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { Image } from 'expo-image';
 import { router, Stack } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -19,7 +18,6 @@ import {
 } from '@/components/workout/workout-sheet-header';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { exerciseThumbnail } from '@/lib/exercise-images';
 import * as haptics from '@/lib/haptics';
 import { startWorkoutFromTemplate } from '@/lib/template-actions';
 import { templateExercisesQuery, templateQuery } from '@/lib/template-queries';
@@ -99,11 +97,6 @@ export function TemplatePreview({ id }: { id: string }) {
                 params: { id: exercise.exerciseId },
               })
             }>
-            <Image
-              source={exerciseThumbnail(exercise.sourceId)}
-              style={styles.thumb}
-              contentFit="contain"
-            />
             <View style={styles.rowText}>
               <ThemedText numberOfLines={1}>
                 {Math.max(1, exercise.setCount)} × {exercise.name}
@@ -148,10 +141,6 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
-  },
-  thumb: {
-    width: 48,
-    height: 48,
   },
   rowText: {
     flex: 1,

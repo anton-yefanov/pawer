@@ -24,8 +24,8 @@ npm run typecheck    # tsc --noEmit
 npm run db:generate      # drizzle-kit generate — after any src/db/schema.ts edit
 npm run build:seed       # rebuild src/db/seed/exercises.json from a free-exercise-db checkout
 npm run build:images     # assets/masters/**.png -> shipped webp (see §Assets)
-npm run images:web       # vercel dev — the deployed uploader for assets/masters/exercises (tools/image-uploader)
-npm run masters:pull     # Blob store -> assets/masters/exercises, before build:images
+npm run images:web       # vercel dev — the deployed uploader for assets/masters/{exercises,attributes} (tools/image-uploader)
+npm run masters:pull     # Blob store -> assets/masters/{exercises,attributes}, before build:images
 ```
 
 There is no test runner in this project. Verification is `npm run typecheck && npm run lint` plus running the app.
@@ -62,13 +62,15 @@ These are cheap now and painful to retrofit — hold them for every new table:
 
 ### Assets
 
-Illustrations are never referenced by path from a screen. `src/lib/exercise-images.ts` and `src/lib/mascot-images.ts` are the only resolvers (Metro needs static `require` literals, so any real lookup map must be generated). Both currently return placeholders.
+Illustrations are never referenced by path from a screen. `src/lib/exercise-images.ts`, `src/lib/mascot-images.ts` and `src/lib/attribute-images.ts` are the only resolvers (Metro needs static `require` literals, so any real lookup map must be generated or written out). Exercise and mascot art is still placeholders, and no screen renders the exercise illustrations at all right now.
+
+`attribute-images.ts` is what the exercise sheet's four tiles read: one icon per level, category, equipment and muscle value in the seed, built from `assets/masters/attributes/<kind>/<slug>.png`. The vocabulary lives once in `scripts/attribute-vocabulary.mjs`; a new seed value needs a master, a line in the resolver, and an entry there.
 
 Shipped webp is generated from `assets/masters/` by `scripts/build-images.mjs` — edit masters and re-run, never edit `assets/exercises/` or `assets/mascot/` directly. Paired exercise frames must share one bounding box.
 
-`tools/image-uploader/` is the page for filling the exercise masters: each of the 205 exercises next to its two upstream reference photos, with drop/paste slots that validate against the master spec before writing. It is deployed to Vercel so more than one person can fill them in — a static page out of `tools/image-uploader/` plus serverless functions in `api/`, wired by `vercel.json`. `npm run images:web` is `vercel dev`, the same thing locally.
+`tools/image-uploader/` is the page for filling the masters: the 35 attribute icons in a panel at the top, then each of the 205 exercises next to its two upstream reference photos, all with drop/paste slots that validate against the master spec before writing. It is deployed to Vercel so more than one person can fill them in — a static page out of `tools/image-uploader/` plus serverless functions in `api/`, wired by `vercel.json`. `npm run images:web` is `vercel dev`, the same thing locally.
 
-Nothing about it touches the app bundle, but two of its constraints shape the code. Reference photos are **not** in this repo: they come straight from jsDelivr over the public `yuhonas/free-exercise-db`, so a missing photo is an `img` error, never a server-side existence check. Masters live in **Vercel Blob** under `masters/exercises/<sourceId>_<frame>.png` — the store is the shared drop box, git is still the source of truth, and `npm run masters:pull` is what closes that loop before `build:images`. `api/_lib.mjs` holds the master-spec validation; it is the deployed half of what `assets/masters/README.md` specifies.
+Nothing about it touches the app bundle, but two of its constraints shape the code. Reference photos are **not** in this repo: they come straight from jsDelivr over the public `yuhonas/free-exercise-db`, so a missing photo is an `img` error, never a server-side existence check. Masters live in **Vercel Blob** under `masters/exercises/<sourceId>_<frame>.png` and `masters/attributes/<kind>/<slug>.png` — the store is the shared drop box, git is still the source of truth, and `npm run masters:pull` is what closes that loop before `build:images`. `api/_lib.mjs` holds the master-spec validation; it is the deployed half of what `assets/masters/README.md` specifies.
 
 The site has no auth: anyone with the URL can overwrite or delete a master, so pull and commit regularly.
 

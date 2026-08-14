@@ -6,6 +6,9 @@ const collapseAll = document.getElementById('collapse-all');
 const fileInput = document.getElementById('file-input');
 const lightbox = document.getElementById('lightbox');
 const lightboxImg = document.getElementById('lightbox-img');
+const attributesCard = document.getElementById('attributes');
+const attrGroups = document.getElementById('attr-groups');
+const attrCounter = document.getElementById('attr-counter');
 
 const phone = document.getElementById('phone');
 const previewScreen = document.getElementById('preview-screen');
@@ -20,8 +23,14 @@ const PREVIEW = 'pawer.uploader.preview';
 const SCHEME = 'pawer.uploader.scheme';
 
 let exercises = [];
+let attributes = [];
 let focused = null;
 let previewId = localStorage.getItem(PREVIEW);
+
+const ATTRIBUTE_KINDS = ['level', 'category', 'equipment', 'muscle'];
+const ATTRIBUTE_SIZE = 1024;
+const attributeOf = (kind, value) =>
+  attributes.find((a) => a.kind === kind && a.value === value) ?? null;
 
 const REFERENCES = 'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises';
 
@@ -44,7 +53,9 @@ function cell(label, slot, mascot) {
   return el;
 }
 
-const CHARACTER_SPEC = `Reproduce the mascot exactly as shown in CHARACTER REFERENCE: the same light orange-and-white fur and markings; forehead and cheek stripes; striped orange tail; feline head, ears, white muzzle, amber eyes, whiskers, and calm confident expression; muscular athletic anatomy and established head-to-body proportions; white tank top with dark edging; dark green athletic shorts with white piping and drawstring; white crew socks with two green stripes; and white-and-gray athletic shoes. Match the model sheet's clean hand-drawn linework, warm colors, subtle cel shading, and level of detail. Do not redesign, simplify, darken, exaggerate, or change the mascot's face, markings, outfit, muscularity, or proportions.`;
+const CHARACTER_SPEC = `Reproduce the mascot exactly as shown in CHARACTER REFERENCE. Treat the face as a strict identity lock: copy the same head silhouette and proportions; ear size, angle, and spacing; forehead stripes; cheek stripes and tufts; white blaze and muzzle shape; small pink nose; amber eye color, narrow half-lidded eye shape, eyelid angle, and eye spacing; whisker placement; and the tiny closed mouth with its subtle, calm, mildly self-assured expression. Do not make the eyes rounder, wider, friendlier, fiercer, or more alert, and do not give the mascot a grin, snarl, open mouth, raised eyebrows, or determined workout face. The face must read as the same individual, not merely a similar orange cat.
+
+Match the same light orange-and-white fur and markings, striped orange tail, and established head-to-body proportions. The body is tall, lean, and moderately athletic with natural definition—not a bodybuilder: keep the reference's relatively narrow shoulders and torso, restrained chest and arm volume, and slim waist and legs. Do not enlarge the neck, trapezius, shoulders, biceps, forearms, chest, or thighs; do not add bulging muscles, extreme vascularity, or exaggerated definition. Preserve the white tank top with dark edging; dark green athletic shorts with white piping and drawstring; white crew socks with two green stripes; and white-and-gray athletic shoes. Match the model sheet's clean hand-drawn linework, warm colors, subtle cel shading, and level of detail. Do not redesign, simplify, darken, exaggerate, or change the mascot's face, markings, outfit, build, or proportions.`;
 
 function exercisePrompt(e, index) {
   const frame = index + 1;
@@ -179,6 +190,137 @@ function setFocus(slot) {
   focused = slot;
 }
 
+const attributeUrl = (a) => `${a.url}?v=${a.mtime}`;
+
+function attributeSlot(a) {
+  const slot = document.createElement('div');
+  slot.className = 'slot mascot attr';
+  if (a.warnings) slot.classList.add('warned');
+  slot.tabIndex = 0;
+  slot.dataset.kind = a.kind;
+  slot.dataset.slug = a.slug;
+
+  if (a.mtime) {
+    const img = document.createElement('img');
+    img.loading = 'lazy';
+    img.src = attributeUrl(a);
+    img.alt = `${a.kind} ${a.value} icon`;
+    const tools = document.createElement('div');
+    tools.className = 'tools';
+    tools.innerHTML =
+      '<button type="button" data-act="replace">Replace</button><button type="button" data-act="delete">Delete</button>';
+    tools.addEventListener('click', (ev) => {
+      const act = ev.target.dataset?.act;
+      if (!act) return;
+      ev.stopPropagation();
+      if (act === 'replace') pickAttributeFile(a);
+      else removeAttribute(a);
+    });
+    slot.append(img, tools);
+  } else {
+    slot.innerHTML = '<span class="plus">+</span>';
+  }
+
+  slot.addEventListener('click', () => {
+    setFocus(slot);
+    if (a.mtime) openLightbox(attributeUrl(a), `${a.kind} ${a.value} icon`);
+    else pickAttributeFile(a);
+  });
+  slot.addEventListener('focus', () => setFocus(slot));
+  slot.addEventListener('dragover', (ev) => {
+    ev.preventDefault();
+    slot.classList.add('dragover');
+  });
+  slot.addEventListener('dragleave', () => slot.classList.remove('dragover'));
+  slot.addEventListener('drop', (ev) => {
+    ev.preventDefault();
+    slot.classList.remove('dragover');
+    const file = ev.dataTransfer.files[0];
+    if (file) uploadAttribute(a, file);
+  });
+
+  return slot;
+}
+
+function renderAttributes() {
+  attrGroups.replaceChildren();
+  for (const kind of ATTRIBUTE_KINDS) {
+    const values = attributes.filter((a) => a.kind === kind);
+    if (values.length === 0) continue;
+    const heading = document.createElement('p');
+    heading.className = 'attr-kind';
+    heading.textContent = `${kind} · ${values.filter((a) => a.mtime).length}/${values.length}`;
+    const grid = document.createElement('div');
+    grid.className = 'attr-grid';
+    for (const a of values) grid.append(cell(a.value, attributeSlot(a)));
+    attrGroups.append(heading, grid);
+
+    for (const a of values) {
+      for (const text of a.warnings ?? []) {
+        const p = document.createElement('p');
+        p.className = 'warning';
+        p.textContent = `${a.value}: ${text}`;
+        attrGroups.append(p);
+      }
+    }
+  }
+
+  const done = attributes.filter((a) => a.mtime).length;
+  attrCounter.textContent = `${done}/${attributes.length}`;
+  attributesCard.dataset.state = done === attributes.length ? 'done' : done ? 'partial' : 'empty';
+}
+
+async function uploadAttribute(a, file) {
+  const slot = attrGroups.querySelector(`.slot.attr[data-kind="${a.kind}"][data-slug="${a.slug}"]`);
+  slot?.classList.add('busy');
+  attrGroups.querySelector('.error')?.remove();
+  try {
+    if (file.size > BODY_LIMIT) file = await shrinkToMaster(file, ATTRIBUTE_SIZE);
+  } catch (err) {
+    slot?.classList.remove('busy');
+    showAttributeError(err.message);
+    return;
+  }
+  const res = await fetch(`/api/attribute/${a.kind}/${a.slug}`, { method: 'PUT', body: file });
+  const text = await res.text();
+  const body = text.startsWith('{') ? JSON.parse(text) : {};
+  if (!res.ok) {
+    slot?.classList.remove('busy');
+    showAttributeError(body.error ?? `upload failed with ${res.status}. ${text.trim()}`);
+    return;
+  }
+  a.mtime = body.mtime;
+  a.url = body.url;
+  a.warnings = body.warnings?.length ? body.warnings : null;
+  renderAttributes();
+  renderPreview();
+}
+
+async function removeAttribute(a) {
+  await fetch(`/api/attribute/${a.kind}/${a.slug}`, { method: 'DELETE' });
+  a.mtime = null;
+  a.url = null;
+  a.warnings = null;
+  renderAttributes();
+  renderPreview();
+}
+
+function showAttributeError(message) {
+  const p = document.createElement('p');
+  p.className = 'error';
+  p.textContent = message;
+  attrGroups.append(p);
+}
+
+function pickAttributeFile(a) {
+  fileInput.value = '';
+  fileInput.onchange = () => {
+    const file = fileInput.files[0];
+    if (file) uploadAttribute(a, file);
+  };
+  fileInput.click();
+}
+
 function card(e) {
   const el = document.createElement('section');
   el.className = 'card';
@@ -242,36 +384,23 @@ function selectPreview(id) {
   renderPreview();
 }
 
-/** Mirrors ExerciseDetail: the two frames, then the facts table, then steps. */
+/** Mirrors ExerciseDetail: the four attribute tiles, then the steps. */
 function renderPreview() {
   const e = exercises.find((x) => x.sourceId === previewId);
   previewScreen.replaceChildren();
   previewTitle.textContent = e?.name ?? '';
   if (!e) return;
 
-  const frames = row('frames');
-  for (const frame of [1, 2]) {
+  const tiles = row('tiles');
+  for (const kind of ATTRIBUTE_KINDS) {
+    const a = attributeOf(kind, kind === 'muscle' ? e.muscle : e[kind]);
+    if (!a?.mtime) continue;
     const img = document.createElement('img');
-    img.src = e.mascot[frame - 1] ? mascotUrl(e, frame) : `/api/placeholder/${frame}`;
-    img.alt = `${e.name} frame ${frame}`;
-    frames.append(img);
+    img.src = attributeUrl(a);
+    img.alt = `${a.value} icon`;
+    tiles.append(row('tile', img, span('', a.value)));
   }
-
-  const facts = row('facts');
-  const values = [
-    ['Equipment', e.equipment],
-    ['Primary', e.primaryMuscles.join(', ')],
-    ['Secondary', e.secondaryMuscles.join(', ')],
-    ['Level', e.level],
-    ['Mechanic', e.mechanic],
-    ['Force', e.force],
-    ['Category', e.category],
-  ];
-  for (const [label, value] of values) {
-    if (value) facts.append(row('fact', span('k', label), span('v', value)));
-  }
-
-  previewScreen.append(frames, facts);
+  if (tiles.children.length) previewScreen.append(tiles);
   for (const [i, step] of e.instructions.entries()) {
     previewScreen.append(row('step', span('n', String(i + 1)), span('t', step)));
   }
@@ -325,17 +454,17 @@ const BODY_LIMIT = 4 * 1024 * 1024;
  * is re-encoded to the master canvas here first — the same resize the server
  * would have done anyway, just early enough to fit through.
  */
-function shrinkToMaster(file) {
+function shrinkToMaster(file, size = 1200) {
   return new Promise((res, rej) => {
     const img = new Image();
     img.onerror = () => rej(new Error('could not decode the image'));
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = canvas.height = 1200;
-      const scale = Math.min(1200 / img.width, 1200 / img.height);
+      canvas.width = canvas.height = size;
+      const scale = Math.min(size / img.width, size / img.height);
       const w = img.width * scale;
       const h = img.height * scale;
-      canvas.getContext('2d').drawImage(img, (1200 - w) / 2, (1200 - h) / 2, w, h);
+      canvas.getContext('2d').drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
       canvas.toBlob((blob) => (blob ? res(blob) : rej(new Error('encode failed'))), 'image/png');
     };
     img.src = URL.createObjectURL(file);
@@ -427,6 +556,13 @@ document.addEventListener('paste', (ev) => {
   const file = [...ev.clipboardData.files].find((f) => f.type.startsWith('image/'));
   if (!file) return;
   ev.preventDefault();
+  if (focused.dataset.kind) {
+    const target = attributes.find(
+      (x) => x.kind === focused.dataset.kind && x.slug === focused.dataset.slug,
+    );
+    if (target) uploadAttribute(target, file);
+    return;
+  }
   const e = exercises.find((x) => x.sourceId === focused.dataset.id);
   upload(e, Number(focused.dataset.frame), file);
 });
@@ -454,7 +590,24 @@ setScheme(localStorage.getItem(SCHEME) ?? 'light');
 search.addEventListener('input', render);
 onlyIncomplete.addEventListener('change', render);
 
+const ATTR_COLLAPSED = 'pawer.uploader.attrCollapsed';
+if (localStorage.getItem(ATTR_COLLAPSED) === '1') attributesCard.classList.add('collapsed');
+attributesCard.querySelector('.card-head').addEventListener('click', () => {
+  attributesCard.classList.toggle('collapsed');
+  localStorage.setItem(ATTR_COLLAPSED, attributesCard.classList.contains('collapsed') ? '1' : '0');
+});
+
 (async () => {
+  const attrRes = await fetch('/api/attributes');
+  if (attrRes.ok) {
+    attributes = await attrRes.json();
+    for (const a of attributes) a.warnings = null;
+    renderAttributes();
+  } else {
+    attrCounter.textContent = '—';
+    showAttributeError(`/api/attributes failed with ${attrRes.status}. ${(await attrRes.text()).trim()}`);
+  }
+
   const res = await fetch('/api/exercises');
   if (!res.ok) {
     counter.textContent = `Counter: —`;

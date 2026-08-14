@@ -1,5 +1,4 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { Image } from 'expo-image';
 import { Link, router, type Href } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
@@ -22,7 +21,6 @@ import {
   NO_FILTERS,
   type ExerciseFilters,
 } from '@/lib/exercise-filters';
-import { exerciseThumbnail } from '@/lib/exercise-images';
 import * as haptics from '@/lib/haptics';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -157,7 +155,6 @@ function ExerciseRow({
         styles.row,
         { backgroundColor: pressed ? theme.backgroundSelected : theme.surface },
       ]}>
-      <Image source={exerciseThumbnail(exercise.sourceId)} style={styles.thumb} contentFit="contain" />
       <View style={styles.rowText}>
         <ThemedText numberOfLines={1}>{exercise.name}</ThemedText>
         {detail !== '' && (
@@ -207,16 +204,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
   },
-  thumb: {
-    width: 48,
-    height: 48,
-  },
   rowText: {
     flex: 1,
   },
   separator: {
     height: StyleSheet.hairlineWidth,
-    marginLeft: 48 + Spacing.three * 2,
+    marginLeft: Spacing.three,
   },
   empty: {
     textAlign: 'center',

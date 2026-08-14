@@ -112,6 +112,12 @@ main {
   min-width: 0;
 }
 
+#list {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
 #preview {
   position: sticky;
   top: 96px;
@@ -194,6 +200,36 @@ main {
   min-width: 0;
   aspect-ratio: 1;
   object-fit: contain;
+}
+
+.phone .tiles {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.phone .tile {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.phone .tile img {
+  width: 100%;
+  max-width: 88px;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+
+.phone .tile span {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--fg-dim);
+  text-align: center;
+  text-transform: capitalize;
 }
 
 .phone .facts {
@@ -332,6 +368,35 @@ main {
 
 .card.collapsed .grid {
   display: none;
+}
+
+/* The attribute icons sit above the exercise cards: 35 small slots, six across. */
+.attributes {
+  content-visibility: visible;
+}
+
+.attributes.collapsed #attr-groups {
+  display: none;
+}
+
+.attr-kind {
+  color: var(--dim);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 12px 0 6px;
+}
+
+.attr-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 700px) {
+  .attr-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .slot {

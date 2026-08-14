@@ -6,7 +6,7 @@
   "outputDirectory": "tools/image-uploader",
   "functions": {
     "api/**/*.mjs": {
-      "includeFiles": "{src/db/seed/exercises.json,assets/exercises/detail/placeholder_*.webp}"
+      "includeFiles": "{src/db/seed/exercises.json,assets/exercises/detail/placeholder_*.webp,scripts/attribute-vocabulary.mjs}"
     }
   }
 }

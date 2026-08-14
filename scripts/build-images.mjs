@@ -7,11 +7,13 @@
  * Input  assets/masters/exercises/<slug>_1.png   1200x1200, PNG, alpha
  *        assets/masters/exercises/<slug>_2.png   same bounding box as _1
  *        assets/masters/mascot/<state>.png       1024x1024, PNG, alpha
+ *        assets/masters/attributes/<kind>/<slug>.png  1024x1024, PNG, alpha
  *
  * Output assets/exercises/detail/<slug>_1.webp   600x600  q85 + alpha
  *        assets/exercises/detail/<slug>_2.webp   600x600
  *        assets/exercises/thumb/<slug>.webp      150x150  (from frame 1)
  *        assets/mascot/<state>.webp              512x512
+ *        assets/attributes/<kind>/<slug>.webp    256x256
  *
  * Everything ships as lossy WebP q85 with a lossless alpha channel: ~half the
  * size of optimised PNG, natively decoded by expo-image, and unlike JPEG it
@@ -24,6 +26,8 @@ import { basename, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
+import { ATTRIBUTE_VALUES, attributeSlug } from './attribute-vocabulary.mjs';
+
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 const WEBP = { quality: 85, alphaQuality: 100, effort: 6 };
@@ -32,10 +36,11 @@ const SIZES = {
   detail: 600,
   thumb: 150,
   mascot: 512,
+  attribute: 256,
 };
 
 /** Masters must all be square so thumb and detail share one bounding box. */
-const MASTER_SIZE = { exercises: 1200, mascot: 1024 };
+const MASTER_SIZE = { exercises: 1200, mascot: 1024, attributes: 1024 };
 
 function listPngs(dir) {
   try {
@@ -111,6 +116,35 @@ for (const file of listPngs(mascotMasters)) {
   await checkSquare(src, MASTER_SIZE.mascot, warnings);
   bytes += await toWebp(src, resolve(ROOT, `assets/mascot/${basename(file, '.png')}.webp`), SIZES.mascot);
   count++;
+}
+
+// --- Attributes ------------------------------------------------------------
+for (const [kind, values] of Object.entries(ATTRIBUTE_VALUES)) {
+  const dir = resolve(ROOT, `assets/masters/attributes/${kind}`);
+  const files = listPngs(dir);
+  const expected = new Set(values.map(attributeSlug));
+
+  for (const file of files) {
+    const slug = basename(file, '.png');
+    if (!expected.has(slug)) {
+      warnings.push(`attributes/${kind}/${file}: not a ${kind} value in the seed, skipped`);
+      continue;
+    }
+    const src = resolve(dir, file);
+    await checkSquare(src, MASTER_SIZE.attributes, warnings);
+    bytes += await toWebp(
+      src,
+      resolve(ROOT, `assets/attributes/${kind}/${slug}.webp`),
+      SIZES.attribute,
+    );
+    count++;
+  }
+
+  for (const slug of expected) {
+    if (!files.includes(`${slug}.png`)) {
+      warnings.push(`attributes/${kind}: missing ${slug}.png`);
+    }
+  }
 }
 
 console.log(`Wrote ${count} WebP files, ${(bytes / 1024).toFixed(1)} KB total`);

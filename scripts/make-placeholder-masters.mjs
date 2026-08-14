@@ -19,6 +19,8 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
+import { ATTRIBUTE_VALUES, attributeSlug } from './attribute-vocabulary.mjs';
+
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 const INK = '#3B3226';
@@ -65,6 +67,26 @@ function catSvg({ size, armY, label, bar }) {
 </svg>`);
 }
 
+const ATTRIBUTE_TINT = {
+  level: '#7C6BF0',
+  category: '#4FA3C7',
+  equipment: '#E0913F',
+  muscle: '#D2626B',
+};
+
+function attributeSvg({ size, tint, initials, label }) {
+  return Buffer.from(`
+<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 1000 1000">
+  <rect x="120" y="120" width="760" height="760" rx="180" fill="${tint}" opacity="0.18"/>
+  <rect x="120" y="120" width="760" height="760" rx="180" fill="none" stroke="${tint}"
+        stroke-width="24" opacity="0.55"/>
+  <text x="500" y="560" text-anchor="middle" font-family="Helvetica, sans-serif"
+        font-size="300" font-weight="bold" fill="${tint}">${initials}</text>
+  <text x="500" y="700" text-anchor="middle" font-family="Helvetica, sans-serif"
+        font-size="66" fill="${INK}" opacity="0.4">${label}</text>
+</svg>`);
+}
+
 async function write(path, svg) {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, await sharp(svg).png().toBuffer());
@@ -92,5 +114,24 @@ await write(
   resolve(ROOT, 'assets/masters/mascot/celebrating.png'),
   catSvg({ size: 1024, armY: 250, label: 'MASCOT · celebrating', bar: false })
 );
+
+// Attribute icons — 1024px, one per value the exercise sheet's tiles can show.
+for (const [kind, values] of Object.entries(ATTRIBUTE_VALUES)) {
+  for (const value of values) {
+    const initials = value
+      .split(/\s+/)
+      .map((word) => word[0].toUpperCase())
+      .join('');
+    await write(
+      resolve(ROOT, `assets/masters/attributes/${kind}/${attributeSlug(value)}.png`),
+      attributeSvg({
+        size: 1024,
+        tint: ATTRIBUTE_TINT[kind],
+        initials,
+        label: value.toUpperCase(),
+      }),
+    );
+  }
+}
 
 console.log('\nNow run: npm run build:images');

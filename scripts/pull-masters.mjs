@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Blob store → assets/masters/exercises/ (see assets/masters/README.md).
+ * Blob store → assets/masters/{exercises,attributes}/ (see assets/masters/README.md).
  *
  *   npm run masters:pull
  *
@@ -17,8 +17,17 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const MASTERS = resolve(ROOT, 'assets/masters/exercises');
-const PREFIX = 'masters/exercises/';
+const MASTERS = resolve(ROOT, 'assets/masters');
+
+/** Each prefix maps a blob key suffix onto a path under assets/masters/. */
+const SETS = [
+  { prefix: 'masters/exercises/', dir: 'exercises', name: /^[A-Za-z0-9_]+_[12]\.png$/ },
+  {
+    prefix: 'masters/attributes/',
+    dir: 'attributes',
+    name: /^(level|category|equipment|muscle)\/[a-z_]+\.png$/,
+  },
+];
 
 const envFile = resolve(ROOT, '.env.local');
 if (!process.env.BLOB_READ_WRITE_TOKEN && existsSync(envFile)) {
@@ -32,39 +41,42 @@ if (!process.env.BLOB_READ_WRITE_TOKEN) {
   process.exit(1);
 }
 
-mkdirSync(MASTERS, { recursive: true });
-
-const blobs = [];
-let cursor;
-do {
-  const page = await list({ prefix: PREFIX, cursor, limit: 1000 });
-  blobs.push(...page.blobs);
-  cursor = page.hasMore ? page.cursor : undefined;
-} while (cursor);
-
 let written = 0;
 let skipped = 0;
+let total = 0;
 
-for (const blob of blobs) {
-  const name = blob.pathname.slice(PREFIX.length);
-  if (!/^[A-Za-z0-9_]+_[12]\.png$/.test(name)) {
-    console.warn(`skipping unexpected key ${blob.pathname}`);
-    continue;
+for (const set of SETS) {
+  const blobs = [];
+  let cursor;
+  do {
+    const page = await list({ prefix: set.prefix, cursor, limit: 1000 });
+    blobs.push(...page.blobs);
+    cursor = page.hasMore ? page.cursor : undefined;
+  } while (cursor);
+  total += blobs.length;
+
+  for (const blob of blobs) {
+    const name = blob.pathname.slice(set.prefix.length);
+    if (!set.name.test(name)) {
+      console.warn(`skipping unexpected key ${blob.pathname}`);
+      continue;
+    }
+    const file = resolve(MASTERS, set.dir, name);
+    if (existsSync(file) && statSync(file).mtimeMs >= Date.parse(blob.uploadedAt)) {
+      skipped += 1;
+      continue;
+    }
+    const res = await fetch(blob.url);
+    if (!res.ok) {
+      console.error(`${name}: ${res.status} ${res.statusText}`);
+      continue;
+    }
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, Buffer.from(await res.arrayBuffer()));
+    written += 1;
+    console.log(`  ${set.dir}/${name}`);
   }
-  const file = resolve(MASTERS, name);
-  if (existsSync(file) && statSync(file).mtimeMs >= Date.parse(blob.uploadedAt)) {
-    skipped += 1;
-    continue;
-  }
-  const res = await fetch(blob.url);
-  if (!res.ok) {
-    console.error(`${name}: ${res.status} ${res.statusText}`);
-    continue;
-  }
-  writeFileSync(file, Buffer.from(await res.arrayBuffer()));
-  written += 1;
-  console.log(`  ${name}`);
 }
 
-console.log(`\n${written} written, ${skipped} already current, ${blobs.length} in the store.`);
+console.log(`\n${written} written, ${skipped} already current, ${total} in the store.`);
 console.log('Run `npm run build:images` to regenerate the shipped WebP.');
