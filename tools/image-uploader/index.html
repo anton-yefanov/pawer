@@ -24,7 +24,21 @@
       <pre id="log" hidden></pre>
     </header>
 
-    <main id="list"></main>
+    <div class="columns">
+      <main id="list"></main>
+
+      <aside id="preview">
+        <div class="preview-bar">
+          <strong>In-app preview</strong>
+          <span class="spacer"></span>
+          <button id="preview-scheme" type="button">Dark</button>
+        </div>
+        <div id="phone" class="phone light">
+          <div class="nav"><span id="preview-title"></span></div>
+          <div class="screen" id="preview-screen"></div>
+        </div>
+      </aside>
+    </div>
 
     <div id="lightbox" hidden>
       <div class="lightbox-bar">

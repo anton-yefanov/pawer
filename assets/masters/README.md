@@ -56,7 +56,8 @@ silhouette is all the user has.
 `npm run images:web` serves a local page (`tools/image-uploader/`) listing every
 exercise beside its two upstream reference photos, with drop/paste slots that
 enforce the format table above before writing the master. It also shows how many
-exercises still need art and can run `build:images` for you.
+exercises still need art, previews the selected exercise in the app's detail
+layout (light and dark), and can run `build:images` for you.
 
 ## Placeholders
 

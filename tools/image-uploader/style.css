@@ -96,12 +96,145 @@ button:hover {
   font-size: 12px;
 }
 
+.columns {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 16px;
+}
+
 main {
   display: grid;
   gap: 10px;
   padding: 16px;
   max-width: 900px;
-  margin: 0 auto;
+  flex: 1;
+  min-width: 0;
+}
+
+#preview {
+  position: sticky;
+  top: 96px;
+  padding: 16px 16px 16px 0;
+  width: 422px;
+  flex: none;
+}
+
+@media (max-width: 1180px) {
+  #preview {
+    display: none;
+  }
+}
+
+.preview-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+  color: var(--dim);
+}
+
+.preview-bar .spacer {
+  flex: 1;
+}
+
+/* Everything below mirrors src/components/exercise-detail.tsx at a 390pt
+   viewport — same paddings, gaps and type scale, so a master lands here
+   exactly where it lands on device. */
+.phone {
+  width: 390px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px var(--line);
+  font: 500 16px/24px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+}
+
+.phone.light {
+  --surface: #ffffff;
+  --fg: #000000;
+  --fg-dim: #60646c;
+  --hairline: rgba(0, 0, 0, 0.15);
+}
+
+.phone.dark {
+  --surface: #1c1c1e;
+  --fg: #ffffff;
+  --fg-dim: #b0b4ba;
+  --hairline: rgba(255, 255, 255, 0.15);
+}
+
+.phone .nav {
+  background: var(--surface);
+  color: var(--fg);
+  border-bottom: 1px solid var(--hairline);
+  text-align: center;
+  font-size: 17px;
+  font-weight: 600;
+  padding: 12px 44px;
+}
+
+.phone .screen {
+  background: var(--surface);
+  color: var(--fg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: calc(100vh - 200px);
+  overflow: auto;
+}
+
+.phone .frames {
+  display: flex;
+  gap: 8px;
+}
+
+.phone .frames img {
+  flex: 1;
+  min-width: 0;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+
+.phone .facts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.phone .fact {
+  display: flex;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.phone .fact .k {
+  width: 90px;
+  flex: none;
+  color: var(--fg-dim);
+}
+
+.phone .fact .v {
+  flex: 1;
+  text-transform: capitalize;
+}
+
+.phone .step {
+  display: flex;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.phone .step .n {
+  width: 16px;
+  flex: none;
+  color: var(--fg-dim);
+}
+
+.card.selected {
+  border-color: var(--accent);
 }
 
 /* 203 cards x 4 photos is enough to stall first paint without this. */

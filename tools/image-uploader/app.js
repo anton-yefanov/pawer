@@ -9,12 +9,21 @@ const fileInput = document.getElementById('file-input');
 const lightbox = document.getElementById('lightbox');
 const lightboxImg = document.getElementById('lightbox-img');
 
+const phone = document.getElementById('phone');
+const previewScreen = document.getElementById('preview-screen');
+const previewTitle = document.getElementById('preview-title');
+const previewScheme = document.getElementById('preview-scheme');
+
 const COLLAPSED = 'pawer.uploader.collapsed';
 const collapsed = new Set(JSON.parse(localStorage.getItem(COLLAPSED) ?? '[]'));
 const saveCollapsed = () => localStorage.setItem(COLLAPSED, JSON.stringify([...collapsed]));
 
+const PREVIEW = 'pawer.uploader.preview';
+const SCHEME = 'pawer.uploader.scheme';
+
 let exercises = [];
 let focused = null;
+let previewId = localStorage.getItem(PREVIEW);
 
 const mascotUrl = (id, frame, mtime) => `/api/mascot/${id}/${frame}?v=${mtime}`;
 const isDone = (e) => e.mascot[0] !== null && e.mascot[1] !== null;
@@ -112,6 +121,8 @@ function card(e) {
   el.dataset.id = e.sourceId;
   el.dataset.state = stateOf(e);
   if (collapsed.has(e.sourceId)) el.classList.add('collapsed');
+  if (e.sourceId === previewId) el.classList.add('selected');
+  el.addEventListener('click', () => selectPreview(e.sourceId));
 
   const head = document.createElement('div');
   head.className = 'card-head';
@@ -145,6 +156,64 @@ function card(e) {
   return el;
 }
 
+function row(className, ...children) {
+  const el = document.createElement('div');
+  el.className = className;
+  el.append(...children);
+  return el;
+}
+
+function span(className, text) {
+  const el = document.createElement('span');
+  el.className = className;
+  el.textContent = text;
+  return el;
+}
+
+function selectPreview(id) {
+  previewId = id ?? null;
+  if (previewId) localStorage.setItem(PREVIEW, previewId);
+  list.querySelectorAll('.card.selected').forEach((c) => c.classList.remove('selected'));
+  list.querySelector(`.card[data-id="${id}"]`)?.classList.add('selected');
+  renderPreview();
+}
+
+/** Mirrors ExerciseDetail: the two frames, then the facts table, then steps. */
+function renderPreview() {
+  const e = exercises.find((x) => x.sourceId === previewId);
+  previewScreen.replaceChildren();
+  previewTitle.textContent = e?.name ?? '';
+  if (!e) return;
+
+  const frames = row('frames');
+  for (const frame of [1, 2]) {
+    const mtime = e.mascot[frame - 1];
+    const img = document.createElement('img');
+    img.src = mtime ? mascotUrl(e.sourceId, frame, mtime) : `/api/placeholder/${frame}`;
+    img.alt = `${e.name} frame ${frame}`;
+    frames.append(img);
+  }
+
+  const facts = row('facts');
+  const values = [
+    ['Equipment', e.equipment],
+    ['Primary', e.primaryMuscles.join(', ')],
+    ['Secondary', e.secondaryMuscles.join(', ')],
+    ['Level', e.level],
+    ['Mechanic', e.mechanic],
+    ['Force', e.force],
+    ['Category', e.category],
+  ];
+  for (const [label, value] of values) {
+    if (value) facts.append(row('fact', span('k', label), span('v', value)));
+  }
+
+  previewScreen.append(frames, facts);
+  for (const [i, step] of e.instructions.entries()) {
+    previewScreen.append(row('step', span('n', String(i + 1)), span('t', step)));
+  }
+}
+
 function render() {
   const q = search.value.trim().toLowerCase();
   list.replaceChildren();
@@ -154,6 +223,11 @@ function render() {
     list.append(card(e));
   }
   counter.textContent = `Counter: ${exercises.filter(isDone).length}/${exercises.length}`;
+  selectPreview(
+    list.querySelector(`.card[data-id="${previewId}"]`)
+      ? previewId
+      : (list.firstElementChild?.dataset.id ?? previewId),
+  );
 }
 
 function rerenderCard(e) {
@@ -161,6 +235,7 @@ function rerenderCard(e) {
   if (!old) return;
   if (onlyIncomplete.checked && isDone(e)) old.remove();
   else old.replaceWith(card(e));
+  if (e.sourceId === previewId) renderPreview();
   counter.textContent = `Counter: ${exercises.filter(isDone).length}/${exercises.length}`;
 }
 
@@ -280,6 +355,17 @@ buildBtn.addEventListener('click', async () => {
 
 log.addEventListener('click', () => (log.hidden = true));
 log.title = 'click to dismiss';
+
+function setScheme(scheme) {
+  phone.className = `phone ${scheme}`;
+  previewScheme.textContent = scheme === 'dark' ? 'Light' : 'Dark';
+  localStorage.setItem(SCHEME, scheme);
+}
+
+previewScheme.addEventListener('click', () =>
+  setScheme(phone.classList.contains('dark') ? 'light' : 'dark'),
+);
+setScheme(localStorage.getItem(SCHEME) ?? 'light');
 
 search.addEventListener('input', render);
 onlyIncomplete.addEventListener('change', render);

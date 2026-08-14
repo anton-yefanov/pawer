@@ -24,12 +24,18 @@ const MASTERS = resolve(ROOT, 'assets/masters/exercises');
 const MASTER_SIZE = 1200;
 
 const exercises = JSON.parse(readFileSync(resolve(ROOT, 'src/db/seed/exercises.json'), 'utf8')).map(
-  ({ sourceId, name, category, equipment, primaryMuscles }) => ({
+  ({ sourceId, name, category, equipment, force, level, mechanic, primaryMuscles, secondaryMuscles, instructions }) => ({
     sourceId,
     name,
     category,
     equipment,
     muscle: primaryMuscles[0] ?? null,
+    force,
+    level,
+    mechanic,
+    primaryMuscles,
+    secondaryMuscles,
+    instructions,
   }),
 );
 const byId = new Map(exercises.map((e) => [e.sourceId, e]));
@@ -53,6 +59,7 @@ const MIME = {
   '.css': 'text/css; charset=utf-8',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
+  '.webp': 'image/webp',
 };
 
 function sendJson(res, status, body) {
@@ -192,6 +199,12 @@ const server = createServer(async (req, res) => {
 
     if (path === '/api/build' && req.method === 'POST') {
       sendJson(res, 200, await runBuildImages());
+      return;
+    }
+
+    const placeholder = /^\/api\/placeholder\/([12])$/.exec(path);
+    if (placeholder && req.method === 'GET') {
+      sendFile(res, resolve(ROOT, `assets/exercises/detail/placeholder_${placeholder[1]}.webp`), 'max-age=86400');
       return;
     }
 
