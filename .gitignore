@@ -33,6 +33,9 @@ yarn-error.*
 # local env files
 .env*.local
 
+# Vercel (image uploader)
+.vercel/
+
 # typescript
 *.tsbuildinfo
 

@@ -24,7 +24,8 @@ npm run typecheck    # tsc --noEmit
 npm run db:generate      # drizzle-kit generate — after any src/db/schema.ts edit
 npm run build:seed       # rebuild src/db/seed/exercises.json from a free-exercise-db checkout
 npm run build:images     # assets/masters/**.png -> shipped webp (see §Assets)
-npm run images:web       # local-only page for filling assets/masters/exercises (tools/image-uploader)
+npm run images:web       # vercel dev — the deployed uploader for assets/masters/exercises (tools/image-uploader)
+npm run masters:pull     # Blob store -> assets/masters/exercises, before build:images
 ```
 
 There is no test runner in this project. Verification is `npm run typecheck && npm run lint` plus running the app.
@@ -65,7 +66,11 @@ Illustrations are never referenced by path from a screen. `src/lib/exercise-imag
 
 Shipped webp is generated from `assets/masters/` by `scripts/build-images.mjs` — edit masters and re-run, never edit `assets/exercises/` or `assets/mascot/` directly. Paired exercise frames must share one bounding box.
 
-`npm run images:web` (`tools/image-uploader/`) is a local dev page for filling the exercise masters: each of the 205 exercises next to its two upstream reference photos, with drop/paste slots that validate against the master spec before writing. Dev-only, never served publicly.
+`tools/image-uploader/` is the page for filling the exercise masters: each of the 205 exercises next to its two upstream reference photos, with drop/paste slots that validate against the master spec before writing. It is deployed to Vercel so more than one person can fill them in — a static page out of `tools/image-uploader/` plus serverless functions in `api/`, wired by `vercel.json`. `npm run images:web` is `vercel dev`, the same thing locally.
+
+Nothing about it touches the app bundle, but two of its constraints shape the code. Reference photos are **not** in this repo: they come straight from jsDelivr over the public `yuhonas/free-exercise-db`, so a missing photo is an `img` error, never a server-side existence check. Masters live in **Vercel Blob** under `masters/exercises/<sourceId>_<frame>.png` — the store is the shared drop box, git is still the source of truth, and `npm run masters:pull` is what closes that loop before `build:images`. `api/_lib.mjs` holds the master-spec validation; it is the deployed half of what `assets/masters/README.md` specifies.
+
+The site has no auth: anyone with the URL can overwrite or delete a master, so pull and commit regularly.
 
 ### UI conventions
 

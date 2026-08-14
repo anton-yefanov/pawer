@@ -53,11 +53,22 @@ silhouette is all the user has.
 
 ## Filling this directory
 
-`npm run images:web` serves a local page (`tools/image-uploader/`) listing every
-exercise beside its two upstream reference photos, with drop/paste slots that
-enforce the format table above before writing the master. It also shows how many
-exercises still need art, previews the selected exercise in the app's detail
-layout (light and dark), and can run `build:images` for you.
+`tools/image-uploader/` is a page listing every exercise beside its two upstream
+reference photos, with drop/paste slots that enforce the format table above
+before storing the master. It also shows how many exercises still need art and
+previews the selected exercise in the app's detail layout (light and dark).
+
+It is deployed to Vercel so several people can fill the set in together, which
+means uploads land in a Vercel Blob store rather than in this directory. Two
+commands close the loop:
+
+```bash
+npm run masters:pull    # Blob store -> assets/masters/exercises
+npm run build:images    # masters -> shipped WebP
+```
+
+`npm run images:web` (`vercel dev`) runs the same site locally; it still writes
+to the shared store, so pull before you build either way.
 
 ## Placeholders
 

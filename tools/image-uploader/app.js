@@ -3,8 +3,6 @@ const counter = document.getElementById('counter');
 const search = document.getElementById('search');
 const onlyIncomplete = document.getElementById('only-incomplete');
 const collapseAll = document.getElementById('collapse-all');
-const buildBtn = document.getElementById('build');
-const log = document.getElementById('log');
 const fileInput = document.getElementById('file-input');
 const lightbox = document.getElementById('lightbox');
 const lightboxImg = document.getElementById('lightbox-img');
@@ -25,7 +23,10 @@ let exercises = [];
 let focused = null;
 let previewId = localStorage.getItem(PREVIEW);
 
-const mascotUrl = (id, frame, mtime) => `/api/mascot/${id}/${frame}?v=${mtime}`;
+const REFERENCES = 'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises';
+
+const originalUrl = (id, index) => `${REFERENCES}/${id}/${index}.jpg`;
+const mascotUrl = (e, frame) => `${e.mascotUrl[frame - 1]}?v=${e.mascot[frame - 1]}`;
 const isDone = (e) => e.mascot[0] !== null && e.mascot[1] !== null;
 
 function stateOf(e) {
@@ -46,17 +47,21 @@ function cell(label, slot, mascot) {
 function originalSlot(e, index) {
   const slot = document.createElement('div');
   slot.className = 'slot original';
-  if (e.hasOriginal[index]) {
-    const img = document.createElement('img');
-    img.loading = 'lazy';
-    img.src = `/api/original/${e.sourceId}/${index}`;
-    img.alt = `${e.name} reference ${index + 1}`;
-    slot.append(img);
-    slot.addEventListener('click', () => openLightbox(img.src, img.alt));
-  } else {
+  const img = document.createElement('img');
+  img.loading = 'lazy';
+  // Anonymous CORS is what keeps the lightbox's canvas copy untainted.
+  img.crossOrigin = 'anonymous';
+  img.alt = `${e.name} reference ${index + 1}`;
+  // A 404 from the CDN is the only signal that upstream has no photo for this one.
+  img.addEventListener('error', () => {
+    slot.className = 'slot';
     slot.innerHTML = '<span class="empty">no reference photo</span>';
-    slot.classList.remove('original');
-  }
+  });
+  img.src = originalUrl(e.sourceId, index);
+  slot.append(img);
+  slot.addEventListener('click', () => {
+    if (img.isConnected && img.naturalWidth) openLightbox(img.src, img.alt);
+  });
   return slot;
 }
 
@@ -70,7 +75,7 @@ function mascotSlot(e, frame) {
   if (mtime) {
     const img = document.createElement('img');
     img.loading = 'lazy';
-    img.src = mascotUrl(e.sourceId, frame, mtime);
+    img.src = mascotUrl(e, frame);
     img.alt = `${e.name} mascot ${frame}`;
     const tools = document.createElement('div');
     tools.className = 'tools';
@@ -187,9 +192,8 @@ function renderPreview() {
 
   const frames = row('frames');
   for (const frame of [1, 2]) {
-    const mtime = e.mascot[frame - 1];
     const img = document.createElement('img');
-    img.src = mtime ? mascotUrl(e.sourceId, frame, mtime) : `/api/placeholder/${frame}`;
+    img.src = e.mascot[frame - 1] ? mascotUrl(e, frame) : `/api/placeholder/${frame}`;
     img.alt = `${e.name} frame ${frame}`;
     frames.append(img);
   }
@@ -255,10 +259,40 @@ function showError(id, frame, message) {
   grid.append(p);
 }
 
+const BODY_LIMIT = 4 * 1024 * 1024;
+
+/**
+ * Serverless functions reject request bodies over 4.5 MB, so an oversized file
+ * is re-encoded to the master canvas here first — the same resize the server
+ * would have done anyway, just early enough to fit through.
+ */
+function shrinkToMaster(file) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onerror = () => rej(new Error('could not decode the image'));
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 1200;
+      const scale = Math.min(1200 / img.width, 1200 / img.height);
+      const w = img.width * scale;
+      const h = img.height * scale;
+      canvas.getContext('2d').drawImage(img, (1200 - w) / 2, (1200 - h) / 2, w, h);
+      canvas.toBlob((blob) => (blob ? res(blob) : rej(new Error('encode failed'))), 'image/png');
+    };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 async function upload(e, frame, file) {
   const slot = slotFor(e.sourceId, frame);
   slot?.classList.add('busy');
   slot?.closest('.grid').querySelector('.error')?.remove();
+  try {
+    if (file.size > BODY_LIMIT) file = await shrinkToMaster(file);
+  } catch (err) {
+    showError(e.sourceId, frame, err.message);
+    return;
+  }
   const res = await fetch(`/api/mascot/${e.sourceId}/${frame}`, { method: 'PUT', body: file });
   const body = await res.json();
   if (!res.ok) {
@@ -266,6 +300,7 @@ async function upload(e, frame, file) {
     return;
   }
   e.mascot[frame - 1] = body.mtime;
+  e.mascotUrl[frame - 1] = body.url;
   e.warnings[frame - 1] = body.warnings?.length ? body.warnings : null;
   rerenderCard(e);
 }
@@ -273,6 +308,7 @@ async function upload(e, frame, file) {
 async function remove(e, frame) {
   await fetch(`/api/mascot/${e.sourceId}/${frame}`, { method: 'DELETE' });
   e.mascot[frame - 1] = null;
+  e.mascotUrl[frame - 1] = null;
   e.warnings[frame - 1] = null;
   rerenderCard(e);
 }
@@ -287,6 +323,7 @@ function pickFile(e, frame) {
 }
 
 function openLightbox(src, alt) {
+  lightboxImg.crossOrigin = 'anonymous';
   lightboxImg.src = src;
   lightboxImg.alt = alt;
   lightbox.hidden = false;
@@ -343,19 +380,6 @@ collapseAll.addEventListener('click', () => {
   render();
 });
 
-buildBtn.addEventListener('click', async () => {
-  buildBtn.disabled = true;
-  log.hidden = false;
-  log.textContent = 'Running scripts/build-images.mjs…';
-  const res = await fetch('/api/build', { method: 'POST' });
-  const { output } = await res.json();
-  log.textContent = output;
-  buildBtn.disabled = false;
-});
-
-log.addEventListener('click', () => (log.hidden = true));
-log.title = 'click to dismiss';
-
 function setScheme(scheme) {
   phone.className = `phone ${scheme}`;
   previewScheme.textContent = scheme === 'dark' ? 'Light' : 'Dark';
@@ -372,7 +396,7 @@ onlyIncomplete.addEventListener('change', render);
 
 (async () => {
   exercises = await (await fetch('/api/exercises')).json();
-  // Warnings describe an upload, not a file, so they live for the session only.
+  // Warnings describe an upload, not a stored file, so they live for the session only.
   for (const e of exercises) e.warnings = [null, null];
   collapseAll.textContent = collapsed.size >= exercises.length ? 'Expand all' : 'Collapse all';
   render();

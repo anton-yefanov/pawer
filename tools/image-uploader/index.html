@@ -14,14 +14,13 @@
         <label><input id="only-incomplete" type="checkbox" /> Only incomplete</label>
         <span class="spacer"></span>
         <button id="collapse-all" type="button">Collapse all</button>
-        <button id="build" type="button">Build WebP</button>
       </div>
       <p class="spec">
         Mascot frames must be <b>PNG</b>, <b>square</b>, <b>1200×1200</b>, on a
         <b>transparent</b> background — and both frames of a pair must share one bounding box.
         Any other square size is resized to 1200×1200 on upload.
+        To ship what is here, run <code>npm run masters:pull &amp;&amp; npm run build:images</code> locally.
       </p>
-      <pre id="log" hidden></pre>
     </header>
 
     <div class="columns">
