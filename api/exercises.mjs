@@ -8,12 +8,21 @@ export default async function handler(req, res) {
   }
 
   const uploaded = new Map();
-  let cursor;
-  do {
-    const page = await list({ prefix: BLOB_PREFIX, cursor, limit: 1000 });
-    for (const b of page.blobs) uploaded.set(b.pathname, b);
-    cursor = page.hasMore ? page.cursor : undefined;
-  } while (cursor);
+  try {
+    let cursor;
+    do {
+      const page = await list({ prefix: BLOB_PREFIX, cursor, limit: 1000 });
+      for (const b of page.blobs) uploaded.set(b.pathname, b);
+      cursor = page.hasMore ? page.cursor : undefined;
+    } while (cursor);
+  } catch (err) {
+    sendJson(res, 500, {
+      error: process.env.BLOB_READ_WRITE_TOKEN
+        ? `blob store unreachable: ${err.message}`
+        : 'BLOB_READ_WRITE_TOKEN is not set on this deployment — connect the Blob store to the project and redeploy',
+    });
+    return;
+  }
 
   const frameOf = (sourceId, frame) => uploaded.get(`${BLOB_PREFIX}${sourceId}_${frame}.png`) ?? null;
 

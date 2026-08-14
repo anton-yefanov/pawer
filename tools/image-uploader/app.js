@@ -294,9 +294,10 @@ async function upload(e, frame, file) {
     return;
   }
   const res = await fetch(`/api/mascot/${e.sourceId}/${frame}`, { method: 'PUT', body: file });
-  const body = await res.json();
+  const text = await res.text();
+  const body = text.startsWith('{') ? JSON.parse(text) : {};
   if (!res.ok) {
-    showError(e.sourceId, frame, body.error ?? 'upload failed');
+    showError(e.sourceId, frame, body.error ?? `upload failed with ${res.status}. ${text.trim()}`);
     return;
   }
   e.mascot[frame - 1] = body.mtime;
@@ -395,7 +396,13 @@ search.addEventListener('input', render);
 onlyIncomplete.addEventListener('change', render);
 
 (async () => {
-  exercises = await (await fetch('/api/exercises')).json();
+  const res = await fetch('/api/exercises');
+  if (!res.ok) {
+    counter.textContent = `Counter: —`;
+    list.innerHTML = `<p class="error">/api/exercises failed with ${res.status}. ${(await res.text()).trim()}</p>`;
+    return;
+  }
+  exercises = await res.json();
   // Warnings describe an upload, not a stored file, so they live for the session only.
   for (const e of exercises) e.warnings = [null, null];
   collapseAll.textContent = collapsed.size >= exercises.length ? 'Expand all' : 'Collapse all';
