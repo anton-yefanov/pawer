@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet } from 'react-native';
+import { Alert, ScrollView, StyleSheet } from 'react-native';
 
 import {
   Card,
@@ -13,8 +13,15 @@ import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAutofillWeightPreference } from '@/lib/autofill-weight';
 import { FINISH_REMINDER_OPTIONS, useFinishReminder } from '@/lib/finish-reminder';
+import { presentCustomerCenter, presentPaywall } from '@/lib/paywall';
+import { PRO_NAME, usePurchases } from '@/lib/purchases';
 import { THEME_PREFERENCES, useThemePreference } from '@/lib/theme-preference';
 import { useWeightUnit } from '@/lib/weight-unit';
+
+const RESTORE_MESSAGES = {
+  restored: `Your purchase is back. ${PRO_NAME} is unlocked.`,
+  nothing: 'No previous purchase was found on this Apple ID.',
+} as const;
 
 export default function SettingsScreen() {
   const theme = useTheme();
@@ -22,12 +29,42 @@ export default function SettingsScreen() {
   const unit = useWeightUnit();
   const { enabled: autofillWeight, setEnabled: setAutofillWeight } = useAutofillWeightPreference();
   const { option: finishReminder } = useFinishReminder();
+  const { isPro, restore } = usePurchases();
+
+  const onRestorePressed = async () => {
+    const result = await restore();
+    Alert.alert(
+      PRO_NAME,
+      result.status === 'error' ? result.message : RESTORE_MESSAGES[result.status],
+    );
+  };
 
   return (
     <ScrollView
       style={{ backgroundColor: theme.background }}
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic">
+      <SectionTitle>{PRO_NAME}</SectionTitle>
+      <Card>
+        {isPro ? (
+          <DisclosureRow
+            label="Manage Subscription"
+            detail="Billing, plan changes and refunds"
+            onPress={() => void presentCustomerCenter()}
+          />
+        ) : (
+          <>
+            <DisclosureRow
+              label={`Upgrade to ${PRO_NAME}`}
+              detail="Unlimited templates, full history, custom exercises"
+              onPress={() => void presentPaywall()}
+            />
+            <Separator />
+            <DisclosureRow label="Restore Purchases" onPress={() => void onRestorePressed()} />
+          </>
+        )}
+      </Card>
+
       <SectionTitle>Appearance</SectionTitle>
       <Card>
         <DisclosureRow

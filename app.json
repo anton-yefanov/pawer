@@ -44,6 +44,7 @@
         }
       ],
       "expo-sqlite",
+      "./plugins/with-no-aps-environment",
       [
         "expo-notifications",
         {
@@ -51,6 +52,12 @@
         }
       ]
     ],
+    "extra": {
+      "revenueCat": {
+        "ios": "test_YagBgAzFucASRGNovnWGGEfCpdW",
+        "android": "test_YagBgAzFucASRGNovnWGGEfCpdW"
+      }
+    },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

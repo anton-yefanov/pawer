@@ -2,7 +2,12 @@ import { router } from 'expo-router';
 import { Alert } from 'react-native';
 
 import { type CardAction } from '@/components/templates/card-menu';
-import { createFolder, deleteFolder, moveTemplateToFolder } from '@/lib/folder-actions';
+import {
+  createFolder,
+  deleteFolder,
+  moveTemplateToFolder,
+  renameFolder,
+} from '@/lib/folder-actions';
 import * as haptics from '@/lib/haptics';
 import { deleteTemplate, duplicateTemplate } from '@/lib/template-actions';
 
@@ -87,13 +92,13 @@ export function templateActions(
 
 export function folderActions(
   folder: { id: string; name: string },
-  { onRename, confirm = alertConfirm }: { onRename: () => void; confirm?: ConfirmDestructive },
+  { confirm = alertConfirm }: { confirm?: ConfirmDestructive } = {},
 ): CardAction[] {
   return [
     {
       label: 'Rename',
       systemImage: 'pencil',
-      onPress: onRename,
+      onPress: () => promptRenameFolder(folder),
     },
     {
       label: 'Customize',
@@ -117,6 +122,25 @@ export function folderActions(
         }),
     },
   ];
+}
+
+export function promptRenameFolder(folder: { id: string; name: string }): void {
+  Alert.prompt(
+    'Rename Folder',
+    undefined,
+    [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Rename',
+        onPress: (value?: string) => {
+          const name = value?.trim();
+          if (name) void renameFolder(folder.id, name);
+        },
+      },
+    ],
+    'plain-text',
+    folder.name,
+  );
 }
 
 export function promptNewFolder(): void {

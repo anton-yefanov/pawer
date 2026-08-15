@@ -2,6 +2,14 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 const REST_CHANNEL_ID = 'rest-timer';
+
+/**
+ * One fixed identifier for every rest ping, so a new one replaces the pending
+ * *and* the already-delivered banner instead of piling a second "Rest over" on
+ * the lock screen for a set the user has long since finished.
+ */
+const REST_NOTIFICATION_ID = 'rest-timer';
+
 export const REMINDER_CHANNEL_ID = 'workout-reminders';
 
 export const FINISH_REMINDER_DATA_TYPE = 'finish-reminder';
@@ -66,11 +74,13 @@ export async function scheduleNotification(input: {
   channelId: string;
   interruptionLevel: 'active' | 'timeSensitive';
   data?: Record<string, unknown>;
+  identifier?: string;
 }): Promise<string | null> {
   if (!(await ensureNotificationPermission())) return null;
 
   try {
     return await Notifications.scheduleNotificationAsync({
+      identifier: input.identifier,
       content: {
         title: input.title,
         body: input.body,
@@ -90,14 +100,33 @@ export async function scheduleNotification(input: {
   }
 }
 
-export function scheduleRestNotification(endsAt: number, body: string): Promise<string | null> {
+export async function scheduleRestNotification(
+  endsAt: number,
+  body: string
+): Promise<string | null> {
+  await dismissRestNotification();
   return scheduleNotification({
     title: 'Rest over',
     body,
     date: endsAt,
     channelId: REST_CHANNEL_ID,
     interruptionLevel: 'timeSensitive',
+    identifier: REST_NOTIFICATION_ID,
   });
+}
+
+export async function cancelRestNotification(id: string | null): Promise<void> {
+  await cancelScheduledNotification(id ?? REST_NOTIFICATION_ID);
+  await dismissRestNotification();
+}
+
+async function dismissRestNotification(): Promise<void> {
+  if (Platform.OS === 'web') return;
+  try {
+    await Notifications.dismissNotificationAsync(REST_NOTIFICATION_ID);
+  } catch {
+    // Nothing delivered under that id; there is nothing to clear.
+  }
 }
 
 export async function cancelScheduledNotification(id: string | null): Promise<void> {

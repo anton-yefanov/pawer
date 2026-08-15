@@ -32,6 +32,8 @@ import * as haptics from '@/lib/haptics';
 import { mascotImage } from '@/lib/mascot-images';
 import type { LoggedSet, LoggingActions } from '@/lib/logging-model';
 import { move, sortBy } from '@/lib/order';
+import { presentFirstWorkoutPaywall } from '@/lib/pro-gates';
+import { usePro } from '@/lib/purchases';
 import { DEFAULT_REST_SECONDS, useRestTimer } from '@/lib/rest-timer';
 import {
   addSet,
@@ -92,6 +94,7 @@ type Props = {
 export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone }: Props) {
   const theme = useTheme();
   const unit = useWeightUnit();
+  const isPro = usePro();
   const rest = useRestTimer();
 
   const [phase, setPhase] = useState<'logging' | 'summary'>('logging');
@@ -227,7 +230,12 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
           sets={sets ?? []}
           personalRecords={records ?? []}
           unit={unit}
-          onDone={onDone}
+          // Presented over the summary rather than after it: a modal raised
+          // into a dismissing screen is a modal iOS drops on the floor.
+          onDone={async () => {
+            await presentFirstWorkoutPaywall(isPro);
+            onDone();
+          }}
         />
       </View>
     );

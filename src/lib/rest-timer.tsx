@@ -4,7 +4,7 @@ import { db } from '@/db/client';
 import { getSetting, setSetting } from '@/db/seed';
 import { useAppStateActive } from '@/hooks/use-app-state-active';
 import * as haptics from '@/lib/haptics';
-import { cancelScheduledNotification, scheduleRestNotification } from '@/lib/notifications';
+import { cancelRestNotification, scheduleRestNotification } from '@/lib/notifications';
 
 const STATE_KEY = 'rest_timer';
 
@@ -90,7 +90,7 @@ export function RestTimerProvider({ children }: { children: ReactNode }) {
     endsAt: rest?.endsAt ?? null,
 
     start: async ({ setId, seconds, exerciseName }) => {
-      await cancelScheduledNotification(rest?.notificationId ?? null);
+      await cancelRestNotification(rest?.notificationId ?? null);
       if (seconds <= 0) {
         setRest(null);
         await clearStored();
@@ -106,7 +106,7 @@ export function RestTimerProvider({ children }: { children: ReactNode }) {
 
     adjust: async (deltaSeconds) => {
       if (!rest) return;
-      await cancelScheduledNotification(rest.notificationId);
+      await cancelRestNotification(rest.notificationId);
       const endsAt = Math.max(Date.now(), rest.endsAt + deltaSeconds * 1000);
       const notificationId = await scheduleRestNotification(endsAt, 'Next set');
       const next = {
@@ -120,7 +120,7 @@ export function RestTimerProvider({ children }: { children: ReactNode }) {
     },
 
     cancel: async () => {
-      await cancelScheduledNotification(rest?.notificationId ?? null);
+      await cancelRestNotification(rest?.notificationId ?? null);
       setRest(null);
       await clearStored();
     },

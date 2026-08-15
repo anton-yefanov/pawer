@@ -13,6 +13,8 @@ import { useTemplateDrag } from '@/components/templates/template-drag';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { allowNewTemplate } from '@/lib/pro-gates';
+import { usePro } from '@/lib/purchases';
 
 const COLUMNS = 2;
 const GAP = Spacing.two;
@@ -156,6 +158,11 @@ function slotOffset(index: number, cellWidth: number, cellHeight: number) {
 /** Same Host-sizing rules as CardMenu — see the comment there. */
 function AddMenu() {
   const theme = useTheme();
+  const isPro = usePro();
+
+  const newTemplate = async () => {
+    if (await allowNewTemplate(isPro)) router.push('/template/new');
+  };
 
   return (
     <GlassCircle accessibilityLabel="Add">
@@ -174,7 +181,7 @@ function AddMenu() {
           <Button
             label="New Template"
             systemImage="doc.badge.plus"
-            onPress={() => router.push('/template/new')}
+            onPress={() => void newTemplate()}
           />
           <Button label="New Folder" systemImage="folder.badge.plus" onPress={promptNewFolder} />
         </Menu>

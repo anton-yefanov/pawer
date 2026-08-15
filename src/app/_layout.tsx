@@ -8,6 +8,7 @@ import { DatabaseProvider } from '@/db/provider';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AutofillWeightProvider } from '@/lib/autofill-weight';
 import { FinishReminderProvider } from '@/lib/finish-reminder';
+import { PurchasesProvider } from '@/lib/purchases';
 import { RestTimerProvider } from '@/lib/rest-timer';
 import { ThemePreferenceProvider } from '@/lib/theme-preference';
 import { WeightUnitProvider } from '@/lib/weight-unit';
@@ -18,15 +19,17 @@ export default function TabLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <DatabaseProvider>
-        <ThemePreferenceProvider>
-          <WeightUnitProvider>
-            <AutofillWeightProvider>
-              <FinishReminderProvider>
-                <ThemedApp />
-              </FinishReminderProvider>
-            </AutofillWeightProvider>
-          </WeightUnitProvider>
-        </ThemePreferenceProvider>
+        <PurchasesProvider>
+          <ThemePreferenceProvider>
+            <WeightUnitProvider>
+              <AutofillWeightProvider>
+                <FinishReminderProvider>
+                  <ThemedApp />
+                </FinishReminderProvider>
+              </AutofillWeightProvider>
+            </WeightUnitProvider>
+          </ThemePreferenceProvider>
+        </PurchasesProvider>
       </DatabaseProvider>
     </GestureHandlerRootView>
   );
