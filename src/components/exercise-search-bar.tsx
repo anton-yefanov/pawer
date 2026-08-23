@@ -1,9 +1,7 @@
-import { GlassContainer, GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { router, useFocusEffect, type Href } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
 import { useCallback, useRef } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import Animated, {
+import {
   Easing,
   Extrapolation,
   interpolate,
@@ -14,7 +12,15 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ExerciseFacetMenu } from '@/components/exercise-filter-menu';
+import {
+  AnimatedFloatingSurface,
+  FloatingContainer,
+  FloatingSurface,
+  useActionColors,
+} from '@/components/floating-surface';
+import { Icon } from '@/components/icon';
 import { Spacing } from '@/constants/theme';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { useTheme } from '@/hooks/use-theme';
 import type { ExerciseFilters, FacetMenu } from '@/lib/exercise-filters';
 import * as haptics from '@/lib/haptics';
@@ -22,10 +28,6 @@ import * as haptics from '@/lib/haptics';
 const SEARCH_BAR_HEIGHT = 48;
 const TOP_GAP = Spacing.one;
 const GAP = Spacing.two;
-
-/** Both facet menus in one capsule: two square halves plus the rule between
- *  them. Anything narrower clips a half. */
-const FILTER_PAIR_WIDTH = SEARCH_BAR_HEIGHT * 2 + StyleSheet.hairlineWidth;
 
 /** Room for "Cancel" at 17pt plus its leading gap. Fixed so the label never
  *  reflows mid-animation the way a measured width would. */
@@ -52,8 +54,6 @@ const TIMING = {
  */
 const MIDPOINT = 0.5;
 
-const AnimatedGlassView = Animated.createAnimatedComponent(GlassView);
-
 /**
  * Height the row occupies *below* the safe-area inset.
  *
@@ -73,34 +73,41 @@ export const SEARCH_BAR_CLEARANCE = TOP_GAP + SEARCH_BAR_HEIGHT;
  * edge. Building the row gives us full-width layout at the cost of
  * reimplementing focus and clear behaviour, which `TextInput` mostly covers.
  *
- * Glass comes from expo-glass-effect. `GlassContainer` lets the two capsules
- * merge as they approach each other, the way system glass elements do, and
- * `isInteractive` is what gives each capsule the liquid-glass press response —
- * without it the glass is inert under a finger.
+ * The capsules are `FloatingSurface`, which is liquid glass on iOS — merging as
+ * they approach each other, the way system glass elements do — and an elevated
+ * Material surface on Android, where the "+" is also a FAB.
  *
- * Focusing runs the system's search transition: the filter pair and the "+"
+ * Focusing runs the system's search transition: back, equipment and the "+"
  * collapse into the field (glass merging as it goes), the field takes the freed
  * width, and Cancel slides in. Driving it from a shared value keeps the whole thing on
  * the UI thread, so it doesn't stutter behind the keyboard animation.
  */
 export function ExerciseSearchBar({
   filters,
-  muscles,
   equipment,
   onChange,
   onFocusChange,
   onFilterOpenChange,
   focused,
+  showBack,
+  onBack,
+  placeholder,
   newExerciseHref,
   topInset,
 }: {
   filters: ExerciseFilters;
-  muscles: FacetMenu;
   equipment: FacetMenu;
   onChange: (next: ExerciseFilters) => void;
   onFocusChange: (focused: boolean) => void;
   onFilterOpenChange: (open: boolean) => void;
   focused: boolean;
+  /** True once the exercise list is showing — the back capsule takes the
+   *  leading slot and clears every filter on the way out. */
+  showBack: boolean;
+  onBack: () => void;
+  /** Names what a query would search — the group being browsed, where there is
+   *  one. The only thing on screen that says which group that is. */
+  placeholder: string;
   /** Where "+" leads. Each stack registers its own copy of the sheet, so the
    *  route differs per host screen. */
   newExerciseHref: Href;
@@ -110,6 +117,7 @@ export function ExerciseSearchBar({
 }) {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
+  const action = useActionColors();
   const input = useRef<TextInput>(null);
 
   // Leaving the screen gives up the field for good. Without this UIKit restores
@@ -127,10 +135,6 @@ export function ExerciseSearchBar({
     }, [onFocusChange])
   );
 
-  const fallback = isLiquidGlassAvailable()
-    ? undefined
-    : { backgroundColor: theme.surface };
-
   // 0 = resting, 1 = focused. `useDerivedValue` keeps the animation in sync
   // with the prop, so programmatic blurs animate the same as user taps.
   const progress = useDerivedValue(() => withTiming(focused ? 1 : 0, TIMING), [focused]);
@@ -138,16 +142,26 @@ export function ExerciseSearchBar({
   // Width and opacity share an input range, so a capsule is fully faded at the
   // exact moment it stops taking space — no sliver, no empty slot. Every
   // interpolation is CLAMPed; unclamped, the ends produce negative widths.
-  const filtersStyle = useAnimatedStyle(() => {
+  const backStyle = useAnimatedStyle(() => {
     const out = interpolate(progress.value, [0, MIDPOINT], [1, 0], Extrapolation.CLAMP);
     return {
-      width: FILTER_PAIR_WIDTH * out,
+      width: SEARCH_BAR_HEIGHT * out,
       // Swallows the row gap along with the capsule, so the field doesn't stop
       // short of the leading edge.
       marginRight: -GAP * (1 - out),
       opacity: out,
       // As a style rather than a prop: the native glass view doesn't forward
       // the `pointerEvents` prop, so a collapsed capsule would still take taps.
+      pointerEvents: out < 1 ? 'none' : 'auto',
+    };
+  });
+
+  const equipmentStyle = useAnimatedStyle(() => {
+    const out = interpolate(progress.value, [0, MIDPOINT], [1, 0], Extrapolation.CLAMP);
+    return {
+      width: SEARCH_BAR_HEIGHT * out,
+      marginLeft: -GAP * (1 - out),
+      opacity: out,
       pointerEvents: out < 1 ? 'none' : 'auto',
     };
   });
@@ -173,26 +187,52 @@ export function ExerciseSearchBar({
 
   return (
     <View style={[styles.container, { top: (topInset ?? insets.top) + TOP_GAP }]}>
-      <GlassContainer spacing={GAP} style={styles.glassRow}>
-        <AnimatedGlassView isInteractive style={[styles.filters, fallback, filtersStyle]}>
-          <View style={styles.clip}>
-            <View style={styles.filterContent}>
-              <ExerciseFacetMenu
-                title="Muscle"
-                anyLabel="Any muscle"
-                systemName="figure.strengthtraining.traditional"
-                menu={muscles}
-                value={filters.muscle}
-                onChange={(muscle) => onChange({ ...filters, muscle })}
-                onOpenChange={onFilterOpenChange}
-                restingTint={theme.text}
-                size={SEARCH_BAR_HEIGHT}
-              />
+      <FloatingContainer spacing={GAP} style={styles.glassRow}>
+        {/* Mounted only while it's needed rather than animated in from zero
+            width: a glass view laid out at width 0 never draws its effect, so
+            an animated-in capsule stays an unbacked glyph for good. */}
+        {showBack && (
+          <AnimatedFloatingSurface style={[styles.capsule, backStyle]}>
+            <View style={styles.clip}>
+              <Pressable
+                style={styles.capsuleContent}
+                onPress={() => {
+                  haptics.tap();
+                  onBack();
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Back to muscle groups">
+                <Icon name="chevron.left" size={20} tintColor={theme.text} />
+              </Pressable>
             </View>
-            {/* Inset top and bottom so the rule reads as a separator between two
-                segments rather than a cut through the capsule. */}
-            <View style={[styles.divider, { backgroundColor: theme.textSecondary }]} />
-            <View style={styles.filterContent}>
+          </AnimatedFloatingSurface>
+        )}
+
+        <FloatingSurface style={styles.field}>
+          <Pressable
+            style={styles.fieldContent}
+            onPress={() => input.current?.focus()}
+            accessibilityRole="search">
+            <Icon name="magnifyingglass" size={20} tintColor={theme.textSecondary} />
+            <ThemedTextInput
+              ref={input}
+              value={filters.search}
+              onChangeText={(search) => onChange({ ...filters, search })}
+              onFocus={() => onFocusChange(true)}
+              onBlur={() => onFocusChange(false)}
+              placeholder={placeholder}
+              style={styles.input}
+              returnKeyType="search"
+              clearButtonMode="while-editing"
+              autoCorrect={false}
+              autoCapitalize="none"
+            />
+          </Pressable>
+        </FloatingSurface>
+
+        <AnimatedFloatingSurface style={[styles.capsule, equipmentStyle]}>
+          <View style={styles.clip}>
+            <View style={styles.capsuleContent}>
               <ExerciseFacetMenu
                 title="Equipment"
                 anyLabel="Any equipment"
@@ -206,46 +246,23 @@ export function ExerciseSearchBar({
               />
             </View>
           </View>
-        </AnimatedGlassView>
+        </AnimatedFloatingSurface>
 
-        <GlassView isInteractive style={[styles.field, fallback]}>
-          <Pressable
-            style={styles.fieldContent}
-            onPress={() => input.current?.focus()}
-            accessibilityRole="search">
-            <SymbolView name="magnifyingglass" size={20} tintColor={theme.textSecondary} />
-            <TextInput
-              ref={input}
-              value={filters.search}
-              onChangeText={(search) => onChange({ ...filters, search })}
-              onFocus={() => onFocusChange(true)}
-              onBlur={() => onFocusChange(false)}
-              placeholder="Search"
-              placeholderTextColor={theme.textSecondary}
-              style={[styles.input, { color: theme.text }]}
-              returnKeyType="search"
-              clearButtonMode="while-editing"
-              autoCorrect={false}
-              autoCapitalize="none"
-            />
-          </Pressable>
-        </GlassView>
-
-        <AnimatedGlassView isInteractive style={[styles.plus, fallback, plusStyle]}>
+        <AnimatedFloatingSurface tintColor={action.tintColor} style={[styles.plus, plusStyle]}>
           <View style={styles.clip}>
             <Pressable
-              style={styles.filterContent}
+              style={styles.capsuleContent}
               onPress={() => {
                 haptics.tap();
                 router.push(newExerciseHref);
               }}
               accessibilityRole="button"
               accessibilityLabel="New exercise">
-              <SymbolView name="plus" size={22} tintColor={theme.text} />
+              <Icon name="plus" size={22} tintColor={action.contentColor} />
             </Pressable>
           </View>
-        </AnimatedGlassView>
-      </GlassContainer>
+        </AnimatedFloatingSurface>
+      </FloatingContainer>
     </View>
   );
 }
@@ -269,7 +286,7 @@ const styles = StyleSheet.create({
   // draws *outside* those bounds — clipped, the glass deforms inside an invisible
   // box under a finger instead of flowing past it. The clipping the collapse
   // animation needs happens one level in, on `clip`.
-  filters: {
+  capsule: {
     height: SEARCH_BAR_HEIGHT,
     borderRadius: SEARCH_BAR_HEIGHT / 2,
   },
@@ -280,16 +297,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  divider: {
-    width: StyleSheet.hairlineWidth,
-    height: SEARCH_BAR_HEIGHT - Spacing.four,
-    opacity: 0.3,
-  },
   plus: {
     height: SEARCH_BAR_HEIGHT,
     borderRadius: SEARCH_BAR_HEIGHT / 2,
   },
-  filterContent: {
+  capsuleContent: {
     width: SEARCH_BAR_HEIGHT,
     height: SEARCH_BAR_HEIGHT,
     alignItems: 'center',

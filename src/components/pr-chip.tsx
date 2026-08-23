@@ -1,6 +1,6 @@
-import { SymbolView } from 'expo-symbols';
 import { StyleSheet, View } from 'react-native';
 
+import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -10,7 +10,7 @@ export function PrChip({ label }: { label: string }) {
 
   return (
     <View style={[styles.chip, { backgroundColor: theme.goldMuted }]}>
-      <SymbolView name="trophy.fill" size={12} tintColor={theme.gold} />
+      <Icon name="trophy.fill" size={12} tintColor={theme.gold} />
       <ThemedText type="small" themeColor="gold" style={styles.label}>
         {label}
       </ThemedText>

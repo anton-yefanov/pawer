@@ -25,7 +25,7 @@ export function ConfirmAlert({
 }: {
   open: boolean;
   title: string;
-  message: string;
+  message?: string;
   confirmLabel: string;
   confirmRole?: 'default' | 'destructive';
   dismissLabel?: string;
@@ -55,9 +55,11 @@ export function ConfirmAlert({
           <Button role={confirmRole} label={confirmLabel} onPress={onConfirm} />
           <Button role="cancel" label={dismissLabel} onPress={onDismiss} />
         </Alert.Actions>
-        <Alert.Message>
-          <Text>{message}</Text>
-        </Alert.Message>
+        {message != null && (
+          <Alert.Message>
+            <Text>{message}</Text>
+          </Alert.Message>
+        )}
       </Alert>
     </Host>
   );

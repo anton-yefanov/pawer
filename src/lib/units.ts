@@ -55,6 +55,12 @@ export function formatTonnage(kg: number, unit: WeightUnit): string {
   return `${Math.round(value).toLocaleString()} ${unit}`;
 }
 
+/** Splits `1,240 kg` into its parts so a display can set the unit apart. */
+export function splitMeasure(text: string): { value: string; unit?: string } {
+  const match = /^(.*\S)\s([a-z]+)$/i.exec(text);
+  return match ? { value: match[1], unit: match[2] } : { value: text };
+}
+
 /** `2:00`, or `1:20:00` once a duration runs past the hour. */
 export function formatDuration(seconds: number): string {
   const s = Math.max(0, Math.round(seconds));

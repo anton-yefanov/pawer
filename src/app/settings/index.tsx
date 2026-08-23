@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Alert, ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 
 import {
   Card,
@@ -13,6 +13,7 @@ import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAutofillWeightPreference } from '@/lib/autofill-weight';
 import { FINISH_REMINDER_OPTIONS, useFinishReminder } from '@/lib/finish-reminder';
+import { notice } from '@/lib/notice';
 import { presentCustomerCenter, presentPaywall } from '@/lib/paywall';
 import { PRO_NAME, usePurchases } from '@/lib/purchases';
 import { THEME_PREFERENCES, useThemePreference } from '@/lib/theme-preference';
@@ -20,7 +21,7 @@ import { useWeightUnit } from '@/lib/weight-unit';
 
 const RESTORE_MESSAGES = {
   restored: `Your purchase is back. ${PRO_NAME} is unlocked.`,
-  nothing: 'No previous purchase was found on this Apple ID.',
+  nothing: 'No previous purchase was found on this account.',
 } as const;
 
 export default function SettingsScreen() {
@@ -33,10 +34,10 @@ export default function SettingsScreen() {
 
   const onRestorePressed = async () => {
     const result = await restore();
-    Alert.alert(
-      PRO_NAME,
-      result.status === 'error' ? result.message : RESTORE_MESSAGES[result.status],
-    );
+    notice({
+      title: PRO_NAME,
+      message: result.status === 'error' ? result.message : RESTORE_MESSAGES[result.status],
+    });
   };
 
   return (

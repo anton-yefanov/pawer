@@ -84,9 +84,12 @@ export const Fonts = Platform.select({
     mono: 'ui-monospace',
   },
   default: {
-    sans: 'normal',
+    /** Bundled per-weight by the `expo-font` plugin in `app.json`, which is what
+     *  lets `fontWeight` resolve against it; the system face is Roboto. */
+    sans: 'Nunito',
     serif: 'serif',
-    rounded: 'normal',
+    /** Android ships no rounded face, so the same bundled family stands in. */
+    rounded: 'Nunito',
     mono: 'monospace',
   },
   web: {
@@ -105,6 +108,18 @@ export const Spacing = {
   four: 24,
   five: 32,
   six: 64,
+} as const;
+
+/**
+ * What lifts a floating control off the page where there is no glass to refract
+ * it — soft and wide, rather than Material's tight `elevation`.
+ *
+ * Dark carries no shadow at all: black on a black page draws nothing, and a
+ * `surface` lighter than the `background` is already the whole affordance.
+ */
+export const Raised = {
+  light: { boxShadow: '0 4px 14px rgba(0, 0, 0, 0.1)' },
+  dark: {},
 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;

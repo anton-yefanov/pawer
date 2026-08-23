@@ -1,7 +1,7 @@
-import { SymbolView } from 'expo-symbols';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -73,7 +73,7 @@ export function DisclosureRow({
           {value}
         </ThemedText>
       )}
-      {chevron && <SymbolView name="chevron.right" size={16} tintColor={theme.textSecondary} />}
+      {chevron && <Icon name="chevron.right" size={16} tintColor={theme.textSecondary} />}
     </Pressable>
   );
 }
@@ -109,7 +109,7 @@ export function PickRow({
           </ThemedText>
         )}
       </View>
-      {selected && <SymbolView name="checkmark" size={20} tintColor={theme.accent} />}
+      {selected && <Icon name="checkmark" size={20} tintColor={theme.accent} />}
     </Pressable>
   );
 }

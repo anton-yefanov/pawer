@@ -1,14 +1,16 @@
-import { SymbolView } from 'expo-symbols';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable as GesturePressable } from 'react-native-gesture-handler';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 
+import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { DurationCell } from '@/components/workout/duration-cell';
 import { NoteInput } from '@/components/workout/note-input';
 import { SET_TYPE_CELL, SetTypeMenu } from '@/components/workout/set-type-menu';
 import { Spacing } from '@/constants/theme';
 import { useDebouncedWrite } from '@/hooks/use-debounced-write';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { useTheme } from '@/hooks/use-theme';
 import { useAutofillWeight } from '@/lib/autofill-weight';
 import * as haptics from '@/lib/haptics';
@@ -68,6 +70,14 @@ export function SetRow({ set, label, previous, unit, trackingType, actions, onCo
   const [flagged, setFlagged] = useState(false);
   const flagTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [noteOpen, setNoteOpen] = useState(() => (set.notes ?? '') !== '');
+  /**
+   * A swipe action's button and glyph cost more to mount than the row they sit
+   * behind, and a session mounts one pair per set — enough to hold the logger's
+   * first commit, and the sheet it opens in, for a second. The coloured strip
+   * still mounts with the row so the Swipeable measures a stable width; only its
+   * contents wait for a drag to begin.
+   */
+  const [swiped, setSwiped] = useState(false);
   // Blurring the input on removal fires onEndEditing with the text still in it,
   // which would write the note straight back.
   const removingNote = useRef(false);
@@ -185,7 +195,7 @@ export function SetRow({ set, label, previous, unit, trackingType, actions, onCo
             },
             pressed && styles.pressed,
           ]}>
-          <SymbolView
+          <Icon
             name="checkmark"
             size={16}
             tintColor={
@@ -234,45 +244,48 @@ export function SetRow({ set, label, previous, unit, trackingType, actions, onCo
         rightThreshold={40}
         overshootLeft={false}
         overshootRight={false}
+        onSwipeableOpenStartDrag={() => setSwiped(true)}
         renderLeftActions={(_progress, _translation, swipeable) => (
-          <Pressable
-            onPress={() => {
-              haptics.tap();
-              swipeable.close();
-              toggleNote();
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={hasNote ? 'Remove note' : 'Add note'}
-            style={({ pressed }) => [
-              styles.action,
-              { backgroundColor: theme.accent },
-              pressed && styles.pressed,
-            ]}>
-            <SymbolView
-              name={hasNote ? 'text.badge.minus' : 'note.text'}
-              size={18}
-              tintColor={theme.accentContent}
-            />
-          </Pressable>
+          <View style={[styles.action, { backgroundColor: theme.accent }]}>
+            {swiped && (
+              // A swipe action has to be gesture-handler's Pressable: on Android
+              // the RN one never sees the touch inside a Swipeable.
+              <GesturePressable
+                onPress={() => {
+                  haptics.tap();
+                  swipeable.close();
+                  toggleNote();
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={hasNote ? 'Remove note' : 'Add note'}
+                style={({ pressed }) => [styles.actionFill, pressed && styles.pressed]}>
+                <Icon
+                  name={hasNote ? 'text.badge.minus' : 'note.text'}
+                  size={18}
+                  tintColor={theme.accentContent}
+                />
+              </GesturePressable>
+            )}
+          </View>
         )}
         renderRightActions={(_progress, _translation, swipeable) => (
-          <Pressable
-            // Deleting a set has no confirmation step, so the buzz is the only
-            // acknowledgement the swipe gets.
-            onPress={() => {
-              haptics.warn();
-              swipeable.close();
-              actions.deleteSet(set.id);
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Delete set"
-            style={({ pressed }) => [
-              styles.action,
-              { backgroundColor: theme.danger },
-              pressed && styles.pressed,
-            ]}>
-            <SymbolView name="trash" size={18} tintColor={theme.accentContent} />
-          </Pressable>
+          <View style={[styles.action, { backgroundColor: theme.danger }]}>
+            {swiped && (
+              <GesturePressable
+                // Deleting a set has no confirmation step, so the buzz is the
+                // only acknowledgement the swipe gets.
+                onPress={() => {
+                  haptics.warn();
+                  swipeable.close();
+                  actions.deleteSet(set.id);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Delete set"
+                style={({ pressed }) => [styles.actionFill, pressed && styles.pressed]}>
+                <Icon name="trash" size={18} tintColor={theme.accentContent} />
+              </GesturePressable>
+            )}
+          </View>
         )}>
         {row}
       </ReanimatedSwipeable>
@@ -363,15 +376,18 @@ function NumericCell({
 } & React.ComponentProps<typeof TextInput>) {
   const theme = useTheme();
   const [text, setText] = useState(value);
+  const [editing, setEditing] = useState(false);
   const focused = useRef(false);
+  const input = useRef<TextInput>(null);
   const write = useDebouncedWrite(onCommit);
 
   useEffect(() => {
     if (!focused.current) setText(value);
   }, [value]);
 
-  return (
-    <TextInput
+  const field = (
+    <ThemedTextInput
+      ref={input}
       value={text}
       onChangeText={(next) => {
         setText(next);
@@ -380,13 +396,17 @@ function NumericCell({
       }}
       onFocus={() => {
         focused.current = true;
+        setEditing(true);
       }}
       onEndEditing={() => {
         focused.current = false;
+        setEditing(false);
         write.flush();
       }}
-      placeholder={placeholder}
-      placeholderTextColor={theme.textSecondary}
+      // Android's EditText draws the caret at the end of the *hint* when the
+      // field is empty and centred, which parks it against the right edge of
+      // the cell. Dropping the hint while focused is what centres it.
+      placeholder={Platform.OS === 'android' && editing ? '' : placeholder}
       selectTextOnFocus
       textAlign="center"
       style={[
@@ -398,11 +418,29 @@ function NumericCell({
             : completed
               ? theme.successElement
               : theme.backgroundElement,
-          color: theme.text,
         },
       ]}
       {...rest}
     />
+  );
+
+  if (Platform.OS !== 'android') return field;
+
+  // Android delivers the touch straight to the native EditText, which asks its
+  // parents not to intercept and then keeps the whole gesture, so a drag that
+  // starts on a cell scrolls nothing. `box-only` on the wrapper is what keeps
+  // the touch off the input: React Native's pointer events only reach Android's
+  // dispatch through a view group, never through the input itself, so setting
+  // them on the input is inert. The tap that focuses the cell comes from the
+  // wrapper instead, and nothing is lost — focus selects the whole value
+  // anyway, so there is no cursor to place by tapping inside it.
+  return (
+    <Pressable
+      pointerEvents="box-only"
+      collapsable={false}
+      onPress={() => input.current?.focus()}>
+      {field}
+    </Pressable>
   );
 }
 
@@ -434,6 +472,9 @@ const styles = StyleSheet.create({
   },
   action: {
     width: 72,
+  },
+  actionFill: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },

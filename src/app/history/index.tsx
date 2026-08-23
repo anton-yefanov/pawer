@@ -1,43 +1,57 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useRouter } from 'expo-router';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { useMemo } from 'react';
+import { FlatList, StyleSheet, View } from 'react-native';
 
-import { PrChip } from '@/components/pr-chip';
+import { Card, Separator } from '@/components/grouped-list';
+import { WorkoutLogRow } from '@/components/history/workout-log-row';
 import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import * as haptics from '@/lib/haptics';
-import { useWeightUnit } from '@/lib/weight-unit';
-import { formatWeight, type WeightUnit } from '@/lib/units';
-import { finishedWorkoutsQuery, type HistoryRow } from '@/lib/workout-queries';
-import { formatElapsed, formatStartTime } from '@/lib/workout-stats';
+import {
+  finishedWorkoutExercisesQuery,
+  finishedWorkoutsQuery,
+  groupBy,
+  type FinishedWorkoutExercise,
+  type HistoryRow,
+} from '@/lib/workout-queries';
+import { formatMonth, monthKey } from '@/lib/workout-stats';
 
 export default function HistoryScreen() {
   const theme = useTheme();
-  const unit = useWeightUnit();
   const router = useRouter();
   const { data } = useLiveQuery(finishedWorkoutsQuery(), []);
+  const { data: exerciseRows } = useLiveQuery(finishedWorkoutExercisesQuery(), []);
+
+  // One join for the whole list, sliced per row here rather than a query per
+  // workout.
+  const byWorkout = useMemo(
+    () => groupBy(exerciseRows ?? [], (row) => row.workoutId),
+    [exerciseRows]
+  );
+
+  // The query is already newest-first, so the months come out in order for free.
+  const months = useMemo(() => {
+    const grouped = groupBy(data ?? [], (workout) => monthKey(workout.startedAt));
+    return [...grouped].map(([key, workouts]) => ({ key, workouts }));
+  }, [data]);
 
   return (
     <FlatList
-      data={data}
-      keyExtractor={(item) => item.id}
+      data={months}
+      keyExtractor={(month) => month.key}
       style={{ backgroundColor: theme.background }}
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic"
       renderItem={({ item }) => (
-        <HistoryCard
-          workout={item}
-          unit={unit}
-          onOpen={() =>
-            router.push({
-              pathname: '/history/workout-details',
-              params: { id: item.id },
-            })
+        <MonthSection
+          workouts={item.workouts}
+          exercisesFor={(id) => byWorkout.get(id) ?? []}
+          onOpen={(id) =>
+            router.push({ pathname: '/history/workout-details', params: { id } })
           }
         />
       )}
-      ItemSeparatorComponent={() => <View style={styles.separator} />}
       ListEmptyComponent={
         <ThemedText style={styles.empty} themeColor="textSecondary">
           No finished workouts yet.
@@ -47,72 +61,54 @@ export default function HistoryScreen() {
   );
 }
 
-function HistoryCard({
-  workout,
-  unit,
+function MonthSection({
+  workouts,
+  exercisesFor,
   onOpen,
 }: {
-  workout: HistoryRow;
-  unit: WeightUnit;
-  onOpen: () => void;
+  workouts: HistoryRow[];
+  exercisesFor: (workoutId: string) => readonly FinishedWorkoutExercise[];
+  onOpen: (workoutId: string) => void;
 }) {
-  const theme = useTheme();
-
-  const stats = [
-    formatElapsed((workout.finishedAt ?? workout.startedAt) - workout.startedAt),
-    `${workout.exerciseCount} ${workout.exerciseCount === 1 ? 'exercise' : 'exercises'}`,
-    `${workout.completedSets} ${workout.completedSets === 1 ? 'set' : 'sets'}`,
-  ];
-  if (workout.volumeKg > 0) stats.push(formatWeight(workout.volumeKg, unit));
-
   return (
-    <Pressable
-      onPress={() => {
-        haptics.tap();
-        onOpen();
-      }}
-      style={({ pressed }) => [
-        styles.card,
-        { backgroundColor: theme.surface },
-        pressed && styles.pressed,
-      ]}>
-      <ThemedText numberOfLines={1}>{workout.name?.trim() || 'Workout'}</ThemedText>
-      <View style={styles.dateRow}>
-        <ThemedText type="small" themeColor="textSecondary">
-          {formatStartTime(workout.startedAt)}
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <ThemedText type="smallBold" themeColor="textSecondary">
+          {formatMonth(workouts[0].startedAt)}
         </ThemedText>
-        {workout.prCount > 0 && (
-          <PrChip label={`${workout.prCount} ${workout.prCount === 1 ? 'PR' : 'PRs'}`} />
-        )}
+        <ThemedText type="smallBold" themeColor="textSecondary">
+          {workouts.length} {workouts.length === 1 ? 'Workout' : 'Workouts'}
+        </ThemedText>
       </View>
-      <ThemedText type="small" themeColor="textSecondary">
-        {stats.join(' · ')}
-      </ThemedText>
-    </Pressable>
+      <Card>
+        {workouts.map((workout, index) => (
+          <View key={workout.id}>
+            {index > 0 && <Separator />}
+            <WorkoutLogRow
+              workout={workout}
+              exercises={exercisesFor(workout.id)}
+              onOpen={() => onOpen(workout.id)}
+            />
+          </View>
+        ))}
+      </Card>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   content: {
-    padding: Spacing.three,
     paddingBottom: BottomTabInset + Spacing.four,
   },
-  separator: {
-    height: Spacing.two,
+  section: {
+    paddingBottom: Spacing.two,
   },
-  card: {
-    gap: Spacing.half,
-    borderRadius: 14,
-    padding: Spacing.three,
-  },
-  dateRow: {
+  sectionHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: Spacing.two,
-  },
-  pressed: {
-    opacity: 0.7,
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.three * 2,
+    paddingTop: Spacing.four,
+    paddingBottom: Spacing.two,
   },
   empty: {
     textAlign: 'center',

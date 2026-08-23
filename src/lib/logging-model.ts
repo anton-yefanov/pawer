@@ -23,6 +23,7 @@ export type LoggedExercise = {
   trackingType: string;
   notes: string | null;
   restSeconds: number | null;
+  supersetId: string | null;
 };
 
 export type LoggingActions = {
@@ -30,6 +31,8 @@ export type LoggingActions = {
   removeExercise: (exerciseRowId: string) => void;
   setExerciseNotes: (exerciseRowId: string, notes: string | null) => void;
   setExerciseRest: (exerciseRowId: string, seconds: number | null) => void;
+  joinSuperset: (exerciseRowId: string, targetRowId: string) => void;
+  leaveSuperset: (exerciseRowId: string) => void;
   updateSetValues: (setId: string, values: Partial<TrackedSet>) => void;
   setSetType: (setId: string, setType: SetType) => void;
   setSetNotes: (setId: string, notes: string | null) => void;

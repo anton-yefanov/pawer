@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Card, PickRow, SectionFooter, SectionTitle, Separator } from '@/components/grouped-list';
+import { SheetGrabber } from '@/components/sheet-grabber';
 import { SHEET_BOTTOM_INSET, SHEET_TOP_INSET } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 
@@ -21,6 +22,7 @@ export function PickerSheet<T extends string>({
 }) {
   return (
     <View style={styles.content}>
+      <SheetGrabber />
       <SectionTitle>{title}</SectionTitle>
       <Card>
         {options.map((option, index) => (

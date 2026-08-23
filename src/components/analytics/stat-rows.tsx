@@ -1,85 +1,206 @@
-import { useState } from 'react';
+import { Fragment } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { formatDelta, type Delta } from '@/lib/analytics-compare';
 
-const COLUMNS = 6;
-const GAP = Spacing.two;
-
-export type StatBadge = {
+export type StatTile = {
   label: string;
   value: string;
-  /** Width in grid columns, out of {@link COLUMNS}. */
-  span: number;
-  hero?: boolean;
+  unit?: string;
+  delta?: Delta | null;
 };
 
-export function StatRows({ badges }: { badges: readonly StatBadge[] }) {
-  const theme = useTheme();
-  const [width, setWidth] = useState(0);
+export type StatRow =
+  /** One card per tile, side by side. */
+  | { tiles: readonly StatTile[] }
+  /** A single card the tiles share, divided by hairlines. */
+  | { split: readonly StatTile[] };
 
-  const unit = width > 0 ? (width - GAP * (COLUMNS - 1)) / COLUMNS : 0;
+export function StatRows({ rows }: { rows: readonly StatRow[] }) {
+  const theme = useTheme();
 
   return (
-    <View style={styles.grid} onLayout={(event) => setWidth(event.nativeEvent.layout.width)}>
-      {badges.map(({ label, value, span, hero }) => (
-        <View
-          key={label}
-          style={[
-            styles.badge,
-            hero && styles.badgeHero,
-            { backgroundColor: theme.surface },
-            unit > 0 && { width: unit * span + GAP * (span - 1) },
-            unit === 0 && styles.badgeHidden,
-          ]}>
-          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-            {label}
-          </ThemedText>
+    <View style={styles.stack}>
+      {rows.map((row) => {
+        const tiles = 'split' in row ? row.split : row.tiles;
+        // Space for a delta is held only where a neighbour actually shows one,
+        // so tiles side by side keep their labels on one line without every
+        // card growing a blank strip when the period has nothing to compare.
+        const reserve = tiles.some((tile) => tile.delta);
+
+        return 'split' in row ? (
+          <View
+            key={row.split.map((tile) => tile.label).join()}
+            style={[styles.card, styles.splitCard, { backgroundColor: theme.surface }]}>
+            {row.split.map((tile, index) => (
+              <Fragment key={tile.label}>
+                {index > 0 && (
+                  <View style={[styles.splitRule, { backgroundColor: theme.backgroundElement }]} />
+                )}
+                <Tile {...tile} reserve={reserve} />
+              </Fragment>
+            ))}
+          </View>
+        ) : (
+          <View key={row.tiles.map((tile) => tile.label).join()} style={styles.row}>
+            {row.tiles.map((tile) => (
+              <View
+                key={tile.label}
+                style={[styles.card, styles.rowCard, { backgroundColor: theme.surface }]}>
+                <Tile {...tile} reserve={reserve} />
+              </View>
+            ))}
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+const ARROWS = {
+  up: 'arrow.up.right',
+  down: 'arrow.down.right',
+  flat: 'minus',
+} as const;
+
+/**
+ * Deltas are never red or green. A lighter month is often a deliberate one, and
+ * an app that colours a deload as failure is giving bad advice; direction is
+ * carried by the glyph alone.
+ */
+function DeltaLine({ value }: { value: Delta }) {
+  const theme = useTheme();
+
+  return (
+    <View style={styles.delta}>
+      <Icon
+        name={ARROWS[value.direction]}
+        size={11}
+        tintColor={theme.textSecondary}
+        resizeMode="scaleAspectFit"
+        style={styles.arrow}
+      />
+      <ThemedText themeColor="textSecondary" style={styles.deltaText} numberOfLines={1}>
+        {formatDelta(value)}
+      </ThemedText>
+    </View>
+  );
+}
+
+/**
+ * Sized from the string rather than by `adjustsFontSizeToFit`: the native
+ * measurement latches onto whatever width it saw during a transient layout pass
+ * — mounting the custom range's SwiftUI date pickers is enough — and shrinks the
+ * number to a fraction of its size with no way back.
+ */
+function valueFontSize(value: string): number {
+  if (value.length <= 5) return 30;
+  if (value.length === 6) return 27;
+  if (value.length === 7) return 25;
+  if (value.length === 8) return 22;
+  return 19;
+}
+
+function Tile({ label, value, unit, delta, reserve }: StatTile & { reserve: boolean }) {
+  const fontSize = valueFontSize(value);
+
+  return (
+    <View style={styles.tile}>
+      {/* The fixed box keeps labels level across cards whose values size
+          differently; the inner row is what centres a shorter value in it
+          instead of hanging it from the top. */}
+      <View style={styles.measureBox}>
+        <View style={styles.measure}>
           <ThemedText
-            style={[styles.value, hero && styles.valueHero]}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.7}>
+            style={[styles.value, { fontSize, lineHeight: Math.round(fontSize * 1.2) }]}
+            numberOfLines={1}>
             {value}
           </ThemedText>
+          {unit && (
+            <ThemedText themeColor="textSecondary" style={styles.unit}>
+              {unit}
+            </ThemedText>
+          )}
         </View>
-      ))}
+      </View>
+      <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+        {label}
+      </ThemedText>
+      {reserve && <View style={styles.deltaSlot}>{delta && <DeltaLine value={delta} />}</View>}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  grid: {
+  stack: {
+    gap: Spacing.two,
+  },
+  row: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: GAP,
+    gap: Spacing.two,
   },
-  badge: {
-    borderRadius: 14,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
+  card: {
+    borderRadius: 20,
+    padding: Spacing.three,
+  },
+  rowCard: {
+    flex: 1,
+  },
+  splitCard: {
+    flexDirection: 'row',
+  },
+  splitRule: {
+    width: StyleSheet.hairlineWidth,
+    marginHorizontal: Spacing.two,
+  },
+  tile: {
+    flex: 1,
+    gap: Spacing.one,
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.half,
-    minHeight: 72,
   },
-  badgeHero: {
-    minHeight: 96,
+  measureBox: {
+    height: 36,
+    alignSelf: 'stretch',
+    justifyContent: 'center',
   },
-  badgeHidden: {
-    // The grid needs one layout pass before column widths exist.
-    opacity: 0,
-    width: 0,
+  measure: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    gap: Spacing.one,
   },
   value: {
-    fontSize: 22,
-    lineHeight: 28,
     fontWeight: 700,
     fontVariant: ['tabular-nums'],
+    flexShrink: 1,
   },
-  valueHero: {
-    fontSize: 34,
-    lineHeight: 40,
+  unit: {
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: 600,
+  },
+  deltaSlot: {
+    height: 16,
+    justifyContent: 'center',
+  },
+  delta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.half,
+  },
+  arrow: {
+    width: 11,
+    height: 11,
+  },
+  deltaText: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: 600,
+    fontVariant: ['tabular-nums'],
   },
 });

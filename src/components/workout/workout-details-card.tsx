@@ -5,6 +5,7 @@ import { ThemedText } from '@/components/themed-text';
 import { StartTimePicker } from '@/components/workout/start-time-picker';
 import { Spacing } from '@/constants/theme';
 import { useDebouncedWrite } from '@/hooks/use-debounced-write';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { useTheme } from '@/hooks/use-theme';
 import type { Workout } from '@/db/schema';
 import { updateWorkout } from '@/lib/workout-actions';
@@ -61,7 +62,6 @@ function WriteThroughField({
   onCommit: (next: string) => void;
   style?: object;
 } & React.ComponentProps<typeof TextInput>) {
-  const theme = useTheme();
   const [text, setText] = useState(value);
   const focused = useRef(false);
   const write = useDebouncedWrite(onCommit);
@@ -71,7 +71,7 @@ function WriteThroughField({
   }, [value]);
 
   return (
-    <TextInput
+    <ThemedTextInput
       value={text}
       onChangeText={(next) => {
         setText(next);
@@ -84,8 +84,7 @@ function WriteThroughField({
         focused.current = false;
         write.flush();
       }}
-      placeholderTextColor={theme.textSecondary}
-      style={[{ color: theme.text }, style]}
+      style={[style]}
       {...rest}
     />
   );

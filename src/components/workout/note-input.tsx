@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, TextInput } from 'react-native';
 
-import { useTheme } from '@/hooks/use-theme';
+import { ThemedTextInput } from '@/components/themed-text-input';
 
 /**
  * An *uncontrolled* multiline TextInput never grows: layout only ever sees the
@@ -24,7 +24,6 @@ export function NoteInput({
   minHeight?: number;
   onCommit: (next: string) => void;
 } & React.ComponentProps<typeof TextInput>) {
-  const theme = useTheme();
   const [text, setText] = useState(value);
   const focused = useRef(false);
 
@@ -33,7 +32,7 @@ export function NoteInput({
   }, [value]);
 
   return (
-    <TextInput
+    <ThemedTextInput
       value={text}
       onChangeText={setText}
       multiline
@@ -45,8 +44,7 @@ export function NoteInput({
         focused.current = false;
         onCommit(text);
       }}
-      placeholderTextColor={theme.textSecondary}
-      style={[styles.input, { color: theme.text, minHeight }, style]}
+      style={[styles.input, { minHeight }, style]}
       {...rest}
     />
   );

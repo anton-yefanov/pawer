@@ -1,20 +1,17 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { Stack } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { SheetHeader } from '@/components/sheet-header';
 import { CardMenu } from '@/components/templates/card-menu';
-import { type ConfirmDestructive } from '@/components/templates/card-actions';
+import { type ConfirmDestructive, type ConfirmRequest } from '@/components/templates/card-actions';
 import { ThemedText } from '@/components/themed-text';
 import { ActiveWorkoutPrompt } from '@/components/workout/active-workout-prompt';
 import { ConfirmAlert } from '@/components/workout/confirm-alert';
 import { ExerciseBreakdown, SummaryStats } from '@/components/workout/workout-recap';
-import {
-  HEADER_CIRCLE_SIZE,
-  headerItem,
-  HeaderSlot,
-} from '@/components/workout/workout-sheet-header';
+import { HEADER_CIRCLE_SIZE } from '@/components/workout/workout-sheet-header';
 import { workoutActions } from '@/components/workout/workout-menu-actions';
+import { SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useWeightUnit } from '@/lib/weight-unit';
@@ -25,8 +22,6 @@ import {
   workoutSetsQuery,
 } from '@/lib/workout-queries';
 import { formatStartTime, summarise } from '@/lib/workout-stats';
-
-type Pending = { title: string; body: string; onConfirm: () => void };
 
 export function WorkoutDetails({
   id,
@@ -47,7 +42,7 @@ export function WorkoutDetails({
   const { data: sets } = useLiveQuery(workoutSetsQuery(id), [id]);
   const { data: records } = useLiveQuery(workoutPersonalRecordsQuery(id), [id]);
 
-  const [pending, setPending] = useState<Pending | null>(null);
+  const [pending, setPending] = useState<ConfirmRequest | null>(null);
   const [blockedBy, setBlockedBy] = useState<string | null>(null);
 
   if (!workout) return <View style={{ flex: 1, backgroundColor: theme.background }} />;
@@ -66,23 +61,19 @@ export function WorkoutDetails({
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          title: workout.name?.trim() || 'Workout',
-          unstable_headerRightItems: () =>
-            headerItem(
-              <HeaderSlot>
-                <CardMenu
-                  accessibilityLabel="Workout options"
-                  actions={actions}
-                  size={HEADER_CIRCLE_SIZE}
-                />
-              </HeaderSlot>
-            ),
-        }}
+      <SheetHeader
+        title={workout.name?.trim() || 'Workout'}
+        right={
+          <CardMenu
+            accessibilityLabel="Workout options"
+            actions={actions}
+            size={HEADER_CIRCLE_SIZE}
+          />
+        }
       />
 
       <ScrollView
+        {...SHEET_SCROLL}
         style={{ backgroundColor: theme.background }}
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic">

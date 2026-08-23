@@ -21,6 +21,7 @@
       }
     },
     "android": {
+      "package": "com.antonyefanov.pawer",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -43,12 +44,40 @@
           "imageWidth": 76
         }
       ],
+      [
+        "expo-font",
+        {
+          "android": {
+            "fonts": [
+              {
+                "fontFamily": "Nunito",
+                "fontDefinitions": [
+                  { "path": "./assets/fonts/Nunito_400Regular.ttf", "weight": 400 },
+                  { "path": "./assets/fonts/Nunito_500Medium.ttf", "weight": 500 },
+                  { "path": "./assets/fonts/Nunito_600SemiBold.ttf", "weight": 600 },
+                  { "path": "./assets/fonts/Nunito_700Bold.ttf", "weight": 700 }
+                ]
+              }
+            ]
+          }
+        }
+      ],
       "expo-sqlite",
       "./plugins/with-no-aps-environment",
+      "./plugins/with-exact-alarms",
       [
         "expo-notifications",
         {
+          "icon": "./assets/images/notification-icon.png",
           "color": "#208AEF"
+        }
+      ],
+      [
+        "expo-widgets",
+        {
+          "groupIdentifier": "group.com.antonyefanov.pawer",
+          "enablePushNotifications": false,
+          "widgets": []
         }
       ]
     ],

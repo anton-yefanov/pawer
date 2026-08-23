@@ -1,8 +1,8 @@
 import { Host, Image, Menu, Picker, Section, Text, ZStack } from '@expo/ui/swift-ui';
 import { buttonStyle, contentShape, frame, shapes, tag } from '@expo/ui/swift-ui/modifiers';
 import { View } from 'react-native';
-import type { SFSymbol } from 'sf-symbols-typescript';
 
+import { sfSymbol, type IconName } from '@/components/icon';
 import { useTheme } from '@/hooks/use-theme';
 import { ANY, titleCase, type FacetMenu } from '@/lib/exercise-filters';
 
@@ -16,7 +16,7 @@ type Props = {
   title: string;
   /** Label of the row that clears this facet, e.g. "Any muscle". */
   anyLabel: string;
-  systemName: SFSymbol;
+  systemName: IconName;
   menu: FacetMenu;
   value: string;
   onChange: (value: string) => void;
@@ -96,7 +96,10 @@ export function ExerciseFacetMenu({
                 frame({ width: size, height: size }),
                 contentShape(shapes.rectangle()),
               ]}>
-              <Image systemName={systemName} color={value !== ANY ? theme.accent : restingTint} />
+              <Image
+                systemName={sfSymbol(systemName)}
+                color={value !== ANY ? theme.accent : restingTint}
+              />
             </ZStack>
           }>
           <Section title={title}>

@@ -1,9 +1,9 @@
 import { router } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
 import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
 import { useAnimatedStyle } from 'react-native-reanimated';
 
+import { Icon } from '@/components/icon';
 import { DraggableCell } from '@/components/templates/draggable-cell';
 import { CARD_BORDER, GridCard } from '@/components/templates/grid-card';
 import { useTemplateDrag } from '@/components/templates/template-drag';
@@ -61,7 +61,7 @@ export function FolderCard({
             params: { id: folder.id },
           })
         }
-        cover={<SymbolView name="folder.fill" size={44} tintColor={theme.textSecondary} />}
+        cover={<Icon name="folder.fill" size={44} tintColor={theme.textSecondary} />}
       />
     </DraggableCell>
   );

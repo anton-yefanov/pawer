@@ -6,10 +6,10 @@ import {
   TabTriggerSlotProps,
   TabListProps,
 } from 'expo-router/ui';
-import { SymbolView } from 'expo-symbols';
 import { Pressable, View, StyleSheet } from 'react-native';
 
 import { ExternalLink } from './external-link';
+import { Icon } from './icon';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
@@ -72,9 +72,9 @@ export function CustomTabList(props: TabListProps) {
         <ExternalLink href="https://docs.expo.dev" asChild>
           <Pressable style={styles.externalPressable}>
             <ThemedText type="link">Docs</ThemedText>
-            <SymbolView
+            <Icon
               tintColor={colors.text}
-              name={{ ios: 'arrow.up.right.square', web: 'link' }}
+              name="arrow.up.right.square"
               size={12}
             />
           </Pressable>
@@ -122,3 +122,6 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.three,
   },
 });
+
+/** Only Android draws its tab bar inside a screen; see `app-tabs.android.tsx`. */
+export const tabBarScreenLayout = undefined;

@@ -29,6 +29,12 @@ import * as haptics from '@/lib/haptics';
  */
 
 const SNAP_BACK = 160;
+/**
+ * The lift, for Android only — `elevation` is what iOS ignores and what the
+ * iOS-only `shadow*` props above cannot reach. It has to be a number so it can
+ * animate alongside `shadowOpacity`, which rules `boxShadow` out.
+ */
+const LIFT = 8;
 const SHIFT = 180;
 const IDLE = -1;
 
@@ -297,6 +303,7 @@ export function useCellMotion(id: string, index: number) {
         ],
         zIndex: 2,
         shadowOpacity: withTiming(0.25, { duration: 120 }),
+        elevation: withTiming(LIFT, { duration: 120 }),
       };
     }
 
@@ -321,6 +328,7 @@ export function useCellMotion(id: string, index: number) {
         transform: [{ translateX: shiftX }, { translateY: shiftY }, { scale: 1 }],
         zIndex: 0,
         shadowOpacity: 0,
+        elevation: 0,
       };
     }
 
@@ -332,6 +340,7 @@ export function useCellMotion(id: string, index: number) {
       ],
       zIndex: 0,
       shadowOpacity: withTiming(0, { duration: 120 }),
+      elevation: withTiming(0, { duration: 120 }),
     };
   });
 }

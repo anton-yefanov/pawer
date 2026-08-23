@@ -1,22 +1,22 @@
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useMemo } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { Icon } from '@/components/icon';
+import { SheetHeader } from '@/components/sheet-header';
 import {
-  alertConfirm,
   type ConfirmDestructive,
+  type ConfirmRequest,
   folderActions,
   templateActions,
 } from '@/components/templates/card-actions';
 import { CardMenu } from '@/components/templates/card-menu';
 import { ThemedText } from '@/components/themed-text';
-import {
-  HEADER_CIRCLE_SIZE,
-  headerItem,
-  HeaderSlot,
-} from '@/components/workout/workout-sheet-header';
+import { ConfirmAlert } from '@/components/workout/confirm-alert';
+import { HEADER_CIRCLE_SIZE } from '@/components/workout/workout-sheet-header';
+import { SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { db } from '@/db/client';
 import { templates } from '@/db/schema';
@@ -45,12 +45,15 @@ export default function FolderScreen() {
     [templateExercises]
   );
 
+  const [pending, setPending] = useState<ConfirmRequest | null>(null);
+
   const folder = folderRows?.[0];
   const list = rows ?? [];
 
-  // Deleting the folder this sheet is showing takes the sheet with it.
+  // Deleting the folder this sheet is showing takes the sheet with it; deleting
+  // a template inside it only takes the row.
   const confirmFolderDelete: ConfirmDestructive = ({ onConfirm, ...options }) =>
-    alertConfirm({
+    setPending({
       ...options,
       onConfirm: () => {
         onConfirm();
@@ -58,35 +61,36 @@ export default function FolderScreen() {
       },
     });
 
+  const confirm: ConfirmDestructive = (options) => setPending(options);
+
   return (
     <>
-      <Stack.Screen
-        options={{
-          title: folder?.name ?? '',
-          contentStyle: { backgroundColor: theme.surface },
-          unstable_headerRightItems: () =>
-            folder
-              ? headerItem(
-                  <HeaderSlot>
-                    <CardMenu
-                      accessibilityLabel={`${folder.name} options`}
-                      actions={folderActions(folder, { confirm: confirmFolderDelete })}
-                      size={HEADER_CIRCLE_SIZE}
-                    />
-                  </HeaderSlot>
-                )
-              : [],
-        }}
+      <SheetHeader
+        title={folder?.name ?? ''}
+        options={{ contentStyle: { backgroundColor: theme.surface } }}
+        right={
+          folder ? (
+            <CardMenu
+              accessibilityLabel={`${folder.name} options`}
+              actions={folderActions(folder, { confirm: confirmFolderDelete })}
+              size={HEADER_CIRCLE_SIZE}
+            />
+          ) : null
+        }
       />
 
       <ScrollView
+        {...SHEET_SCROLL}
         style={{ backgroundColor: theme.surface }}
         contentContainerStyle={styles.list}
         contentInsetAdjustmentBehavior="automatic">
         {list.length === 0 && (
-          <ThemedText type="small" themeColor="textSecondary" style={styles.empty}>
-            Empty. Drag a template onto this folder to file it here.
-          </ThemedText>
+          <View style={styles.empty}>
+            <Icon name="folder.fill" size={44} tintColor={theme.textSecondary} />
+            <ThemedText type="small" themeColor="textSecondary" style={styles.emptyText}>
+              Folder is empty. Drag a template onto this folder to add it
+            </ThemedText>
+          </View>
         )}
 
         {list.map((template) => (
@@ -107,11 +111,23 @@ export default function FolderScreen() {
             </Pressable>
             <CardMenu
               accessibilityLabel={`${template.name} options`}
-              actions={templateActions(template)}
+              actions={templateActions(template, confirm)}
             />
           </View>
         ))}
       </ScrollView>
+
+      <ConfirmAlert
+        open={pending != null}
+        title={pending?.title ?? ''}
+        message={pending?.body ?? ''}
+        confirmLabel="Delete"
+        onConfirm={() => {
+          pending?.onConfirm();
+          setPending(null);
+        }}
+        onDismiss={() => setPending(null)}
+      />
     </>
   );
 }
@@ -121,8 +137,13 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
   },
   empty: {
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.four,
+  },
+  emptyText: {
+    textAlign: 'center',
   },
   row: {
     flexDirection: 'row',

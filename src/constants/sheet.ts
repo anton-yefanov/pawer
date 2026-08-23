@@ -16,6 +16,14 @@ export const SHEET = {
   headerLargeTitle: false,
 } as const;
 
+/**
+ * The radius for a sheet that has to stay pinned to the screen edges: an
+ * explicit value is what opts out of the iOS 26 floating appearance. Split per
+ * platform so asking for it doesn't change a sheet's corners on Android, where
+ * every sheet already carries one radius.
+ */
+export const PINNED_CORNER_RADIUS = 38;
+
 /** A sheet that only ever sits at full height. */
 export const FULL_SHEET = { ...SHEET, sheetAllowedDetents: [1] };
 
@@ -33,3 +41,19 @@ export const SHEET_TOP_INSET = 14;
  * whole tab bar too high.
  */
 export const SHEET_BOTTOM_INSET = 34;
+
+/**
+ * Spread onto any scrollable inside a sheet. Nothing on iOS, where UIKit
+ * already hands the scroll view the gesture first — see the Android file.
+ */
+export const SHEET_SCROLL = {} as const;
+
+/**
+ * A detail sheet: opens at a partial height and expands to full. Android has
+ * its own definition — see the note there.
+ */
+export const DETAIL_SHEET = {
+  ...SHEET,
+  sheetAllowedDetents: [0.6, 1],
+  sheetInitialDetentIndex: 0,
+};

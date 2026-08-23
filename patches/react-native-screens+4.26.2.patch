@@ -1,0 +1,166 @@
+diff --git a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/Screen.kt b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/Screen.kt
+index 76bb694..6e20751 100644
+--- a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/Screen.kt
++++ b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/Screen.kt
+@@ -148,6 +148,16 @@ class Screen(
+ 
+         val sheetBehavior = sheetBehavior
+         if (usesFormSheetPresentation()) {
++            if (changed) {
++                // BottomSheetBehavior resolves the scrollable it must cooperate with
++                // in onLayoutChild, and this subtree is laid out by us, not by the
++                // CoordinatorLayout. A scrollable that mounts after the sheet was laid
++                // out - anything rendered once a query resolves - is therefore never
++                // found, and every gesture over it drags the sheet instead of
++                // scrolling it. Re-running the parent's layout is what picks it up.
++                (parent as? View)?.requestLayout()
++            }
++
+             if (isSheetFitToContents() && sheetBehavior != null) {
+                 val oldHeight = sheetBehavior.fitToContentsSheetHeight()
+                 val isInitial = oldHeight == 0
+@@ -237,6 +247,36 @@ class Screen(
+         }
+     }
+ 
++    /**
++     * Nested scrolling reaches the sheet's BottomSheetBehavior through this view.
++     * The behavior decides per frame whether a downward drag belongs to the sheet
++     * or to the scrollable under it, so a flick that reaches the top of a list
++     * carries on into dragging the sheet away. Claiming the gesture here when the
++     * scrollable still had somewhere to go keeps that decision fixed for the whole
++     * gesture, as UIKit does: the list scrolls to its top and stops, and only a
++     * gesture that begins at the top moves the sheet.
++     */
++    private var ownsNestedScroll = false
++
++    override fun onStartNestedScroll(
++        child: View,
++        target: View,
++        nestedScrollAxes: Int,
++    ): Boolean {
++        if (usesFormSheetPresentation() && nestedScrollAxes and View.SCROLL_AXIS_VERTICAL != 0) {
++            ownsNestedScroll = target.canScrollVertically(-1)
++            if (ownsNestedScroll) {
++                return true
++            }
++        }
++        return super.onStartNestedScroll(child, target, nestedScrollAxes)
++    }
++
++    override fun onStopNestedScroll(target: View) {
++        ownsNestedScroll = false
++        super.onStopNestedScroll(target)
++    }
++
+     internal fun onBottomSheetBehaviorDidLayout(coordinatorLayoutDidChange: Boolean) {
+         if (!usesFormSheetPresentation() || !isNativeStackScreen) {
+             return
+diff --git a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt
+index b9e6e2e..a930078 100644
+--- a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt
++++ b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt
+@@ -10,6 +10,7 @@ import android.view.LayoutInflater
+ import android.view.Menu
+ import android.view.MenuInflater
+ import android.view.MenuItem
++import android.view.MotionEvent
+ import android.view.View
+ import android.view.ViewGroup
+ import android.view.animation.Animation
+@@ -25,6 +26,7 @@ import com.facebook.react.uimanager.UIManagerHelper
+ import com.google.android.material.appbar.AppBarLayout
+ import com.google.android.material.appbar.AppBarLayout.ScrollingViewBehavior
+ import com.google.android.material.bottomsheet.BottomSheetBehavior
++import java.lang.ref.WeakReference
+ import com.google.android.material.shape.CornerFamily
+ import com.google.android.material.shape.MaterialShapeDrawable
+ import com.google.android.material.shape.ShapeAppearanceModel
+@@ -392,7 +394,7 @@ class ScreenStackFragment :
+         return sheetDelegate.createSheetExitAnimator(sheetAnimationContext)
+     }
+ 
+-    private fun createBottomSheetBehaviour(): BottomSheetBehavior<Screen> = BottomSheetBehavior<Screen>()
++    private fun createBottomSheetBehaviour(): BottomSheetBehavior<Screen> = SheetBehavior()
+ 
+     private fun resolveBackgroundColor(screen: Screen): Int? {
+         val screenColor =
+@@ -604,3 +606,78 @@ class ScreenStackFragment :
+         private const val TAG = "ScreenStackFragment"
+     }
+ }
++
++/**
++ * BottomSheetBehavior cooperates with the first descendant that reports nested
++ * scrolling, and on a sheet that hosts any Compose interop view - a menu, a
++ * picker - that is the interop host in the header rather than the list filling
++ * the sheet. Touches outside the resolved child count as drags, so every
++ * gesture over the content moves the sheet and nothing scrolls. Resolve a
++ * descendant that can actually scroll instead, and none at all when nothing can:
++ * a sheet whose content fits has no scrolling to protect, so every gesture over
++ * it should drag the sheet.
++ */
++private class SheetBehavior<V : View> : BottomSheetBehavior<V>() {
++    /**
++     * A footer is pinned over the sheet's visible bottom edge, so a press on it is
++     * never a drag. The behavior does not know that: below the expanded detent it
++     * can move in both directions, so its ViewDragHelper claims a touch that
++     * started on the footer and the press is cancelled before it fires. Turning
++     * dragging off for the duration of such a gesture is what BottomSheetBehavior
++     * already does for a touch that lands on its scrolling child.
++     */
++    override fun onInterceptTouchEvent(
++        parent: CoordinatorLayout,
++        child: V,
++        event: MotionEvent,
++    ): Boolean {
++        when (event.actionMasked) {
++            MotionEvent.ACTION_DOWN -> isDraggable = !isTouchInFooter(child, event)
++            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> isDraggable = true
++        }
++        return super.onInterceptTouchEvent(parent, child, event)
++    }
++
++    private fun isTouchInFooter(
++        child: V,
++        event: MotionEvent,
++    ): Boolean {
++        val footer = (child as? Screen)?.footer ?: return false
++        if (footer.visibility != View.VISIBLE || footer.height == 0) {
++            return false
++        }
++        val y = event.y - child.top
++        return y >= footer.top && y < footer.bottom
++    }
++
++    override fun onLayoutChild(
++        parent: CoordinatorLayout,
++        child: V,
++        layoutDirection: Int,
++    ): Boolean {
++        val handled = super.onLayoutChild(parent, child, layoutDirection)
++        val scrollable = findScrollable(child)
++        runCatching {
++            BottomSheetBehavior::class.java
++                .getDeclaredField("nestedScrollingChildRef")
++                .apply { isAccessible = true }
++                .set(this, scrollable?.let { WeakReference(it) })
++        }
++        return handled
++    }
++
++    private fun findScrollable(view: View): View? {
++        if (view.visibility != View.VISIBLE) {
++            return null
++        }
++        if (view.canScrollVertically(-1) || view.canScrollVertically(1)) {
++            return view
++        }
++        if (view is ViewGroup) {
++            for (index in 0 until view.childCount) {
++                findScrollable(view.getChildAt(index))?.let { return it }
++            }
++        }
++        return null
++    }
++}

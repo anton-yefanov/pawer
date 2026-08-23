@@ -3,6 +3,7 @@ import { useSyncExternalStore } from 'react';
 import { newId } from '@/db/id';
 import { move } from '@/lib/order';
 import type { SetType } from '@/lib/set-types';
+import { joinPlan, leavePlan } from '@/lib/supersets';
 import type { TemplateExerciseInput, TemplateSetInput } from '@/lib/template-actions';
 import type { TrackedSet } from '@/lib/tracking-types';
 
@@ -113,6 +114,7 @@ export function addDraftExercises(exerciseIds: readonly string[]): void {
         exerciseId,
         restSeconds: null,
         notes: null,
+        supersetId: null,
         sets: [blankSet()],
       })),
     ],
@@ -129,6 +131,34 @@ export function removeDraftExercise(rowId: string): void {
   draft = {
     ...draft,
     exercises: draft.exercises.filter((row) => row.id !== rowId),
+  };
+  emit();
+}
+
+export function joinDraftSuperset(rowId: string, targetRowId: string): void {
+  const plan = joinPlan(draft.exercises, rowId, targetRowId);
+  if (!plan) return;
+
+  const members = new Set(plan.memberIds);
+  const byId = new Map(
+    draft.exercises.map((row) => [
+      row.id,
+      members.has(row.id) ? { ...row, supersetId: plan.supersetId } : row,
+    ]),
+  );
+  draft = { ...draft, exercises: plan.orderedIds.map((id) => byId.get(id)!) };
+  emit();
+}
+
+export function leaveDraftSuperset(rowId: string): void {
+  const cleared = new Set(leavePlan(draft.exercises, rowId));
+  if (cleared.size === 0) return;
+
+  draft = {
+    ...draft,
+    exercises: draft.exercises.map((row) =>
+      cleared.has(row.id) ? { ...row, supersetId: null } : row,
+    ),
   };
   emit();
 }

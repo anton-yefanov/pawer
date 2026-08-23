@@ -1,12 +1,15 @@
 import type { ImageSource } from 'expo-image';
 
+import { asCardPose, type CardPose } from '@/constants/card-poses';
+
 /**
- * Resolves a template's cover art from the muscles its exercises target.
+ * Resolves a template's cover art: the pose the user pinned, or — the default —
+ * one derived from the muscles its exercises target.
  *
- * Same contract as exercise-images.ts: every bucket resolves to one placeholder
- * today, and when the real art lands only `SOURCES` changes — no screen ever
- * builds an asset path itself. Metro needs static literal paths, so the eventual
- * map has to be one `require` line per bucket rather than assembled at runtime.
+ * Same contract as exercise-images.ts: buckets without art yet fall back to a
+ * placeholder, and when the real art lands only `SOURCES` changes — no screen
+ * ever builds an asset path itself. Metro needs static literal paths, so the maps
+ * have to be one `require` line per entry rather than assembled at runtime.
  */
 
 export type TemplateBucket =
@@ -22,7 +25,7 @@ const PLACEHOLDER = require('@/assets/mascot/idle.webp') as ImageSource;
 
 const SOURCES: Record<TemplateBucket, ImageSource> = {
   chest: PLACEHOLDER,
-  back: PLACEHOLDER,
+  back: require('@/assets/templates/back.webp') as ImageSource,
   legs: PLACEHOLDER,
   shoulders: PLACEHOLDER,
   arms: PLACEHOLDER,
@@ -30,7 +33,17 @@ const SOURCES: Record<TemplateBucket, ImageSource> = {
   fullBody: PLACEHOLDER,
 };
 
-/** Muscle vocabulary is free-exercise-db's, the same strings as MUSCLE_MENU. */
+const POSES: Record<CardPose, ImageSource> = {
+  pose1: require('@/assets/templates/pose1.webp') as ImageSource,
+  pose2: require('@/assets/templates/pose2.webp') as ImageSource,
+  pose3: require('@/assets/templates/pose3.webp') as ImageSource,
+  pose4: require('@/assets/templates/pose4.webp') as ImageSource,
+  pose5: require('@/assets/templates/pose5.webp') as ImageSource,
+  pose6: require('@/assets/templates/pose6.webp') as ImageSource,
+  pose7: require('@/assets/templates/pose7.webp') as ImageSource,
+};
+
+/** Muscle vocabulary is free-exercise-db's, the same strings as `MUSCLE_OPTIONS`. */
 const BUCKET_BY_MUSCLE: Record<string, TemplateBucket> = {
   chest: 'chest',
   lats: 'back',
@@ -79,6 +92,15 @@ export function templateBucket(primaryMuscles: readonly string[]): TemplateBucke
   return top;
 }
 
-export function templateImage(bucket: TemplateBucket): ImageSource {
-  return SOURCES[bucket];
+export function poseImage(pose: CardPose): ImageSource {
+  return POSES[pose];
+}
+
+/** The art a card actually shows: a pinned pose wins over the muscle bucket. */
+export function templateCover(
+  image: string | null | undefined,
+  primaryMuscles: readonly string[],
+): ImageSource {
+  const pose = asCardPose(image);
+  return pose ? POSES[pose] : SOURCES[templateBucket(primaryMuscles)];
 }

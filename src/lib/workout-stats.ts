@@ -9,18 +9,24 @@ export function formatElapsed(ms: number): string {
   return formatDuration(Math.floor(ms / 1000));
 }
 
-/** `00:58:53` — padded, so a column of averages stays aligned. */
-export function formatClock(ms: number): string {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${pad(Math.floor(total / 3600))}:${pad(Math.floor(total / 60) % 60)}:${pad(total % 60)}`;
-}
-
-/** `5h 53m`, for a total that runs to hours and doesn't care about seconds. */
+/** `5h 53m`, `160d 1h`, for a total that runs long and doesn't care about seconds. */
 export function formatHoursMinutes(ms: number): string {
   const minutes = Math.max(0, Math.floor(ms / 60_000));
   const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  if (days > 0) return `${days}d ${hours % 24}h`;
   return hours === 0 ? `${minutes}m` : `${hours}h ${minutes % 60}m`;
+}
+
+/** "August 2026" — the history list's section header. */
+export function formatMonth(epochMs: number): string {
+  return new Date(epochMs).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+}
+
+/** Carries the year so two Augusts a year apart never land in one section. */
+export function monthKey(epochMs: number): string {
+  const date = new Date(epochMs);
+  return `${date.getFullYear()}-${date.getMonth()}`;
 }
 
 /** "Sat, 8 Aug at 17:53" */
@@ -56,6 +62,28 @@ export function hasIncompleteValidSets(
   tracking: TrackingByExercise
 ): boolean {
   return sets.some((set) => !set.completed && isValidSet(set, typeOf(set, tracking)));
+}
+
+/**
+ * Where the lifter is right now: the first exercise still holding a fillable,
+ * uncompleted set, and that set's place among its exercise's work sets.
+ *
+ * There is no "current exercise" in the schema — the logger renders every card
+ * at once — so this is the nearest honest answer, and it's the same rule
+ * `hasIncompleteValidSets` uses to decide a session still has work left.
+ */
+export function currentPosition(
+  workoutExercises: readonly WorkoutExerciseRow[],
+  sets: readonly WorkoutSetRow[],
+  tracking: TrackingByExercise
+): { exerciseName: string; setIndex: number; setCount: number } | null {
+  for (const exercise of workoutExercises) {
+    const own = sets.filter((set) => set.workoutExerciseId === exercise.id && isWorkSet(set));
+    const index = own.findIndex((set) => !set.completed && isValidSet(set, typeOf(set, tracking)));
+    if (index === -1) continue;
+    return { exerciseName: exercise.name, setIndex: index + 1, setCount: own.length };
+  }
+  return null;
 }
 
 /** Only the types where weight × reps is work the user actually moved. */

@@ -1,46 +1,38 @@
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { router, Stack } from 'expo-router';
+import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
   type ConfirmDestructive,
+  type ConfirmRequest,
   templateActions,
 } from '@/components/templates/card-actions';
 import { CardMenu } from '@/components/templates/card-menu';
 import { ThemedText } from '@/components/themed-text';
 import { ActiveWorkoutPrompt } from '@/components/workout/active-workout-prompt';
+import { ConfirmAlert } from '@/components/workout/confirm-alert';
 import { BigButton } from '@/components/workout/big-button';
-import {
-  HEADER_CIRCLE_SIZE,
-  headerItem,
-  HeaderSlot,
-} from '@/components/workout/workout-sheet-header';
+import { SheetFooter } from '@/components/sheet-footer';
+import { SHEET_FOOTER_HEIGHT } from '@/components/sheet-footer.types';
+import { SheetHeader } from '@/components/sheet-header';
+import { HEADER_CIRCLE_SIZE } from '@/components/workout/workout-sheet-header';
+import { SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import * as haptics from '@/lib/haptics';
 import { startWorkoutFromTemplate } from '@/lib/template-actions';
 import { templateExercisesQuery, templateQuery } from '@/lib/template-queries';
+import { useLiveRows } from '@/lib/use-live-rows';
 
 export function TemplatePreview({ id }: { id: string }) {
   const theme = useTheme();
-  const { data: templateRows } = useLiveQuery(templateQuery(id), [id]);
-  const { data: exercises } = useLiveQuery(templateExercisesQuery(id), [id]);
-  const template = templateRows?.[0];
+  const templateRows = useLiveRows(() => templateQuery(id), id);
+  const exercises = useLiveRows(() => templateExercisesQuery(id), id);
+  const template = templateRows[0];
   const [blockedBy, setBlockedBy] = useState<string | null>(null);
+  const [pending, setPending] = useState<ConfirmRequest | null>(null);
 
-  const confirm: ConfirmDestructive = ({ title, body, onConfirm }) =>
-    Alert.alert(title, body, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          onConfirm();
-          router.back();
-        },
-      },
-    ]);
+  const confirm: ConfirmDestructive = (options) => setPending(options);
 
   // Pushed, not replaced: swapping one modal route for another makes
   // RNSScreenStack bail out (see workout/_layout.tsx).
@@ -59,30 +51,26 @@ export function TemplatePreview({ id }: { id: string }) {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          title: template?.name ?? '',
-          contentStyle: { backgroundColor: theme.surface },
-          unstable_headerRightItems: () =>
-            template
-              ? headerItem(
-                  <HeaderSlot>
-                    <CardMenu
-                      accessibilityLabel={`${template.name} options`}
-                      actions={templateActions(template, confirm)}
-                      size={HEADER_CIRCLE_SIZE}
-                    />
-                  </HeaderSlot>
-                )
-              : [],
-        }}
+      <SheetHeader
+        title={template?.name ?? ''}
+        options={{ contentStyle: { backgroundColor: theme.surface } }}
+        right={
+          template ? (
+            <CardMenu
+              accessibilityLabel={`${template.name} options`}
+              actions={templateActions(template, confirm)}
+              size={HEADER_CIRCLE_SIZE}
+            />
+          ) : null
+        }
       />
 
       <ScrollView
+        {...SHEET_SCROLL}
         style={{ backgroundColor: theme.surface }}
         contentContainerStyle={styles.list}
         contentInsetAdjustmentBehavior="automatic">
-        {exercises?.map((exercise) => (
+        {exercises.map((exercise) => (
           <Pressable
             key={exercise.id}
             style={({ pressed }) => [
@@ -111,9 +99,23 @@ export function TemplatePreview({ id }: { id: string }) {
         ))}
       </ScrollView>
 
-      <View style={styles.footer}>
+      <SheetFooter>
         <BigButton title="Start Workout" onPress={start} />
-      </View>
+      </SheetFooter>
+
+      {/* Deleting the template this sheet is showing takes the sheet with it. */}
+      <ConfirmAlert
+        open={pending != null}
+        title={pending?.title ?? ''}
+        message={pending?.body ?? ''}
+        confirmLabel="Delete"
+        onConfirm={() => {
+          pending?.onConfirm();
+          setPending(null);
+          router.back();
+        }}
+        onDismiss={() => setPending(null)}
+      />
 
       <ActiveWorkoutPrompt
         open={blockedBy != null}
@@ -128,12 +130,10 @@ export function TemplatePreview({ id }: { id: string }) {
   );
 }
 
-const FOOTER_HEIGHT = 50 + Spacing.three * 2;
-
 const styles = StyleSheet.create({
   list: {
     paddingVertical: Spacing.two,
-    paddingBottom: FOOTER_HEIGHT + Spacing.three,
+    paddingBottom: SHEET_FOOTER_HEIGHT + Spacing.three,
   },
   row: {
     flexDirection: 'row',
@@ -147,12 +147,5 @@ const styles = StyleSheet.create({
   },
   muscle: {
     textTransform: 'capitalize',
-  },
-  footer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    padding: Spacing.three,
   },
 });

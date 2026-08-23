@@ -1,9 +1,12 @@
 import { Image } from 'expo-image';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { SheetFooter } from '@/components/sheet-footer';
+import { SHEET_FOOTER_HEIGHT } from '@/components/sheet-footer.types';
 import { ThemedText } from '@/components/themed-text';
 import { BigButton } from '@/components/workout/big-button';
 import { ExerciseBreakdown, SummaryStats } from '@/components/workout/workout-recap';
+import { SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { mascotImage } from '@/lib/mascot-images';
 import { type WeightUnit } from '@/lib/units';
@@ -33,8 +36,8 @@ export function WorkoutSummary({
 }) {
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <Image source={mascotImage('celebrating')} style={styles.mascot} contentFit="cover" />
+      <ScrollView {...SHEET_SCROLL} style={styles.scroll} contentContainerStyle={styles.content}>
+        <Image source={mascotImage('celebrating')} style={styles.mascot} contentFit="contain" />
         <ThemedText type="subtitle" style={styles.title}>
           Nice work
         </ThemedText>
@@ -52,14 +55,12 @@ export function WorkoutSummary({
         />
       </ScrollView>
 
-      <View style={styles.footer}>
+      <SheetFooter>
         <BigButton title="Done" onPress={onDone} />
-      </View>
+      </SheetFooter>
     </View>
   );
 }
-
-const FOOTER_HEIGHT = 50 + Spacing.three * 2;
 
 const styles = StyleSheet.create({
   container: {
@@ -71,23 +72,14 @@ const styles = StyleSheet.create({
   content: {
     padding: Spacing.three,
     gap: Spacing.three,
-    paddingBottom: FOOTER_HEIGHT + Spacing.three,
+    paddingBottom: SHEET_FOOTER_HEIGHT + Spacing.three,
   },
   mascot: {
-    // The master is a square canvas letterboxing 4:3 art, so cover into a 4:3
-    // box crops exactly the transparent bars.
-    aspectRatio: 4 / 3,
-    marginTop: -Spacing.three,
-    marginHorizontal: -Spacing.three,
+    width: 180,
+    height: 180,
+    alignSelf: 'center',
   },
   title: {
     textAlign: 'center',
-  },
-  footer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    padding: Spacing.three,
   },
 });

@@ -25,6 +25,16 @@ const API_KEY = ((Constants.expoConfig?.extra?.revenueCat ?? {}) as Record<strin
   Platform.OS
 ];
 
+/**
+ * The RevenueCat SDK force-quits the app inside `configure` when a `test_` key
+ * is used in a build that isn't debuggable, so a release build on the test key
+ * can never launch. Skipping configure keeps it runnable: every `Purchases`
+ * call then rejects into the catch it already has and Pro stays locked, which
+ * is what makes a local `--variant release` usable for profiling before the
+ * production key exists.
+ */
+const CONFIGURED = Boolean(API_KEY) && (__DEV__ || !API_KEY.startsWith('test_'));
+
 export type RestoreResult =
   | { status: 'restored' }
   | { status: 'nothing' }
@@ -62,8 +72,10 @@ export function PurchasesProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!API_KEY) {
-      console.warn(`[purchases] no RevenueCat key for ${Platform.OS}; ${PRO_NAME} stays locked`);
+    if (!CONFIGURED) {
+      console.warn(
+        `[purchases] ${API_KEY ? 'test key in a release build' : `no key for ${Platform.OS}`}; ${PRO_NAME} stays locked`
+      );
       return;
     }
 

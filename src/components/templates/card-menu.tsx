@@ -1,19 +1,11 @@
 import { Button, Divider, Host, Image, Menu, ZStack } from '@expo/ui/swift-ui';
 import { buttonStyle, contentShape, frame, shapes } from '@expo/ui/swift-ui/modifiers';
-import type { SFSymbol } from 'sf-symbols-typescript';
 
 import { CIRCLE_BUTTON_SIZE, GlassCircle } from '@/components/circle-button';
+import { sfSymbol } from '@/components/icon';
+import type { CardAction } from '@/components/templates/card-actions';
 import { useTheme } from '@/hooks/use-theme';
 import * as haptics from '@/lib/haptics';
-
-export type CardAction = {
-  label: string;
-  systemImage: SFSymbol;
-  destructive?: boolean;
-  /** Draws a divider above this row. */
-  separated?: boolean;
-  onPress: () => void;
-};
 
 /**
  * Same Host-sizing rules as ExerciseMenu: the Host is explicitly sized or it
@@ -51,7 +43,7 @@ export function CardMenu({
             <Button
               key={action.label}
               label={action.label}
-              systemImage={action.systemImage}
+              systemImage={sfSymbol(action.icon)}
               role={action.destructive ? 'destructive' : undefined}
               // Even the destructive rows only tap: each one raises a confirm,
               // and that presentation is what carries the warning buzz.

@@ -5,21 +5,28 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { DayPicker } from '@/components/analytics/day-picker';
 import { PeriodPicker } from '@/components/analytics/period-picker';
 import { MetricChart } from '@/components/analytics/metric-chart';
-import { StatRows, type StatBadge } from '@/components/analytics/stat-rows';
+import { QuickSummary } from '@/components/analytics/quick-summary';
+import { RecordsCard } from '@/components/analytics/records-card';
+import { StatRows, type StatRow } from '@/components/analytics/stat-rows';
 import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useWeightUnit } from '@/lib/weight-unit';
 import {
   combineTotals,
+  firstWorkoutQuery,
   metricSeriesQuery,
+  periodRecordsQuery,
+  prTotalsQuery,
   setTotalsQuery,
   workoutTotalsQuery,
 } from '@/lib/analytics-queries';
 import { DEFAULT_PERIOD, rangeFor, type PeriodId } from '@/lib/analytics-period';
+import { comparisonLabel, delta, previousRange } from '@/lib/analytics-compare';
+import { buildQuickSummary } from '@/lib/analytics-insights';
 import { buildSeries } from '@/lib/analytics-series';
-import { distanceUnitFor, formatDistance, formatTonnage } from '@/lib/units';
-import { formatClock, formatHoursMinutes } from '@/lib/workout-stats';
+import { distanceUnitFor, formatDistance, formatTonnage, splitMeasure } from '@/lib/units';
+import { formatHoursMinutes } from '@/lib/workout-stats';
 
 export default function AnalyticsScreen() {
   const theme = useTheme();
@@ -32,55 +39,112 @@ export default function AnalyticsScreen() {
 
   const range = useMemo(
     () => rangeFor(period, { from: new Date(customFrom), to: new Date(customTo) }),
-    [period, customFrom, customTo]
+    [period, customFrom, customTo],
   );
+
+  const previous = useMemo(() => previousRange(range), [range]);
 
   const { data: workoutRows } = useLiveQuery(workoutTotalsQuery(range), [range]);
   const { data: setRows } = useLiveQuery(setTotalsQuery(range), [range]);
   const { data: metricRows } = useLiveQuery(metricSeriesQuery(range), [range]);
+  const { data: prRows } = useLiveQuery(prTotalsQuery(range), [range]);
+  const { data: recordRows } = useLiveQuery(periodRecordsQuery(range), [range]);
 
-  const totals = combineTotals(workoutRows?.[0], setRows?.[0]);
+  // Always built, so the hook order never depends on whether the period has a
+  // comparison; the result is discarded when `previous` is null.
+  const comparison = previous ?? range;
+  const { data: pastWorkoutRows } = useLiveQuery(workoutTotalsQuery(comparison), [comparison]);
+  const { data: pastSetRows } = useLiveQuery(setTotalsQuery(comparison), [comparison]);
+  const { data: pastPrRows } = useLiveQuery(prTotalsQuery(comparison), [comparison]);
+
+  const totals = combineTotals(workoutRows?.[0], setRows?.[0], prRows?.[0]);
+  const past = combineTotals(pastWorkoutRows?.[0], pastSetRows?.[0], pastPrRows?.[0]);
+
+  const { data: firstRows } = useLiveQuery(firstWorkoutQuery(), []);
+  const firstWorkoutAt = firstRows?.[0]?.startedAt ?? null;
+
+  // Three conditions, all about not promising a comparison the screen can't
+  // keep. The rows have to belong to *this* comparison — until they do they are
+  // the last period's, and a delta drawn from them would show for a frame and
+  // then vanish. The previous window has to be one the user's training actually
+  // covers, or a partial window reads as an impossible gain. And it has to
+  // contain a workout at all.
+  const settled =
+    pastWorkoutRows?.[0]?.from === comparison.from && pastPrRows?.[0]?.from === comparison.from;
+  const covered = previous !== null && firstWorkoutAt !== null && firstWorkoutAt <= previous.from;
+  const comparable = covered && settled && past.workouts > 0;
+
+  const since = (pick: (of: typeof totals) => number) =>
+    comparable ? delta(pick(totals), pick(past)) : undefined;
+
+  const summary = buildQuickSummary({ totals, past, comparable, range, unit });
 
   const tonnage = useMemo(
     () => buildSeries(metricRows ?? [], range, (row) => row.volumeKg),
-    [metricRows, range]
+    [metricRows, range],
   );
   const duration = useMemo(
     () => buildSeries(metricRows ?? [], range, (row) => row.durationMs),
-    [metricRows, range]
+    [metricRows, range],
   );
 
-  const badges: StatBadge[] = [
-    { label: 'Workouts', value: String(totals.workouts), span: 3, hero: true },
+  const rows: StatRow[] = [
     {
-      label: 'Total tonnage',
-      value: formatTonnage(totals.volumeKg, unit),
-      span: 3,
-      hero: true,
-    },
-    { label: 'Sets', value: String(totals.completedSets), span: 2 },
-    { label: 'Reps', value: String(totals.reps), span: 2 },
-    { label: 'Exercises', value: String(totals.exerciseEntries), span: 2 },
-    {
-      label: 'Time in gym',
-      value: formatHoursMinutes(totals.durationMs),
-      span: 4,
-      hero: true,
+      tiles: [
+        {
+          label: 'Workouts',
+          value: String(totals.workouts),
+          delta: since((of) => of.workouts),
+        },
+        {
+          label: 'Total tonnage',
+          ...splitMeasure(formatTonnage(totals.volumeKg, unit)),
+          delta: since((of) => of.volumeKg),
+        },
+      ],
     },
     {
-      label: 'Avg duration',
-      value: formatClock(totals.avgDurationMs),
-      span: 2,
+      split: [
+        {
+          label: 'Sets',
+          value: String(totals.completedSets),
+          delta: since((of) => of.completedSets),
+        },
+        { label: 'Reps', value: String(totals.reps), delta: since((of) => of.reps) },
+        {
+          label: 'PRs',
+          value: String(totals.records),
+          delta: since((of) => of.records),
+        },
+      ],
     },
     {
-      label: 'Avg tonnage',
-      value: formatTonnage(totals.avgVolumeKg, unit),
-      span: 3,
+      tiles: [
+        {
+          label: 'Time in gym',
+          value: formatHoursMinutes(totals.durationMs),
+          delta: since((of) => of.durationMs),
+        },
+        {
+          label: 'Avg duration',
+          value: formatHoursMinutes(totals.avgDurationMs),
+          delta: since((of) => of.avgDurationMs),
+        },
+      ],
     },
     {
-      label: 'Total distance',
-      value: formatDistance(totals.distanceM, distanceUnitFor(unit)),
-      span: 3,
+      tiles: [
+        {
+          label: 'Avg tonnage',
+          ...splitMeasure(formatTonnage(totals.avgVolumeKg, unit)),
+          delta: since((of) => of.avgVolumeKg),
+        },
+        {
+          label: 'Total distance',
+          ...splitMeasure(formatDistance(totals.distanceM, distanceUnitFor(unit))),
+          delta: since((of) => of.distanceM),
+        },
+      ],
     },
   ];
 
@@ -117,7 +181,17 @@ export default function AnalyticsScreen() {
         )}
       </View>
 
-      <StatRows badges={badges} />
+      <QuickSummary summary={summary} />
+
+      <StatRows rows={rows} />
+
+      {comparable && (
+        <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
+          vs {comparisonLabel(range)}
+        </ThemedText>
+      )}
+
+      <RecordsCard records={recordRows ?? []} unit={unit} />
 
       <MetricChart
         title="Total tonnage"
@@ -142,7 +216,7 @@ const styles = StyleSheet.create({
   content: {
     padding: Spacing.three,
     paddingBottom: BottomTabInset + Spacing.four,
-    gap: Spacing.four,
+    gap: Spacing.two,
   },
   card: {
     borderRadius: 14,
@@ -157,5 +231,9 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: StyleSheet.hairlineWidth,
+  },
+  caption: {
+    paddingHorizontal: Spacing.three,
+    marginTop: -Spacing.one,
   },
 });

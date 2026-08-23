@@ -55,6 +55,7 @@ export function templateExercisesQuery(templateId: string) {
       position: templateExercises.position,
       notes: templateExercises.notes,
       restSeconds: templateExercises.restSeconds,
+      supersetId: templateExercises.supersetId,
       setCount: sql<number>`(SELECT COUNT(*) FROM ${templateSets} ts
         WHERE ts.template_exercise_id = ${templateExercises.id} AND ts.deleted_at IS NULL)`,
       name: exercises.name,

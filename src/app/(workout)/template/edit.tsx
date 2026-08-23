@@ -1,19 +1,19 @@
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 
 import { TemplateEditor } from '@/components/templates/template-editor';
 import { setTypeOf } from '@/lib/set-types';
 import { updateTemplate } from '@/lib/template-actions';
 import { blankSet, loadDraft, resetDraft } from '@/lib/template-draft';
 import { templateExercisesQuery, templateQuery, templateSetsQuery } from '@/lib/template-queries';
+import { useLiveRows } from '@/lib/use-live-rows';
 import { groupBy } from '@/lib/workout-queries';
 
 export default function EditTemplateScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: templateRows } = useLiveQuery(templateQuery(id), [id]);
-  const { data: exercises } = useLiveQuery(templateExercisesQuery(id), [id]);
-  const { data: sets } = useLiveQuery(templateSetsQuery(id), [id]);
+  const templateRows = useLiveRows(() => templateQuery(id), id);
+  const exercises = useLiveRows(() => templateExercisesQuery(id), id);
+  const sets = useLiveRows(() => templateSetsQuery(id), id);
 
   const template = templateRows?.[0];
   const seeded = useRef(false);
@@ -21,10 +21,12 @@ export default function EditTemplateScreen() {
   useEffect(() => resetDraft, []);
 
   // Seeded once: after this the draft is the user's, and the live queries would
-  // otherwise keep overwriting their edits.
-  useEffect(() => {
-    // An empty array is a legitimate answer, so test for the query having run.
-    if (seeded.current || !template || exercises === undefined || sets === undefined) return;
+  // otherwise keep overwriting their edits. A layout effect, so the editor's
+  // first painted frame already has the exercises — the rows are read
+  // synchronously during render, and waiting for a passive effect would give
+  // Android's sheet a frame of empty content to animate in.
+  useLayoutEffect(() => {
+    if (seeded.current || !template) return;
     seeded.current = true;
 
     const byExercise = groupBy(sets, (row) => row.templateExerciseId);
@@ -39,6 +41,7 @@ export default function EditTemplateScreen() {
           exerciseId: row.exerciseId,
           restSeconds: row.restSeconds,
           notes: row.notes,
+          supersetId: row.supersetId,
           // A template saved before planned sets existed has none to load.
           sets:
             planned.length > 0

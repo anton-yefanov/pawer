@@ -8,17 +8,29 @@ Never hand-edit the generated WebP files. Change a master, re-run the script.
 
 ## Format
 
-| | Exercises | Mascot | Attributes |
-|---|---|---|---|
-| Path | `masters/exercises/<slug>_1.png`, `<slug>_2.png` | `masters/mascot/<state>.png` | `masters/attributes/<kind>/<slug>.png` |
-| Size | 1200 × 1200 | 1024 × 1024 | 1024 × 1024 |
-| Format | PNG, transparent background | PNG, transparent background | PNG, transparent background |
-| Colour | sRGB | sRGB | sRGB |
+| | Exercises | Mascot | Attributes | Backgrounds | Template covers |
+|---|---|---|---|---|---|
+| Path | `masters/exercises/<slug>_1.png`, `<slug>_2.png` | `masters/mascot/<state>.png` | `masters/attributes/<kind>/<slug>.png` | `masters/backgrounds/<color>.png` | `masters/templates/<name>.png` |
+| Size | 1200 × 1200 | 1024 × 1024 | 1024 × 1024 | square, ≥ 512 | square, ≥ 512 |
+| Format | PNG, transparent background | PNG, transparent background | PNG, transparent background | PNG, opaque | PNG, transparent background |
+| Colour | sRGB | sRGB | sRGB | sRGB | sRGB |
+
+`<color>` is a member of `CARD_COLORS` in `src/constants/card-colors.ts` — the
+card cover a template or folder is customized with.
+
+`<name>` is the cat that sits on that cover, and it is one of two things: a
+`TemplateBucket` in `src/lib/template-images.ts`, used when a template's image is
+left on Auto, or a `CARD_POSES` id in `src/constants/card-poses.ts`, which the
+user picks from the Customize sheet. A new pose is a master here plus one line in
+each of those two files.
 
 `<slug>` is the exercise's `sourceId` from `src/db/seed/exercises.json`
 (e.g. `Barbell_Squat`) — 203 of them, two frames each.
 
-`<state>` is a member of `MascotState` in `src/lib/mascot-images.ts`.
+`<state>` is a member of `MascotState` in `src/lib/mascot-images.ts`, or
+`face-<face>` for a `MascotFace` head-only variant. Poses drawn but not mapped to
+a state live in `masters/mascot/spare/`, which the build ignores — promote one by
+moving it up a directory under a state name.
 
 `<kind>` is `level`, `category`, `equipment` or `muscle`, and `<slug>` is the
 attribute value with spaces replaced by `_` (`body only` → `body_only.png`).
@@ -39,6 +51,8 @@ category value in the seed needs an icon here plus a line in
 | `assets/exercises/detail/<slug>_2.webp` | 600 × 600 | frame 2 |
 | `assets/mascot/<state>.webp` | 512 × 512 | master |
 | `assets/attributes/<kind>/<slug>.webp` | 256 × 256 | master |
+| `assets/backgrounds/<color>.webp` | 512 × 512 | master |
+| `assets/templates/<name>.webp` | 512 × 512 | master |
 
 WebP, never JPEG — JPEG has no alpha channel and its DCT compression smears the
 crisp outlines this art style depends on.
@@ -68,17 +82,13 @@ before storing the master. The 35 attribute icons sit in their own panel at the
 top of that page, grouped by kind, with the same drop/paste/replace slots. It also shows how many exercises still need art and
 previews the selected exercise in the app's detail layout (light and dark).
 
-It is deployed to Vercel so several people can fill the set in together, which
-means uploads land in a Vercel Blob store rather than in this directory. Two
-commands close the loop:
+`npm run images:web` serves it from `tools/image-uploader/server.mjs` on
+http://localhost:4000. A drop is written straight into this directory, so git is
+the only store and one command ships it:
 
 ```bash
-npm run masters:pull    # Blob store -> assets/masters/exercises
 npm run build:images    # masters -> shipped WebP
 ```
-
-`npm run images:web` (`vercel dev`) runs the same site locally; it still writes
-to the shared store, so pull before you build either way.
 
 ## Placeholders
 
@@ -91,5 +101,4 @@ attribute tiles instead.
 
 The 35 attribute icons are tinted initials for now and are the one set the app
 does render. They need no code change at all: drop a PNG on its slot in the
-uploader (or overwrite the master directly), then
-`npm run masters:pull && npm run build:images`.
+uploader (or overwrite the master directly), then `npm run build:images`.

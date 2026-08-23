@@ -1,18 +1,18 @@
-import { Stack } from 'expo-router';
+import { Stack } from "expo-router";
 
-import { useTheme } from '@/hooks/use-theme';
+import { tabBarScreenLayout } from "@/components/app-tabs";
+import { stackScreenOptions, TAB_ROOT_HEADER } from "@/constants/navigation";
+import { useTheme } from "@/hooks/use-theme";
 
 export default function AnalyticsLayout() {
   const theme = useTheme();
 
   return (
-    <Stack
-      screenOptions={{
-        headerShown: true,
-        headerTintColor: theme.text,
-        contentStyle: { backgroundColor: theme.background },
-      }}>
-      <Stack.Screen name="index" options={{ title: 'Analytics', headerLargeTitle: true }} />
+    <Stack screenOptions={stackScreenOptions(theme)} screenLayout={tabBarScreenLayout}>
+      <Stack.Screen
+        name="index"
+        options={{ title: "Analytics", ...TAB_ROOT_HEADER }}
+      />
     </Stack>
   );
 }

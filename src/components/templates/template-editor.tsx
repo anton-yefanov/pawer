@@ -1,29 +1,30 @@
 import { inArray } from 'drizzle-orm';
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { router, Stack } from 'expo-router';
+import { router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, TextInput } from 'react-native';
+import { StyleSheet } from 'react-native';
 
+import { KeyboardScrollView } from '@/components/keyboard-scroll-view';
+import { SheetHeader } from '@/components/sheet-header';
 import { ThemedText } from '@/components/themed-text';
 import { BigButton } from '@/components/workout/big-button';
 import { ExerciseCard } from '@/components/workout/exercise-card';
 import { ExerciseReorderProvider, ReorderDim } from '@/components/workout/exercise-reorder';
-import {
-  CloseButton,
-  headerItem,
-  HeaderPillButton,
-  HeaderSlot,
-} from '@/components/workout/workout-sheet-header';
+import { CloseButton, HeaderPillButton } from '@/components/workout/workout-sheet-header';
+import { SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { db } from '@/db/client';
 import { exercises } from '@/db/schema';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { useTheme } from '@/hooks/use-theme';
 import * as haptics from '@/lib/haptics';
 import type { LoggingActions } from '@/lib/logging-model';
 import { DEFAULT_REST_SECONDS } from '@/lib/rest-timer';
+import { supersetCandidates, supersetGroups } from '@/lib/supersets';
 import {
   addDraftSet,
   deleteDraftSet,
+  joinDraftSuperset,
+  leaveDraftSuperset,
   moveDraftExercise,
   removeDraftExercise,
   resetDraft,
@@ -36,6 +37,7 @@ import {
   useTemplateDraft,
   type TemplateDraft,
 } from '@/lib/template-draft';
+import { useLiveRows } from '@/lib/use-live-rows';
 import { useWeightUnit } from '@/lib/weight-unit';
 import { groupBy, previousSetsQuery } from '@/lib/workout-queries';
 
@@ -45,6 +47,8 @@ const DRAFT_ACTIONS: LoggingActions = {
   removeExercise: removeDraftExercise,
   setExerciseNotes: setDraftExerciseNotes,
   setExerciseRest: setDraftExerciseRest,
+  joinSuperset: joinDraftSuperset,
+  leaveSuperset: leaveDraftSuperset,
   updateSetValues: updateDraftSetValues,
   setSetType: setDraftSetType,
   setSetNotes: setDraftSetNotes,
@@ -74,19 +78,29 @@ export function TemplateEditor({
   const exerciseIds = draft.exercises.map((row) => row.exerciseId);
   const membership = [...exerciseIds].sort().join(',');
 
-  const { data } = useLiveQuery(
-    db
-      .select()
-      .from(exercises)
-      // An empty `IN ()` is not valid SQLite, so an id that matches nothing stands in.
-      .where(inArray(exercises.id, exerciseIds.length > 0 ? exerciseIds : [''])),
-    [membership],
+  const data = useLiveRows(
+    () =>
+      db
+        .select()
+        .from(exercises)
+        // An empty `IN ()` is not valid SQLite, so an id that matches nothing stands in.
+        .where(inArray(exercises.id, exerciseIds.length > 0 ? exerciseIds : [''])),
+    membership,
   );
 
-  const { data: previous } = useLiveQuery(previousSetsQuery(null), []);
-  const previousByExercise = groupBy(previous ?? [], (row) => row.exerciseId);
+  const previous = useLiveRows(() => previousSetsQuery(null));
+  const previousByExercise = groupBy(previous, (row) => row.exerciseId);
 
-  const byId = new Map((data ?? []).map((row) => [row.id, row]));
+  const byId = new Map(data.map((row) => [row.id, row]));
+
+  // The superset menu lists names, which live in the exercise table rather than
+  // the draft; a row whose exercise hasn't loaded yet renders nothing anyway.
+  const named = draft.exercises.map((row) => ({
+    id: row.id,
+    supersetId: row.supersetId,
+    name: byId.get(row.exerciseId)?.name ?? '',
+  }));
+  const groups = supersetGroups(named);
 
   const name = draft.name.trim();
 
@@ -98,23 +112,11 @@ export function TemplateEditor({
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          title,
-          contentStyle: { backgroundColor: theme.background },
-          unstable_headerLeftItems: () =>
-            headerItem(
-              <HeaderSlot>
-                <CloseButton onPress={() => router.back()} />
-              </HeaderSlot>
-            ),
-          unstable_headerRightItems: () =>
-            headerItem(
-              <HeaderSlot>
-                <HeaderPillButton title="Save" onPress={save} disabled={name === ''} />
-              </HeaderSlot>
-            ),
-        }}
+      <SheetHeader
+        title={title}
+        options={{ contentStyle: { backgroundColor: theme.background } }}
+        left={<CloseButton onPress={() => router.back()} />}
+        right={<HeaderPillButton title="Save" onPress={save} disabled={name === ''} />}
       />
 
       <ExerciseReorderProvider
@@ -125,7 +127,8 @@ export function TemplateEditor({
           haptics.complete();
         }}
         onReorderingChange={setReordering}>
-        <ScrollView
+        <KeyboardScrollView
+          {...SHEET_SCROLL}
           style={{ backgroundColor: theme.background }}
           contentContainerStyle={styles.content}
           automaticallyAdjustKeyboardInsets
@@ -135,12 +138,11 @@ export function TemplateEditor({
           // it at the same time would put it somewhere the drop test can't see.
           scrollEnabled={!reordering}>
           <ReorderDim>
-            <TextInput
+            <ThemedTextInput
               value={draft.name}
               onChangeText={setDraftName}
               placeholder="New Template"
-              placeholderTextColor={theme.textSecondary}
-              style={[styles.name, { color: theme.text }]}
+              style={styles.name}
               returnKeyType="done"
             />
           </ReorderDim>
@@ -158,8 +160,11 @@ export function TemplateEditor({
                   trackingType: exercise.trackingType,
                   notes: row.notes,
                   restSeconds: row.restSeconds,
+                  supersetId: row.supersetId,
                 }}
                 index={index}
+                supersetIndex={groups.get(row.id)}
+                supersetCandidates={supersetCandidates(named, named[index])}
                 sets={row.sets.map((set) => ({ ...set, completed: false }))}
                 previous={previousByExercise.get(row.exerciseId) ?? []}
                 unit={unit}
@@ -189,7 +194,7 @@ export function TemplateEditor({
               Add an exercise to plan its sets.
             </ThemedText>
           )}
-        </ScrollView>
+        </KeyboardScrollView>
       </ExerciseReorderProvider>
     </>
   );

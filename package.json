@@ -4,7 +4,6 @@
   "version": "1.0.0",
   "dependencies": {
     "@expo/ui": "~57.0.9",
-    "@vercel/blob": "^2.8.0",
     "drizzle-orm": "^0.45.2",
     "expo": "~57.0.11",
     "expo-constants": "~57.0.9",
@@ -24,10 +23,13 @@
     "expo-symbols": "~57.0.2",
     "expo-system-ui": "~57.0.2",
     "expo-web-browser": "~57.0.2",
+    "expo-widgets": "~57.0.10",
+    "phosphor-react-native": "^3.0.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.2",
     "react-native-gesture-handler": "~2.32.0",
+    "react-native-keyboard-controller": "1.21.9",
     "react-native-purchases": "^10.7.1",
     "react-native-purchases-ui": "^10.7.1",
     "react-native-reanimated": "4.5.1",
@@ -44,6 +46,7 @@
     "drizzle-kit": "^0.31.10",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~57.0.1",
+    "patch-package": "^8.0.1",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -58,8 +61,8 @@
     "build:seed": "node ./scripts/build-exercise-seed.mjs",
     "build:images": "node ./scripts/build-images.mjs",
     "build:placeholders": "node ./scripts/make-placeholder-masters.mjs && npm run build:images",
-    "masters:pull": "node ./scripts/pull-masters.mjs",
-    "images:web": "vercel dev"
+    "images:web": "node ./tools/image-uploader/server.mjs",
+    "postinstall": "patch-package"
   },
   "private": true
 }

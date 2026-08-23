@@ -76,7 +76,7 @@
   },
   {
     "sourceId": "pull_day",
-    "color": "teal",
+    "color": "black",
     "name": "Pull",
     "position": 5,
     "exercises": [

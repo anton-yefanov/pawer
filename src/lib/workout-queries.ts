@@ -110,6 +110,37 @@ export function finishedWorkoutsQuery() {
     .orderBy(desc(workouts.finishedAt));
 }
 
+/**
+ * The exercise lines under each row of the history list — one flat query for
+ * every finished workout, sliced per workout in JS, rather than a query per row.
+ *
+ * The set count is a scalar subquery for the same reason `prCount` above is one:
+ * joining sets in would fan the rows out. It counts only completed work sets, so
+ * "3x Deadlift" means three sets that actually happened.
+ */
+export function finishedWorkoutExercisesQuery() {
+  return db
+    .select({
+      workoutId: workoutExercises.workoutId,
+      position: workoutExercises.position,
+      name: exercises.name,
+      setCount: sql<number>`(SELECT COUNT(*) FROM ${sets}
+        WHERE ${sets.workoutExerciseId} = ${workoutExercises.id}
+          AND ${sets.deletedAt} IS NULL AND ${sets.completed} = 1 AND ${WORK_SETS})`,
+    })
+    .from(workoutExercises)
+    .innerJoin(exercises, eq(exercises.id, workoutExercises.exerciseId))
+    .innerJoin(workouts, eq(workouts.id, workoutExercises.workoutId))
+    .where(
+      and(
+        isNull(workoutExercises.deletedAt),
+        isNull(workouts.deletedAt),
+        isNotNull(workouts.finishedAt)
+      )
+    )
+    .orderBy(asc(workoutExercises.workoutId), asc(workoutExercises.position));
+}
+
 export function workoutQuery(workoutId: string) {
   return db.select().from(workouts).where(eq(workouts.id, workoutId)).limit(1);
 }
@@ -122,6 +153,7 @@ export function workoutExercisesQuery(workoutId: string) {
       position: workoutExercises.position,
       notes: workoutExercises.notes,
       restSeconds: workoutExercises.restSeconds,
+      supersetId: workoutExercises.supersetId,
       name: exercises.name,
       sourceId: exercises.sourceId,
       trackingType: exercises.trackingType,
@@ -225,6 +257,9 @@ export function workoutPersonalRecordsQuery(workoutId: string) {
 }
 
 export type HistoryRow = Awaited<ReturnType<typeof finishedWorkoutsQuery>>[number];
+export type FinishedWorkoutExercise = Awaited<
+  ReturnType<typeof finishedWorkoutExercisesQuery>
+>[number];
 export type WorkoutPrRow = Awaited<ReturnType<typeof workoutPersonalRecordsQuery>>[number];
 export type WorkoutExerciseRow = Awaited<ReturnType<typeof workoutExercisesQuery>>[number];
 export type WorkoutSetRow = Awaited<ReturnType<typeof workoutSetsQuery>>[number];

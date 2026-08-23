@@ -14,6 +14,7 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
   return (
     <Text
       style={[
+        base,
         { color: theme[themeColor ?? (type === 'linkPrimary' ? 'accent' : 'text')] },
         type === 'default' && styles.default,
         type === 'title' && styles.title,
@@ -29,6 +30,12 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
     />
   );
 }
+
+/**
+ * iOS resolves the system face by falling through, so only Android is named —
+ * left alone it lands on Roboto, which is the loudest Material tell in the app.
+ */
+const base = Platform.select({ android: { fontFamily: Fonts.sans } });
 
 const styles = StyleSheet.create({
   small: {

@@ -447,12 +447,12 @@ function showError(id, frame, message) {
   grid.append(p);
 }
 
-const BODY_LIMIT = 4 * 1024 * 1024;
+const BODY_LIMIT = 32 * 1024 * 1024;
 
 /**
- * Serverless functions reject request bodies over 4.5 MB, so an oversized file
- * is re-encoded to the master canvas here first — the same resize the server
- * would have done anyway, just early enough to fit through.
+ * The server refuses bodies over its limit, so an oversized file is re-encoded
+ * to the master canvas here first — the same resize the server would have done
+ * anyway, just early enough to fit through.
  */
 function shrinkToMaster(file, size = 1200) {
   return new Promise((res, rej) => {

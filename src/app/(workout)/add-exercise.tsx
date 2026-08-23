@@ -1,14 +1,14 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
 
 import { ExerciseLibrary } from '@/components/exercise-library';
+import { SheetFooter } from '@/components/sheet-footer';
+import { SHEET_FOOTER_HEIGHT } from '@/components/sheet-footer.types';
+import { SheetGrabber } from '@/components/sheet-grabber';
 import { BigButton } from '@/components/workout/big-button';
 import { SHEET_BOTTOM_INSET, SHEET_TOP_INSET } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { addExerciseToWorkout } from '@/lib/workout-actions';
-
-const FOOTER_HEIGHT = 50 + Spacing.three * 2;
 
 export default function AddExerciseScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -32,6 +32,8 @@ export default function AddExerciseScreen() {
 
   return (
     <>
+      <SheetGrabber />
+
       <ExerciseLibrary
         onSelect={(exercise) => toggle(exercise.id)}
         selectedIds={pickedSet}
@@ -41,30 +43,20 @@ export default function AddExerciseScreen() {
           params: { id: exercise.id },
         })}
         topInset={SHEET_TOP_INSET}
-        bottomInset={FOOTER_HEIGHT + SHEET_BOTTOM_INSET}
+        bottomInset={(picked.length > 0 ? SHEET_FOOTER_HEIGHT : 0) + SHEET_BOTTOM_INSET}
       />
 
       {picked.length > 0 && (
         // No entering animation: a Reanimated layout animation on the wrapper
         // stops the native glass view inside from drawing at all.
-        <View style={[styles.footer, { paddingBottom: Spacing.three + SHEET_BOTTOM_INSET }]}>
+        <SheetFooter style={{ paddingBottom: Spacing.three + SHEET_BOTTOM_INSET }}>
           <BigButton
             title={`Add Exercise${picked.length > 1 ? 's' : ''}`}
             onPress={confirm}
             feedback="complete"
           />
-        </View>
+        </SheetFooter>
       )}
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  footer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    padding: Spacing.three,
-  },
-});

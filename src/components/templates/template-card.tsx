@@ -5,7 +5,8 @@ import { StyleSheet, View } from 'react-native';
 import { DraggableCell } from '@/components/templates/draggable-cell';
 import { CARD_BORDER, cardSlot, GridCard } from '@/components/templates/grid-card';
 import { type CardColor } from '@/constants/card-colors';
-import { templateBucket, templateImage } from '@/lib/template-images';
+import { type CardPose } from '@/constants/card-poses';
+import { templateCover } from '@/lib/template-images';
 
 export type TemplateCardData = {
   id: string;
@@ -13,6 +14,7 @@ export type TemplateCardData = {
   isBuiltIn: boolean;
   folderId: string | null;
   color: CardColor | null;
+  image: CardPose | null;
   exerciseNames: readonly string[];
   primaryMuscles: readonly string[];
 };
@@ -36,9 +38,9 @@ export function TemplateCard({ template, width, index, draggable = false }: Prop
       }
       cover={
         <Image
-          source={templateImage(templateBucket(template.primaryMuscles))}
+          source={templateCover(template.image, template.primaryMuscles)}
           style={styles.cover}
-          contentFit="cover"
+          contentFit="contain"
         />
       }
     />

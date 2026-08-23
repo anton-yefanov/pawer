@@ -1,4 +1,3 @@
-import { SymbolView } from 'expo-symbols';
 import { Fragment, useRef, useState, type Ref } from 'react';
 import { Keyboard, Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -10,6 +9,7 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 
+import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import {
   COLLAPSED_ROW,
@@ -21,6 +21,7 @@ import { ExerciseMenu } from '@/components/workout/exercise-menu';
 import { NoteInput } from '@/components/workout/note-input';
 import { RestCountdownRow } from '@/components/workout/rest-countdown-row';
 import { fieldWidth, SET_COLUMNS, SetRow } from '@/components/workout/set-row';
+import { SupersetBadge } from '@/components/workout/superset-badge';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import * as haptics from '@/lib/haptics';
@@ -43,6 +44,10 @@ type Props = {
   unit: WeightUnit;
   defaultRestSeconds: number;
   actions: LoggingActions;
+  /** Which superset colour this row wears; undefined when it is in none. */
+  supersetIndex?: number;
+  /** The other exercises in the session, its own superset aside. */
+  supersetCandidates: readonly { id: string; name: string }[];
   onOpenExercise: (exerciseId: string) => void;
   /** Both logger-only: a template has nothing to tick and nothing resting. */
   onComplete?: (set: LoggedSet, completed: boolean) => void;
@@ -59,6 +64,8 @@ export function ExerciseCard({
   unit,
   defaultRestSeconds,
   actions,
+  supersetIndex,
+  supersetCandidates,
   onOpenExercise,
   onComplete,
   restingSetId,
@@ -146,7 +153,8 @@ export function ExerciseCard({
                 haptics.tap();
                 onOpenExercise(exercise.exerciseId);
               }}>
-              <ThemedText type="smallBold" numberOfLines={1}>
+              {supersetIndex !== undefined && <SupersetBadge index={supersetIndex} />}
+              <ThemedText type="smallBold" numberOfLines={1} style={styles.name}>
                 {exercise.name}
               </ThemedText>
             </Pressable>
@@ -156,6 +164,8 @@ export function ExerciseCard({
                 restSeconds={exercise.restSeconds}
                 defaultRestSeconds={defaultRestSeconds}
                 hasNote={notesOpen}
+                inSuperset={exercise.supersetId !== null}
+                candidates={supersetCandidates}
                 onToggleNote={() => {
                   if (!notesOpen) {
                     removingNote.current = false;
@@ -167,6 +177,14 @@ export function ExerciseCard({
                   actions.setExerciseNotes(exercise.id, null);
                 }}
                 onChangeRest={(seconds) => actions.setExerciseRest(exercise.id, seconds)}
+                onJoinSuperset={(targetRowId) => {
+                  haptics.select();
+                  actions.joinSuperset(exercise.id, targetRowId);
+                }}
+                onLeaveSuperset={() => {
+                  haptics.tap();
+                  actions.leaveSuperset(exercise.id);
+                }}
                 // No confirmation step: the menu row is already marked destructive by
                 // SwiftUI, and a system alert raised from inside a formSheet never
                 // reaches the screen. The warning buzz stands in for it.
@@ -178,7 +196,7 @@ export function ExerciseCard({
             </Animated.View>
 
             <Animated.View style={[styles.grabber, grabberFade]} pointerEvents="none">
-              <SymbolView name="line.3.horizontal" size={18} tintColor={theme.textSecondary} />
+              <Icon name="line.3.horizontal" size={18} tintColor={theme.textSecondary} />
             </Animated.View>
           </View>
         </Animated.View>
@@ -271,6 +289,12 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  name: {
+    flexShrink: 1,
   },
   grabber: {
     position: 'absolute',

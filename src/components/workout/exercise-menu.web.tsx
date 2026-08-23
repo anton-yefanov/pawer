@@ -1,6 +1,6 @@
-import { SymbolView } from 'expo-symbols';
 import { Pressable } from 'react-native';
 
+import { Icon } from '@/components/icon';
 import { useTheme } from '@/hooks/use-theme';
 
 export const REST_OPTIONS = [0, 30, 45, 60, 90, 120, 180] as const;
@@ -10,7 +10,7 @@ export function ExerciseMenu({ onRemove }: { onRemove: () => void } & Record<str
   const theme = useTheme();
   return (
     <Pressable onPress={onRemove} accessibilityLabel="Remove exercise" hitSlop={8}>
-      <SymbolView name="ellipsis" size={20} tintColor={theme.textSecondary} />
+      <Icon name="ellipsis" size={20} tintColor={theme.textSecondary} />
     </Pressable>
   );
 }

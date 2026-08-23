@@ -6,6 +6,13 @@ import { Spacing } from '@/constants/theme';
 import type { Exercise } from '@/db/schema';
 import { attributeIcon, type AttributeKind } from '@/lib/attribute-images';
 
+const KIND_LABEL: Record<AttributeKind, string> = {
+  level: 'Level',
+  category: 'Type',
+  equipment: 'Equipment',
+  muscle: 'Muscle',
+};
+
 export function ExerciseAttributeTiles({ exercise }: { exercise: Exercise }) {
   const tiles = (
     [
@@ -26,13 +33,14 @@ export function ExerciseAttributeTiles({ exercise }: { exercise: Exercise }) {
       {tiles.map((tile) => (
         <View key={tile.kind} style={styles.tile}>
           <Image source={tile.icon} style={styles.icon} contentFit="contain" />
-          <ThemedText
-            type="small"
-            themeColor="textSecondary"
-            numberOfLines={2}
-            style={styles.label}>
-            {tile.value}
-          </ThemedText>
+          <View style={styles.caption}>
+            <ThemedText themeColor="textSecondary" numberOfLines={1} style={styles.kind}>
+              {KIND_LABEL[tile.kind]}
+            </ThemedText>
+            <ThemedText type="smallBold" numberOfLines={2} style={styles.value}>
+              {tile.value}
+            </ThemedText>
+          </View>
         </View>
       ))}
     </View>
@@ -55,7 +63,18 @@ const styles = StyleSheet.create({
     maxWidth: 88,
     aspectRatio: 1,
   },
-  label: {
+  caption: {
+    alignItems: 'center',
+  },
+  kind: {
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: '600',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+  },
+  value: {
     textAlign: 'center',
     textTransform: 'capitalize',
   },

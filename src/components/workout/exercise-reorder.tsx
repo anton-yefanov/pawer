@@ -243,7 +243,11 @@ export function useLiftShadow(id: string) {
 
   return useAnimatedStyle(() => {
     const lifted = draggingId.value === id && settling.value === 0;
-    return { shadowOpacity: withTiming(lifted ? 0.18 : 0, { duration: 140 }) };
+    return {
+      shadowOpacity: withTiming(lifted ? 0.18 : 0, { duration: 140 }),
+      // iOS reads the `shadow*` props; Android only ever reads this one.
+      elevation: withTiming(lifted ? 6 : 0, { duration: 140 }),
+    };
   });
 }
 

@@ -47,8 +47,13 @@ type Props = {
   restSeconds: number | null;
   defaultRestSeconds: number;
   hasNote: boolean;
+  inSuperset: boolean;
+  /** The other exercises this one can be supersetted with, its own group aside. */
+  candidates: readonly { id: string; name: string }[];
   onToggleNote: () => void;
   onChangeRest: (seconds: number | null) => void;
+  onJoinSuperset: (targetRowId: string) => void;
+  onLeaveSuperset: () => void;
   onRemove: () => void;
 };
 
@@ -65,8 +70,12 @@ export function ExerciseMenu({
   restSeconds,
   defaultRestSeconds,
   hasNote,
+  inSuperset,
+  candidates,
   onToggleNote,
   onChangeRest,
+  onJoinSuperset,
+  onLeaveSuperset,
   onRemove,
 }: Props) {
   const theme = useTheme();
@@ -125,6 +134,28 @@ export function ExerciseMenu({
                   onPress={() => setCustomOpen(true)}
                 />
               </Menu>
+
+              {(candidates.length > 0 || inSuperset) && (
+                <Menu label="Superset" systemImage="arrow.triangle.2.circlepath">
+                  {[
+                    ...candidates.map((row) => (
+                      <Button key={row.id} label={row.name} onPress={() => onJoinSuperset(row.id)} />
+                    )),
+                    ...(inSuperset
+                      ? [
+                          <Divider key="superset-divider" />,
+                          <Button
+                            key="superset-leave"
+                            role="destructive"
+                            systemImage="xmark"
+                            label="Remove from superset"
+                            onPress={onLeaveSuperset}
+                          />,
+                        ]
+                      : []),
+                  ]}
+                </Menu>
+              )}
 
               <Divider />
               <Button

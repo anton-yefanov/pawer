@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 import type { CardColor } from '../constants/card-colors';
+import type { CardPose } from '../constants/card-poses';
 
 /**
  * Conventions, per IMPLEMENTATION_PLAN.md §1:
@@ -125,6 +126,8 @@ export const workoutExercises = sqliteTable(
     notes: text('notes'),
     /** Seconds. Null falls back to the global default. */
     restSeconds: integer('rest_seconds'),
+    /** Rows sharing a value are one superset; null is none. See src/lib/supersets.ts. */
+    supersetId: text('superset_id'),
     ...timestamps,
   },
   (t) => [index('workout_exercises_workout_idx').on(t.workoutId, t.position)]
@@ -181,6 +184,9 @@ export const templates = sqliteTable(
     isBuiltIn: integer('is_built_in', { mode: 'boolean' }).notNull().default(false),
     folderId: text('folder_id').references(() => folders.id),
     color: text('color').$type<CardColor>(),
+
+    /** Pinned cover pose; null lets the cover follow the template's muscles. */
+    image: text('image').$type<CardPose>(),
     ...timestamps,
   },
   (t) => [
@@ -202,6 +208,7 @@ export const templateExercises = sqliteTable(
     position: integer('position').notNull(),
     notes: text('notes'),
     restSeconds: integer('rest_seconds'),
+    supersetId: text('superset_id'),
     ...timestamps,
   },
   (t) => [index('template_exercises_template_idx').on(t.templateId, t.position)]

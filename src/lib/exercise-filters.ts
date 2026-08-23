@@ -1,7 +1,8 @@
-import { and, asc, isNull, sql, type SQL } from 'drizzle-orm';
+import { and, asc, isNull, ne, sql, type SQL } from 'drizzle-orm';
 
 import { exercises } from '@/db/schema';
 import seedExercises from '@/db/seed/exercises.json';
+import { exerciseGroup } from '@/lib/exercise-groups';
 import { collapse, searchTokens } from '@/lib/exercise-search';
 
 /** Sentinel used by the native pickers for "no filter on this facet". */
@@ -30,40 +31,24 @@ export type FacetMenu = {
   groups?: { title: string; options: string[] }[];
 };
 
-/**
- * A UIMenu taller than the space below its anchor turns into a scroll view, and
- * a scrolling menu spends the press-and-drag gesture on panning instead of
- * selecting a row. Sixteen muscles plus "Any" crosses that threshold, so the
- * long tail lives in submenus — don't flatten this back out.
- */
-const MUSCLE_GROUPS: Record<string, string[]> = {
-  Arms: ['biceps', 'triceps', 'forearms'],
-  Back: ['lats', 'traps', 'middle back', 'lower back'],
-  Legs: ['quadriceps', 'hamstrings', 'glutes', 'calves', 'abductors', 'adductors'],
-};
-
-const GROUPED_MUSCLES = new Set(Object.values(MUSCLE_GROUPS).flat());
-
-export const MUSCLE_MENU: FacetMenu = {
-  options: MUSCLE_OPTIONS.filter((muscle) => !GROUPED_MUSCLES.has(muscle)),
-  groups: Object.entries(MUSCLE_GROUPS).map(([title, options]) => ({
-    title,
-    options: options.filter((muscle) => MUSCLE_OPTIONS.includes(muscle)),
-  })),
-};
-
 export const EQUIPMENT_MENU: FacetMenu = { options: EQUIPMENT_OPTIONS };
 
 export type ExerciseFilters = {
   search: string;
-  muscle: string;
+  /** An `EXERCISE_GROUPS` id. Navigation rather than a filter facet. */
+  group: string;
   equipment: string;
 };
 
-export const NO_FILTERS: ExerciseFilters = { search: '', muscle: ANY, equipment: ANY };
+export const NO_FILTERS: ExerciseFilters = { search: '', group: ANY, equipment: ANY };
 
 export function activeFilterCount(filters: ExerciseFilters): number {
-  return (filters.muscle !== ANY ? 1 : 0) + (filters.equipment !== ANY ? 1 : 0);
+  return filters.equipment !== ANY ? 1 : 0;
+}
+
+/** Resting state: nothing picked, nothing typed, so the library shows groups. */
+export function isBrowsing(filters: ExerciseFilters): boolean {
+  return filters.search.trim() === '' && filters.group === ANY && filters.equipment === ANY;
 }
 
 /**
@@ -80,9 +65,11 @@ const HAYSTACK = sql`CASE WHEN ${exercises.searchText} = ''
  * order irrelevant; the haystack carries each string both spaced and collapsed,
  * so "pull down" and "pulldown" find each other (see lib/exercise-search.ts).
  *
- * Muscle matching goes through `json_each` because `primary_muscles` is a JSON
+ * Group matching goes through `json_each` because `primary_muscles` is a JSON
  * array in a text column — a plain LIKE would match "lower back" inside
- * "middle back" style substrings and silently over-match.
+ * "middle back" style substrings and silently over-match. A muscle group also
+ * has to exclude cardio: every cardio exercise is tagged `quadriceps` upstream,
+ * so without that it shows up under Legs as well as under its own group.
  */
 export function exerciseFilterWhere(filters: ExerciseFilters): SQL | undefined {
   const clauses: (SQL | undefined)[] = [isNull(exercises.deletedAt)];
@@ -96,9 +83,18 @@ export function exerciseFilterWhere(filters: ExerciseFilters): SQL | undefined {
     clauses.push(sql`${exercises.equipment} = ${filters.equipment}`);
   }
 
-  if (filters.muscle !== ANY) {
+  const group = filters.group === ANY ? undefined : exerciseGroup(filters.group);
+
+  if (group?.category) {
+    clauses.push(sql`${exercises.category} = ${group.category}`);
+  } else if (group?.muscles) {
     clauses.push(
-      sql`EXISTS (SELECT 1 FROM json_each(${exercises.primaryMuscles}) WHERE value = ${filters.muscle})`
+      sql`EXISTS (SELECT 1 FROM json_each(${exercises.primaryMuscles})
+        WHERE value IN (${sql.join(
+          group.muscles.map((muscle) => sql`${muscle}`),
+          sql`, `
+        )}))`,
+      ne(exercises.category, 'cardio')
     );
   }
 

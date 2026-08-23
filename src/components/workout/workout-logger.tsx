@@ -1,9 +1,9 @@
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { Image } from 'expo-image';
-import { Stack } from 'expo-router';
 import { useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { KeyboardScrollView } from '@/components/keyboard-scroll-view';
+import { SheetHeader } from '@/components/sheet-header';
 import { ThemedText } from '@/components/themed-text';
 import { BigButton } from '@/components/workout/big-button';
 import { ConfirmAlert } from '@/components/workout/confirm-alert';
@@ -19,14 +19,15 @@ import { RestTimerButton } from '@/components/workout/rest-timer-button';
 import {
   CloseButton,
   FinishButton,
-  headerItem,
   HeaderPillButton,
-  HeaderSlot,
 } from '@/components/workout/workout-sheet-header';
 import { WorkoutDetailsCard } from '@/components/workout/workout-details-card';
 import { WorkoutSummary } from '@/components/workout/workout-summary';
+import { SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
+import { useProgressiveMount } from '@/hooks/use-progressive-mount';
 import { useTheme } from '@/hooks/use-theme';
+import { useLiveRows } from '@/lib/use-live-rows';
 import { useWeightUnit } from '@/lib/weight-unit';
 import * as haptics from '@/lib/haptics';
 import { mascotImage } from '@/lib/mascot-images';
@@ -35,12 +36,15 @@ import { move, sortBy } from '@/lib/order';
 import { presentFirstWorkoutPaywall } from '@/lib/pro-gates';
 import { usePro } from '@/lib/purchases';
 import { DEFAULT_REST_SECONDS, useRestTimer } from '@/lib/rest-timer';
+import { supersetCandidates, supersetGroups } from '@/lib/supersets';
 import {
   addSet,
   cancelWorkout,
   completeUnfinishedSets,
   deleteSet,
   finishWorkout,
+  joinWorkoutSuperset,
+  leaveWorkoutSuperset,
   removeWorkoutExercise,
   reorderWorkoutExercises,
   saveWorkoutEdits,
@@ -66,8 +70,12 @@ import {
   trackingByExercise,
 } from '@/lib/workout-stats';
 
-/** Module scope keeps the identity stable without a hook. */
-const WORKOUT_ACTIONS: LoggingActions = {
+/**
+ * Module scope keeps the identity stable without a hook. The superset pair is
+ * missing on purpose: joining also repositions rows, so it has to clear the
+ * optimistic drag order the screen holds.
+ */
+const WORKOUT_ACTIONS: Omit<LoggingActions, 'joinSuperset' | 'leaveSuperset'> = {
   addSet: (id) => void addSet(id),
   removeExercise: (id) => void removeWorkoutExercise(id),
   setExerciseNotes: (id, notes) => void setWorkoutExerciseNotes(id, notes),
@@ -77,6 +85,9 @@ const WORKOUT_ACTIONS: LoggingActions = {
   setSetNotes: (id, notes) => void setSetNotes(id, notes),
   deleteSet: (id) => void deleteSet(id),
 };
+
+/** What a sheet-height screen shows before the first scroll. */
+const CARDS_ON_SCREEN = 2;
 
 type Props = {
   id: string;
@@ -100,6 +111,7 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
   const [phase, setPhase] = useState<'logging' | 'summary'>('logging');
   const [confirming, setConfirming] = useState(false);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [confirmingFinish, setConfirmingFinish] = useState(false);
   const [reordering, setReordering] = useState(false);
 
   /**
@@ -115,17 +127,28 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
   const viewportHeight = useRef(0);
   const restRowRef = useRef<View>(null);
 
-  const workout = useLiveQuery(workoutQuery(id), [id]).data?.[0];
-  const { data: exercises } = useLiveQuery(workoutExercisesQuery(id), [id]);
-  const { data: sets } = useLiveQuery(workoutSetsQuery(id), [id]);
-  const { data: previous } = useLiveQuery(previousSetsQuery(id), [id]);
-  const { data: records } = useLiveQuery(workoutPersonalRecordsQuery(id), [id]);
+  const workout = useLiveRows(() => workoutQuery(id), id)[0];
+  const exercises = useLiveRows(() => workoutExercisesQuery(id), id);
+  const sets = useLiveRows(() => workoutSetsQuery(id), id);
+  const previous = useLiveRows(() => previousSetsQuery(id), id);
+  const records = useLiveRows(() => workoutPersonalRecordsQuery(id), id);
+  const mounted = useProgressiveMount(exercises.length, CARDS_ON_SCREEN);
 
   if (!workout) return <View style={{ flex: 1, backgroundColor: theme.background }} />;
 
-  const setsByExercise = groupBy(sets ?? [], (set) => set.workoutExerciseId);
-  const previousByExercise = groupBy(previous ?? [], (row) => row.exerciseId);
-  const ordered = sortBy(exercises ?? [], order);
+  const setsByExercise = groupBy(sets, (set) => set.workoutExerciseId);
+  const previousByExercise = groupBy(previous, (row) => row.exerciseId);
+  const ordered = sortBy(exercises, order);
+  const groups = supersetGroups(ordered);
+
+  const actions: LoggingActions = {
+    ...WORKOUT_ACTIONS,
+    joinSuperset: (id, targetId) => {
+      setOrder([]);
+      void joinWorkoutSuperset(id, targetId);
+    },
+    leaveSuperset: (id) => void leaveWorkoutSuperset(id),
+  };
 
   const reorder = (from: number, to: number, settle: Settle) => {
     const ids = move(
@@ -203,32 +226,26 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
     const empty =
       (name === '' || name === 'Workout') &&
       !workout.notes?.trim() &&
-      (exercises ?? []).length === 0;
+      exercises.length === 0;
     if (empty) void cancel();
     else setConfirmingCancel(true);
   };
 
   const onFinishPressed = () => {
-    if (hasIncompleteValidSets(sets ?? [], trackingByExercise(exercises ?? []))) setConfirming(true);
-    else void finish();
+    if (hasIncompleteValidSets(sets, trackingByExercise(exercises))) setConfirming(true);
+    else setConfirmingFinish(true);
   };
 
   if (phase === 'summary') {
     return (
       <View style={[styles.page, { backgroundColor: theme.background }]}>
-        <Stack.Screen
-          options={{
-            unstable_headerLeftItems: () => [],
-            headerTitle: () => null,
-            unstable_headerRightItems: () => [],
-          }}
-        />
+        <SheetHeader />
         <WorkoutSummary
           name={workout.name?.trim() || 'Workout'}
-          summary={summarise(workout, exercises ?? [], sets ?? [])}
-          exercises={exercises ?? []}
-          sets={sets ?? []}
-          personalRecords={records ?? []}
+          summary={summarise(workout, exercises, sets)}
+          exercises={exercises}
+          sets={sets}
+          personalRecords={records}
           unit={unit}
           // Presented over the summary rather than after it: a modal raised
           // into a dismissing screen is a modal iOS drops on the floor.
@@ -244,50 +261,42 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
   const mascot = mascotStateFor({
     finished: false,
     resting: rest.setId != null,
-    hasProgress: (sets ?? []).some((set) => set.completed),
+    hasProgress: sets.some((set) => set.completed),
   });
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          unstable_headerLeftItems: () =>
-            headerItem(
-              <HeaderSlot>
-                {mode === 'edit' ? (
-                  <CloseButton onPress={onDone} />
-                ) : (
-                  <RestTimerButton onPress={scrollToRest} />
-                )}
-              </HeaderSlot>
-            ),
-          headerTitle: () =>
-            mode === 'edit' ? (
-              <ThemedText type="smallBold" numberOfLines={1}>
-                {workout.name?.trim() || 'Workout'}
-              </ThemedText>
-            ) : (
-              <ElapsedTime startedAt={workout.startedAt} />
-            ),
-          unstable_headerRightItems: () =>
-            headerItem(
-              <HeaderSlot>
-                {mode === 'edit' ? (
-                  <HeaderPillButton title="Save" onPress={() => void save()} />
-                ) : (
-                  <FinishButton onPress={onFinishPressed} />
-                )}
-              </HeaderSlot>
-            ),
-        }}
+      <SheetHeader
+        title={
+          mode === 'edit' ? (
+            workout.name?.trim() || 'Workout'
+          ) : (
+            <ElapsedTime startedAt={workout.startedAt} />
+          )
+        }
+        left={
+          mode === 'edit' ? (
+            <CloseButton onPress={onDone} />
+          ) : (
+            <RestTimerButton onPress={scrollToRest} />
+          )
+        }
+        right={
+          mode === 'edit' ? (
+            <HeaderPillButton title="Save" onPress={() => void save()} />
+          ) : (
+            <FinishButton onPress={onFinishPressed} />
+          )
+        }
       />
 
       <ExerciseReorderProvider
         count={ordered.length}
         onReorder={reorder}
         onReorderingChange={setReordering}>
-        <ScrollView
-          ref={scrollRef}
+        <KeyboardScrollView
+          {...SHEET_SCROLL}
+          scrollRef={scrollRef}
           onLayout={(event) => {
             viewportHeight.current = event.nativeEvent.layout.height;
           }}
@@ -309,7 +318,7 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
               <WorkoutDetailsCard workout={workout} />
             </ReorderDim>
 
-            {ordered.map((workoutExercise, index) => (
+            {ordered.slice(0, mounted).map((workoutExercise, index) => (
               <ExerciseCard
                 key={workoutExercise.id}
                 exercise={workoutExercise}
@@ -320,19 +329,16 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
                 defaultRestSeconds={DEFAULT_REST_SECONDS}
                 restingSetId={rest.setId}
                 restRowRef={restRowRef}
-                actions={WORKOUT_ACTIONS}
+                actions={actions}
+                supersetIndex={groups.get(workoutExercise.id)}
+                supersetCandidates={supersetCandidates(ordered, workoutExercise)}
                 onComplete={(set, completed) => complete(workoutExercise, set, completed)}
                 onOpenExercise={onOpenExercise}
               />
             ))}
 
             <ReorderDim>
-              <BigButton
-                title="Add Exercise"
-                symbol="plus.circle"
-                variant="tinted"
-                onPress={onAddExercise}
-              />
+              <BigButton title="Add Exercise" symbol="plus.circle" onPress={onAddExercise} />
             </ReorderDim>
 
             {ordered.length === 0 && (
@@ -347,7 +353,7 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
               </ReorderDim>
             )}
           </View>
-        </ScrollView>
+        </KeyboardScrollView>
       </ExerciseReorderProvider>
 
       <ConfirmAlert
@@ -363,20 +369,30 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
         onDismiss={() => setConfirmingCancel(false)}
       />
 
-      {confirming && (
-        <ConfirmFinish
-          onCompleteUnfinished={async () => {
-            setConfirming(false);
-            await completeUnfinishedSets(id);
-            await finish();
-          }}
-          onCancelWorkout={async () => {
-            setConfirming(false);
-            await cancel();
-          }}
-          onDismiss={() => setConfirming(false)}
-        />
-      )}
+      <ConfirmAlert
+        open={confirmingFinish}
+        title="Finish workout?"
+        confirmLabel="Finish"
+        confirmRole="default"
+        onConfirm={() => {
+          setConfirmingFinish(false);
+          void finish();
+        }}
+        onDismiss={() => setConfirmingFinish(false)}
+      />
+      <ConfirmFinish
+        open={confirming}
+        onCompleteUnfinished={async () => {
+          setConfirming(false);
+          await completeUnfinishedSets(id);
+          await finish();
+        }}
+        onCancelWorkout={async () => {
+          setConfirming(false);
+          await cancel();
+        }}
+        onDismiss={() => setConfirming(false)}
+      />
     </>
   );
 }

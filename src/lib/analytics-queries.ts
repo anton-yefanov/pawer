@@ -1,7 +1,19 @@
-import { and, asc, count, countDistinct, eq, gte, isNotNull, isNull, lt, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  count,
+  countDistinct,
+  desc,
+  eq,
+  gte,
+  isNotNull,
+  isNull,
+  lt,
+  sql,
+} from 'drizzle-orm';
 
 import { db } from '@/db/client';
-import { exercises, sets, workoutExercises, workouts } from '@/db/schema';
+import { exercises, personalRecords, sets, workoutExercises, workouts } from '@/db/schema';
 import type { DateRange } from '@/lib/analytics-period';
 import { VOLUME_TRACKING_TYPES, WORK_SETS } from '@/lib/workout-queries';
 
@@ -32,6 +44,10 @@ function inRange(range: DateRange) {
 export function workoutTotalsQuery(range: DateRange) {
   return db
     .select({
+      // Echoed back so a caller can tell this result apart from the last
+      // range's: `useLiveQuery` keeps the previous rows until the new query
+      // settles, and a comparison drawn from those is briefly wrong.
+      from: sql<number>`${range.from}`,
       workouts: count(),
       // Clamped per workout, not on the total: a start time edited past its
       // finish would otherwise subtract from every real session in the range.
@@ -41,6 +57,60 @@ export function workoutTotalsQuery(range: DateRange) {
     .from(workouts)
     .where(inRange(range));
 }
+
+/**
+ * When the user's history begins. A comparison is only fair against a window
+ * their training already covered — a first workout part-way through the
+ * previous period turns a percentage into noise (a 180-day view can otherwise
+ * report a five-figure gain against the one session that happened to precede
+ * it).
+ */
+export function firstWorkoutQuery() {
+  return db
+    .select({ startedAt: sql<number | null>`MIN(${workouts.startedAt})` })
+    .from(workouts)
+    .where(and(isNotNull(workouts.finishedAt), isNull(workouts.deletedAt)));
+}
+
+/**
+ * Records are ranged on the *workout's* `startedAt`, not on their own
+ * `achievedAt`: `achievedAt` is stamped when the workout is finished, so a
+ * session begun before midnight and finished after it would land in a different
+ * bucket than every other number on the screen.
+ */
+function prInRange(range: DateRange) {
+  return and(inRange(range), isNull(personalRecords.deletedAt));
+}
+
+export function prTotalsQuery(range: DateRange) {
+  return db
+    .select({
+      from: sql<number>`${range.from}`,
+      records: count(),
+    })
+    .from(personalRecords)
+    .innerJoin(workouts, eq(workouts.id, personalRecords.workoutId))
+    .where(prInRange(range));
+}
+
+export function periodRecordsQuery(range: DateRange) {
+  return db
+    .select({
+      id: personalRecords.id,
+      kind: personalRecords.kind,
+      value: personalRecords.value,
+      achievedAt: personalRecords.achievedAt,
+      exerciseName: exercises.name,
+      trackingType: exercises.trackingType,
+    })
+    .from(personalRecords)
+    .innerJoin(workouts, eq(workouts.id, personalRecords.workoutId))
+    .innerJoin(exercises, eq(exercises.id, personalRecords.exerciseId))
+    .where(prInRange(range))
+    .orderBy(desc(personalRecords.achievedAt));
+}
+
+export type PeriodRecordRow = Awaited<ReturnType<typeof periodRecordsQuery>>[number];
 
 export function setTotalsQuery(range: DateRange) {
   const completed = sql`${sets.completed} = 1 AND ${WORK_SETS}`;
@@ -119,6 +189,7 @@ export type AnalyticsTotals = {
   volumeKg: number;
   avgVolumeKg: number;
   distanceM: number;
+  records: number;
 };
 
 export function combineTotals(
@@ -131,7 +202,8 @@ export function combineTotals(
         volumeKg: number;
         distanceM: number;
       }
-    | undefined
+    | undefined,
+  prRow?: { records: number }
 ): AnalyticsTotals {
   const workoutCount = workoutRow?.workouts ?? 0;
   const durationMs = workoutRow?.durationMs ?? 0;
@@ -147,5 +219,6 @@ export function combineTotals(
     volumeKg,
     avgVolumeKg: workoutCount === 0 ? 0 : volumeKg / workoutCount,
     distanceM: setRow?.distanceM ?? 0,
+    records: prRow?.records ?? 0,
   };
 }

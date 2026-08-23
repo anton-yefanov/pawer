@@ -8,12 +8,16 @@
  *        assets/masters/exercises/<slug>_2.png   same bounding box as _1
  *        assets/masters/mascot/<state>.png       1024x1024, PNG, alpha
  *        assets/masters/attributes/<kind>/<slug>.png  1024x1024, PNG, alpha
+ *        assets/masters/backgrounds/<color>.png  square, PNG, opaque
+ *        assets/masters/templates/<bucket>.png   square, PNG, alpha
  *
  * Output assets/exercises/detail/<slug>_1.webp   600x600  q85 + alpha
  *        assets/exercises/detail/<slug>_2.webp   600x600
  *        assets/exercises/thumb/<slug>.webp      150x150  (from frame 1)
  *        assets/mascot/<state>.webp              512x512
  *        assets/attributes/<kind>/<slug>.webp    256x256
+ *        assets/backgrounds/<color>.webp         512x512, opaque
+ *        assets/templates/<bucket>.webp          512x512
  *
  * Everything ships as lossy WebP q85 with a lossless alpha channel: ~half the
  * size of optimised PNG, natively decoded by expo-image, and unlike JPEG it
@@ -37,6 +41,8 @@ const SIZES = {
   thumb: 150,
   mascot: 512,
   attribute: 256,
+  background: 512,
+  template: 512,
 };
 
 /** Masters must all be square so thumb and detail share one bounding box. */
@@ -145,6 +151,45 @@ for (const [kind, values] of Object.entries(ATTRIBUTE_VALUES)) {
       warnings.push(`attributes/${kind}: missing ${slug}.png`);
     }
   }
+}
+
+// --- Card backgrounds ------------------------------------------------------
+// Opaque covers, so no alpha channel and a lower quality than the line art
+// needs: these are soft gradients where q85 buys nothing but bytes.
+const backgroundMasters = resolve(ROOT, 'assets/masters/backgrounds');
+for (const file of listPngs(backgroundMasters)) {
+  const src = resolve(backgroundMasters, file);
+  const { width, height } = await sharp(src).metadata();
+  if (width !== height) {
+    warnings.push(`backgrounds/${file}: ${width}x${height} is not square — the card crop will drift`);
+  }
+  const out = resolve(ROOT, `assets/backgrounds/${basename(file, '.png')}.webp`);
+  mkdirSync(dirname(out), { recursive: true });
+  const buf = await sharp(src)
+    .resize(SIZES.background, SIZES.background, { fit: 'cover' })
+    .webp({ quality: 80, effort: 6 })
+    .toBuffer();
+  writeFileSync(out, buf);
+  bytes += buf.length;
+  count++;
+}
+
+// --- Template covers -------------------------------------------------------
+// Mascot art that sits on top of a card background, so alpha stays and the
+// frame is `contain` — the cover crops the background, never the cats.
+const templateMasters = resolve(ROOT, 'assets/masters/templates');
+for (const file of listPngs(templateMasters)) {
+  const src = resolve(templateMasters, file);
+  const { width, height } = await sharp(src).metadata();
+  if (width !== height) {
+    warnings.push(`templates/${file}: ${width}x${height} is not square`);
+  }
+  bytes += await toWebp(
+    src,
+    resolve(ROOT, `assets/templates/${basename(file, '.png')}.webp`),
+    SIZES.template,
+  );
+  count++;
 }
 
 console.log(`Wrote ${count} WebP files, ${(bytes / 1024).toFixed(1)} KB total`);

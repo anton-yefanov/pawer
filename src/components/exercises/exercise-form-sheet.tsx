@@ -1,6 +1,6 @@
-import { router, Stack } from 'expo-router';
+import { router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import {
   Card,
@@ -12,16 +12,18 @@ import {
   SectionTitle,
   Separator,
 } from '@/components/grouped-list';
+import { KeyboardScrollView } from '@/components/keyboard-scroll-view';
+import { SheetHeader } from '@/components/sheet-header';
 import {
   BackButton,
   CloseButton,
   HeaderConfirmButton,
-  headerItem,
-  HeaderSlot,
 } from '@/components/workout/workout-sheet-header';
-import { SHEET_BOTTOM_INSET } from '@/constants/sheet';
+import { SHEET_BOTTOM_INSET, SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import type { Exercise } from '@/db/schema';
+import { useSheetAutoFocus } from '@/hooks/use-sheet-autofocus';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { useTheme } from '@/hooks/use-theme';
 import { createCustomExercise, updateCustomExercise } from '@/lib/exercise-actions';
 import { MUSCLE_OPTIONS, titleCase } from '@/lib/exercise-filters';
@@ -41,9 +43,9 @@ type Step = 'form' | 'category' | 'type';
  * would mean nine registrations for what is one modal from the user's point of
  * view.
  *
- * The bar is the stack's own header, driven per step through `Stack.Screen` —
- * a hand-drawn row inside the sheet doesn't reserve layout space the way the
- * native one does, and the content ends up underneath it.
+ * The bar is `SheetHeader`, re-declared per step: on iOS it is the stack's own
+ * header, so it must never be a row drawn over the content — that reserves no
+ * layout space and the form ends up underneath it.
  */
 export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
   const theme = useTheme();
@@ -58,6 +60,7 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
   // under — re-reading 60 kg × 8 as 60 seconds is not an edit anyone means to
   // make — so both are settled at creation and read-only afterwards.
   const locked = exercise !== undefined;
+  const [nameRef, nameAutoFocus] = useSheetAutoFocus(!exercise);
 
   const save = async () => {
     const form = { name, muscle, trackingType, description };
@@ -68,34 +71,24 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          title: step === 'form' && exercise ? 'Edit Exercise' : STEP_TITLES[step],
-          unstable_headerLeftItems: () =>
-            headerItem(
-              <HeaderSlot>
-                {step === 'form' ? (
-                  <CloseButton onPress={() => router.back()} />
-                ) : (
-                  <BackButton onPress={() => setStep('form')} />
-                )}
-              </HeaderSlot>,
-            ),
-          unstable_headerRightItems: () =>
-            step === 'form'
-              ? headerItem(
-                  <HeaderSlot>
-                    <HeaderConfirmButton
-                      onPress={() => void save()}
-                      disabled={name.trim() === ''}
-                    />
-                  </HeaderSlot>,
-                )
-              : [],
-        }}
+      <SheetHeader
+        title={step === 'form' && exercise ? 'Edit Exercise' : STEP_TITLES[step]}
+        left={
+          step === 'form' ? (
+            <CloseButton onPress={() => router.back()} />
+          ) : (
+            <BackButton onPress={() => setStep('form')} />
+          )
+        }
+        right={
+          step === 'form' ? (
+            <HeaderConfirmButton onPress={() => void save()} disabled={name.trim() === ''} />
+          ) : null
+        }
       />
 
-      <ScrollView
+      <KeyboardScrollView
+        {...SHEET_SCROLL}
         style={{ backgroundColor: theme.background }}
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic"
@@ -105,13 +98,13 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
           <>
             <Card>
               <View style={groupedStyles.row}>
-                <TextInput
+                <ThemedTextInput
+                  ref={nameRef}
                   value={name}
                   onChangeText={setName}
                   placeholder="Name"
-                  placeholderTextColor={theme.textSecondary}
-                  style={[styles.input, { color: theme.text }]}
-                  autoFocus={!exercise}
+                  style={styles.input}
+                  autoFocus={nameAutoFocus}
                   autoCapitalize="words"
                   returnKeyType="done"
                 />
@@ -148,12 +141,11 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
             <SectionTitle>Description</SectionTitle>
             <Card>
               <View style={groupedStyles.row}>
-                <TextInput
+                <ThemedTextInput
                   value={description}
                   onChangeText={setDescription}
                   placeholder="How to perform this exercise"
-                  placeholderTextColor={theme.textSecondary}
-                  style={[styles.input, styles.descriptionInput, { color: theme.text }]}
+                  style={[styles.input, styles.descriptionInput]}
                   multiline
                   textAlignVertical="top"
                 />
@@ -202,7 +194,7 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
               </Card>
             </View>
           ))}
-      </ScrollView>
+      </KeyboardScrollView>
     </>
   );
 }

@@ -4,6 +4,7 @@ import { db } from '@/db/client';
 import { newId } from '@/db/id';
 import { exercises, personalRecords, sets, workoutExercises } from '@/db/schema';
 import { trackingTypeOf, type TrackedSet, type TrackingType } from '@/lib/tracking-types';
+import { formatTonnage, formatWeight, type WeightUnit } from '@/lib/units';
 import { WORK_SETS } from '@/lib/workout-queries';
 
 export const PR_KINDS = ['heaviest_weight', 'best_1rm', 'best_volume', 'most_reps'] as const;
@@ -18,6 +19,21 @@ export const PR_LABELS: Record<PrKind, string> = {
 
 export function isPrKind(value: string): value is PrKind {
   return (PR_KINDS as readonly string[]).includes(value);
+}
+
+/** What a record's bare `value` means, which only its kind knows. */
+export function formatPrValue(kind: PrKind, value: number, unit: WeightUnit): string {
+  switch (kind) {
+    case 'heaviest_weight':
+    case 'best_1rm':
+      return formatWeight(value, unit);
+    case 'best_volume':
+      return formatTonnage(value, unit);
+    case 'most_reps': {
+      const reps = Math.round(value);
+      return `${reps} ${reps === 1 ? 'rep' : 'reps'}`;
+    }
+  }
 }
 
 /** Epley. Wrong past ~10 reps like every other formula, but it is the one lifters recognise. */

@@ -1,29 +1,39 @@
 import { router } from 'expo-router';
-import { Alert } from 'react-native';
 
-import { type CardAction } from '@/components/templates/card-menu';
+import { type IconName } from '@/components/icon';
 import {
   createFolder,
   deleteFolder,
   moveTemplateToFolder,
   renameFolder,
 } from '@/lib/folder-actions';
-import * as haptics from '@/lib/haptics';
+import { prompt } from '@/lib/text-prompt';
 import { deleteTemplate, duplicateTemplate } from '@/lib/template-actions';
 
-export type ConfirmDestructive = (options: {
+export type CardAction = {
+  label: string;
+  icon: IconName;
+  destructive?: boolean;
+  /** Draws a divider above this row. */
+  separated?: boolean;
+  onPress: () => void;
+};
+
+export type ConfirmRequest = {
   title: string;
   body: string;
   onConfirm: () => void;
-}) => void;
-
-export const alertConfirm: ConfirmDestructive = ({ title, body, onConfirm }) => {
-  haptics.warn();
-  Alert.alert(title, body, [
-    { text: 'Cancel', style: 'cancel' },
-    { text: 'Delete', style: 'destructive', onPress: onConfirm },
-  ]);
 };
+
+/**
+ * Raising the confirm is the caller's job, and there is deliberately no default.
+ * `Alert.alert` used to be one, and it was wrong on both platforms: on iOS it
+ * presents from the view controller behind a formSheet and never reaches the
+ * screen (see workout/confirm-alert.tsx), and on Android it is the Material
+ * dialog rather than the app's own. Every caller holds the request in state and
+ * hands it to `ConfirmAlert`.
+ */
+export type ConfirmDestructive = (options: ConfirmRequest) => void;
 
 export type TemplateMenuTarget = {
   id: string;
@@ -34,11 +44,11 @@ export type TemplateMenuTarget = {
 
 export function templateActions(
   template: TemplateMenuTarget,
-  confirm: ConfirmDestructive = alertConfirm,
+  confirm: ConfirmDestructive,
 ): CardAction[] {
   const duplicate: CardAction = {
     label: 'Duplicate',
-    systemImage: 'plus.square.on.square',
+    icon: 'plus.square.on.square',
     onPress: () => void duplicateTemplate(template.id),
   };
 
@@ -47,7 +57,7 @@ export function templateActions(
   const actions: CardAction[] = [
     {
       label: 'Edit',
-      systemImage: 'pencil',
+      icon: 'pencil',
       onPress: () =>
         router.push({
           pathname: '/template/edit',
@@ -56,7 +66,7 @@ export function templateActions(
     },
     {
       label: 'Customize',
-      systemImage: 'paintpalette',
+      icon: 'paintpalette',
       onPress: () =>
         router.push({
           pathname: '/customize',
@@ -69,14 +79,14 @@ export function templateActions(
   if (template.folderId) {
     actions.push({
       label: 'Remove from Folder',
-      systemImage: 'folder.badge.minus',
+      icon: 'folder.badge.minus',
       onPress: () => void moveTemplateToFolder(template.id, null),
     });
   }
 
   actions.push({
     label: 'Delete',
-    systemImage: 'trash',
+    icon: 'trash',
     destructive: true,
     separated: true,
     onPress: () =>
@@ -92,17 +102,17 @@ export function templateActions(
 
 export function folderActions(
   folder: { id: string; name: string },
-  { confirm = alertConfirm }: { confirm?: ConfirmDestructive } = {},
+  { confirm }: { confirm: ConfirmDestructive },
 ): CardAction[] {
   return [
     {
       label: 'Rename',
-      systemImage: 'pencil',
+      icon: 'pencil',
       onPress: () => promptRenameFolder(folder),
     },
     {
       label: 'Customize',
-      systemImage: 'paintpalette',
+      icon: 'paintpalette',
       onPress: () =>
         router.push({
           pathname: '/customize',
@@ -111,7 +121,7 @@ export function folderActions(
     },
     {
       label: 'Delete',
-      systemImage: 'trash',
+      icon: 'trash',
       destructive: true,
       separated: true,
       onPress: () =>
@@ -125,38 +135,17 @@ export function folderActions(
 }
 
 export function promptRenameFolder(folder: { id: string; name: string }): void {
-  Alert.prompt(
-    'Rename Folder',
-    undefined,
-    [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Rename',
-        onPress: (value?: string) => {
-          const name = value?.trim();
-          if (name) void renameFolder(folder.id, name);
-        },
-      },
-    ],
-    'plain-text',
-    folder.name,
+  void prompt({ title: 'Rename Folder', confirmLabel: 'Rename', initialValue: folder.name }).then(
+    (value) => {
+      const name = value.trim();
+      if (name) void renameFolder(folder.id, name);
+    },
   );
 }
 
 export function promptNewFolder(): void {
-  Alert.prompt(
-    'New Folder',
-    undefined,
-    [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Create',
-        onPress: (value?: string) => {
-          const name = value?.trim();
-          if (name) void createFolder(name);
-        },
-      },
-    ],
-    'plain-text',
-  );
+  void prompt({ title: 'New Folder', confirmLabel: 'Create' }).then((value) => {
+    const name = value.trim();
+    if (name) void createFolder(name);
+  });
 }

@@ -5,6 +5,7 @@ import { newId } from '@/db/id';
 import { personalRecords, sets, workoutExercises, workouts } from '@/db/schema';
 import { recordPersonalRecords } from '@/lib/personal-records';
 import type { SetType } from '@/lib/set-types';
+import { joinPlan, leavePlan, remapSuperset } from '@/lib/supersets';
 
 const touch = () => ({ updatedAt: Date.now() });
 
@@ -93,6 +94,51 @@ export async function reorderWorkoutExercises(orderedIds: readonly string[]): Pr
       .set({ position, updatedAt: now })
       .where(eq(workoutExercises.id, id));
   }
+}
+
+async function workoutSupersetRows(workoutExerciseId: string) {
+  const row = await db
+    .select({ workoutId: workoutExercises.workoutId })
+    .from(workoutExercises)
+    .where(eq(workoutExercises.id, workoutExerciseId))
+    .get();
+  if (!row) return [];
+
+  return db
+    .select({ id: workoutExercises.id, supersetId: workoutExercises.supersetId })
+    .from(workoutExercises)
+    .where(and(eq(workoutExercises.workoutId, row.workoutId), isNull(workoutExercises.deletedAt)))
+    .orderBy(asc(workoutExercises.position))
+    .all();
+}
+
+export async function joinWorkoutSuperset(
+  sourceRowId: string,
+  targetRowId: string
+): Promise<void> {
+  const rows = await workoutSupersetRows(sourceRowId);
+  const plan = joinPlan(rows, sourceRowId, targetRowId);
+  if (!plan) return;
+
+  const now = Date.now();
+  for (const id of plan.memberIds) {
+    await db
+      .update(workoutExercises)
+      .set({ supersetId: plan.supersetId, updatedAt: now })
+      .where(eq(workoutExercises.id, id));
+  }
+  await reorderWorkoutExercises(plan.orderedIds);
+}
+
+export async function leaveWorkoutSuperset(workoutExerciseId: string): Promise<void> {
+  const rows = await workoutSupersetRows(workoutExerciseId);
+  const cleared = leavePlan(rows, workoutExerciseId);
+  if (cleared.length === 0) return;
+
+  await db
+    .update(workoutExercises)
+    .set({ supersetId: null, ...touch() })
+    .where(inArray(workoutExercises.id, cleared));
 }
 
 export async function setWorkoutExerciseNotes(
@@ -293,6 +339,7 @@ export async function repeatWorkout(workoutId: string): Promise<StartWorkoutResu
       id: workoutExercises.id,
       exerciseId: workoutExercises.exerciseId,
       restSeconds: workoutExercises.restSeconds,
+      supersetId: workoutExercises.supersetId,
     })
     .from(workoutExercises)
     .where(and(eq(workoutExercises.workoutId, workoutId), isNull(workoutExercises.deletedAt)))
@@ -328,6 +375,8 @@ export async function repeatWorkout(workoutId: string): Promise<StartWorkoutResu
     updatedAt: startedAt,
   });
 
+  const supersetIds = new Map<string, string>();
+
   for (const [position, row] of planned.entries()) {
     const workoutExerciseId = newId();
     await db.insert(workoutExercises).values({
@@ -336,6 +385,7 @@ export async function repeatWorkout(workoutId: string): Promise<StartWorkoutResu
       exerciseId: row.exerciseId,
       position,
       restSeconds: row.restSeconds,
+      supersetId: remapSuperset(supersetIds, row.supersetId),
     });
 
     const sourceSets = plannedSets.filter((set) => set.workoutExerciseId === row.id);

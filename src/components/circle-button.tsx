@@ -1,7 +1,7 @@
-import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
-import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 
+import { FloatingSurface } from '@/components/floating-surface';
+import { Icon, type IconName } from '@/components/icon';
 import { useTheme } from '@/hooks/use-theme';
 import * as haptics from '@/lib/haptics';
 
@@ -10,9 +10,9 @@ import * as haptics from '@/lib/haptics';
 export const CIRCLE_BUTTON_SIZE = 48;
 
 /**
- * The glass disc itself, for the cases where the thing inside isn't a Pressable
- * — a SwiftUI menu trigger, say. The press response comes from `isInteractive`
- * rather than a wrapper, so the glass reacts the way system controls do.
+ * The floating disc itself, for the cases where the thing inside isn't a
+ * Pressable — a SwiftUI menu trigger, say. On iOS the press response comes from
+ * the glass rather than a wrapper, so it reacts the way system controls do.
  */
 export function GlassCircle({
   size = CIRCLE_BUTTON_SIZE,
@@ -27,23 +27,13 @@ export function GlassCircle({
   style?: StyleProp<ViewStyle>;
   children: React.ReactNode;
 }) {
-  const theme = useTheme();
-
   return (
-    <GlassView
-      isInteractive
+    <FloatingSurface
       tintColor={tintColor}
       accessibilityLabel={accessibilityLabel}
-      style={[
-        styles.circle,
-        { width: size, height: size, borderRadius: size / 2 },
-        !isLiquidGlassAvailable() && {
-          backgroundColor: tintColor ?? theme.surface,
-        },
-        style,
-      ]}>
+      style={[styles.circle, { width: size, height: size, borderRadius: size / 2 }, style]}>
       {children}
-    </GlassView>
+    </FloatingSurface>
   );
 }
 
@@ -58,7 +48,7 @@ export function CircleButton({
   feedback = 'tap',
   onPress,
 }: {
-  symbol: SymbolViewProps['name'];
+  symbol: IconName;
   symbolSize?: number;
   size?: number;
   label: string;
@@ -89,8 +79,8 @@ export function CircleButton({
         accessibilityRole="button"
         accessibilityLabel={label}
         accessibilityState={{ disabled }}
-        style={styles.content}>
-        <SymbolView name={symbol} size={symbolSize} tintColor={symbolColor ?? theme.text} />
+        style={({ pressed }) => [styles.content, pressed && styles.pressed]}>
+        <Icon name={symbol} size={symbolSize} tintColor={symbolColor ?? theme.text} />
       </Pressable>
     </GlassCircle>
   );
@@ -101,6 +91,7 @@ const styles = StyleSheet.create({
   // traps UIGlassEffect's interactive stretch inside the button's own rect. The
   // glass shape comes from `borderRadius` reaching the native effect, not from
   // clipping, so the disc stays round and is free to deform under a finger.
+  // On Android it is also what keeps the `Raised` shadow circular.
   circle: {
     width: CIRCLE_BUTTON_SIZE,
     height: CIRCLE_BUTTON_SIZE,
@@ -110,5 +101,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  pressed: {
+    opacity: 0.6,
   },
 });

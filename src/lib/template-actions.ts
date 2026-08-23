@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
 import { type CardColor } from '@/constants/card-colors';
+import { type CardPose } from '@/constants/card-poses';
 import { db } from '@/db/client';
 import { newId } from '@/db/id';
 import {
@@ -12,6 +13,7 @@ import {
   workouts,
 } from '@/db/schema';
 import { type SetType } from '@/lib/set-types';
+import { remapSuperset } from '@/lib/supersets';
 import { type TrackedSet } from '@/lib/tracking-types';
 import { activeWorkoutId, type StartWorkoutResult } from '@/lib/workout-actions';
 
@@ -27,6 +29,7 @@ export type TemplateExerciseInput = {
   exerciseId: string;
   restSeconds: number | null;
   notes: string | null;
+  supersetId: string | null;
   sets: readonly TemplateSetInput[];
 };
 
@@ -81,6 +84,7 @@ export async function createTemplate({
         position,
         notes: row.notes,
         restSeconds: row.restSeconds,
+        supersetId: row.supersetId,
       })),
     );
 
@@ -107,6 +111,7 @@ export async function createTemplateFromWorkout(workoutId: string): Promise<stri
       exerciseId: workoutExercises.exerciseId,
       notes: workoutExercises.notes,
       restSeconds: workoutExercises.restSeconds,
+      supersetId: workoutExercises.supersetId,
     })
     .from(workoutExercises)
     .where(and(eq(workoutExercises.workoutId, workoutId), isNull(workoutExercises.deletedAt)))
@@ -145,6 +150,7 @@ export async function createTemplateFromWorkout(workoutId: string): Promise<stri
 
   if (rows.length > 0) {
     const ids = new Map(rows.map((row) => [row.id, newId()]));
+    const supersetIds = new Map<string, string>();
 
     await db.insert(templateExercises).values(
       rows.map((row, position) => ({
@@ -154,6 +160,7 @@ export async function createTemplateFromWorkout(workoutId: string): Promise<stri
         position,
         notes: row.notes,
         restSeconds: row.restSeconds,
+        supersetId: remapSuperset(supersetIds, row.supersetId),
       })),
     );
 
@@ -237,6 +244,7 @@ export async function updateTemplate({
       position,
       notes: row.notes,
       restSeconds: row.restSeconds,
+      supersetId: row.supersetId,
       updatedAt: now,
     };
     if (hadExercise.has(row.id)) {
@@ -265,10 +273,15 @@ export async function updateTemplate({
 }
 
 /** App-shipped templates keep the color they ship with, so the guard matters. */
-export async function setTemplateColor(templateId: string, color: CardColor): Promise<void> {
+/** A `null` image restores the muscle-derived cover. */
+export async function setTemplateAppearance(
+  templateId: string,
+  color: CardColor,
+  image: CardPose | null,
+): Promise<void> {
   await db
     .update(templates)
-    .set({ color, ...touch() })
+    .set({ color, image, ...touch() })
     .where(and(eq(templates.id, templateId), eq(templates.isBuiltIn, false)));
 }
 
@@ -301,10 +314,12 @@ export async function duplicateTemplate(templateId: string): Promise<string> {
     isBuiltIn: false,
     folderId: source.isBuiltIn ? null : source.folderId,
     color: source.color,
+    image: source.image,
   });
 
   if (rows.length > 0) {
     const ids = new Map(rows.map((row) => [row.id, newId()]));
+    const supersetIds = new Map<string, string>();
 
     await db.insert(templateExercises).values(
       rows.map((row, position) => ({
@@ -314,6 +329,7 @@ export async function duplicateTemplate(templateId: string): Promise<string> {
         position,
         notes: row.notes,
         restSeconds: row.restSeconds,
+        supersetId: remapSuperset(supersetIds, row.supersetId),
       })),
     );
 
@@ -399,6 +415,7 @@ export async function startWorkoutFromTemplate(templateId: string): Promise<Star
       exerciseId: templateExercises.exerciseId,
       notes: templateExercises.notes,
       restSeconds: templateExercises.restSeconds,
+      supersetId: templateExercises.supersetId,
     })
     .from(templateExercises)
     .where(and(eq(templateExercises.templateId, templateId), isNull(templateExercises.deletedAt)))
@@ -431,6 +448,8 @@ export async function startWorkoutFromTemplate(templateId: string): Promise<Star
     updatedAt: startedAt,
   });
 
+  const supersetIds = new Map<string, string>();
+
   for (const [position, row] of planned.entries()) {
     const workoutExerciseId = newId();
     await db.insert(workoutExercises).values({
@@ -440,6 +459,7 @@ export async function startWorkoutFromTemplate(templateId: string): Promise<Star
       position,
       notes: row.notes,
       restSeconds: row.restSeconds,
+      supersetId: remapSuperset(supersetIds, row.supersetId),
     });
 
     const own = plannedSets.filter((set) => set.templateExerciseId === row.id);
