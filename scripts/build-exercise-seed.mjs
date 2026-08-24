@@ -152,6 +152,11 @@ function trackingTypeFor(e) {
   return 'weight_reps';
 }
 
+// Upstream's anatomical names where the app's vocabulary reads better in a row
+// subtitle. src/lib/attribute-images.ts and the group tables use these.
+const MUSCLE_RENAMES = { abdominals: 'abs' };
+const renameMuscle = (muscle) => MUSCLE_RENAMES[muscle] ?? muscle;
+
 const raw = JSON.parse(readFileSync(resolve(SOURCE, 'dist/exercises.json'), 'utf8'));
 if (!Array.isArray(raw) || raw.length === 0) {
   throw new Error(`No exercises found at ${SOURCE}/dist/exercises.json`);
@@ -187,8 +192,8 @@ const exercises = [...raw, ...ADDITIONS]
       equipment: e.equipment ?? null,
       category: e.category,
       trackingType,
-      primaryMuscles: e.primaryMuscles ?? [],
-      secondaryMuscles: e.secondaryMuscles ?? [],
+      primaryMuscles: (e.primaryMuscles ?? []).map(renameMuscle),
+      secondaryMuscles: (e.secondaryMuscles ?? []).map(renameMuscle),
       instructions: e.instructions ?? [],
       tags: tagsFor(e),
       // `images` is deliberately dropped: upstream ships stock photos, we ship

@@ -112,12 +112,16 @@ export function ExerciseDetail({ id, editHref }: { id: string; editHref?: Href }
               </View>
             ))}
 
-            <BigButton
-              title="Watch technique on YouTube"
-              variant="soft"
-              icon={<Image source={YOUTUBE_LOGO} style={styles.youtubeLogo} resizeMode="contain" />}
-              onPress={lookUpTechnique}
-            />
+            {editable ? null : (
+              <BigButton
+                title="Watch technique on YouTube"
+                variant="soft"
+                icon={
+                  <Image source={YOUTUBE_LOGO} style={styles.youtubeLogo} resizeMode="contain" />
+                }
+                onPress={lookUpTechnique}
+              />
+            )}
           </>
         ) : null}
       </ScrollView>

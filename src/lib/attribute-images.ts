@@ -41,8 +41,8 @@ const EQUIPMENT: Record<string, ImageSource> = {
 };
 
 const MUSCLE: Record<string, ImageSource> = {
-  abdominals: require('@/assets/attributes/muscle/abdominals.webp'),
   abductors: require('@/assets/attributes/muscle/abductors.webp'),
+  abs: require('@/assets/attributes/muscle/abs.webp'),
   adductors: require('@/assets/attributes/muscle/adductors.webp'),
   biceps: require('@/assets/attributes/muscle/biceps.webp'),
   calves: require('@/assets/attributes/muscle/calves.webp'),

@@ -17,7 +17,7 @@ import seedTemplateData from './seed/templates.json';
  * scripts/build-exercise-seed.mjs), and template rows keep the id they were
  * first inserted with, so `workouts.template_id` references survive.
  */
-export const SEED_VERSION = 8;
+export const SEED_VERSION = 9;
 
 const SEED_VERSION_KEY = 'seed_version';
 

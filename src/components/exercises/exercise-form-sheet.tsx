@@ -12,6 +12,7 @@ import {
   SectionTitle,
   Separator,
 } from '@/components/grouped-list';
+import { KeyboardDismissButton } from '@/components/keyboard-dismiss';
 import { KeyboardScrollView } from '@/components/keyboard-scroll-view';
 import { SheetHeader } from '@/components/sheet-header';
 import {
@@ -26,7 +27,8 @@ import { useSheetAutoFocus } from '@/hooks/use-sheet-autofocus';
 import { ThemedTextInput } from '@/components/themed-text-input';
 import { useTheme } from '@/hooks/use-theme';
 import { createCustomExercise, updateCustomExercise } from '@/lib/exercise-actions';
-import { MUSCLE_OPTIONS, titleCase } from '@/lib/exercise-filters';
+import { EXERCISE_GROUPS, exerciseGroup, groupOfExercise } from '@/lib/exercise-groups';
+import { announceCustomExercise } from '@/lib/new-exercise-handoff';
 import {
   TRACKING_LABELS,
   TRACKING_SECTIONS,
@@ -51,7 +53,7 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
   const theme = useTheme();
   const [step, setStep] = useState<Step>('form');
   const [name, setName] = useState(exercise?.name ?? '');
-  const [muscle, setMuscle] = useState<string | null>(exercise?.primaryMuscles[0] ?? null);
+  const [group, setGroup] = useState<string | null>(exercise ? groupOfExercise(exercise) : null);
   const [trackingType, setTrackingType] = useState<TrackingType>(
     trackingTypeOf(exercise?.trackingType),
   );
@@ -60,12 +62,17 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
   // under — re-reading 60 kg × 8 as 60 seconds is not an edit anyone means to
   // make — so both are settled at creation and read-only afterwards.
   const locked = exercise !== undefined;
+  const [missingGroup, setMissingGroup] = useState(false);
   const [nameRef, nameAutoFocus] = useSheetAutoFocus(!exercise);
 
   const save = async () => {
-    const form = { name, muscle, trackingType, description };
+    if (!group) {
+      setMissingGroup(true);
+      return;
+    }
+    const form = { name, group, trackingType, description };
     if (exercise) await updateCustomExercise(exercise.id, form);
-    else await createCustomExercise(form);
+    else announceCustomExercise(await createCustomExercise(form));
     router.back();
   };
 
@@ -112,13 +119,18 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
               <Separator />
               <DisclosureRow
                 label="Category"
-                value={muscle ? titleCase(muscle) : undefined}
+                value={group ? exerciseGroup(group)?.title : undefined}
                 chevron={!locked}
                 onPress={() => {
                   if (!locked) setStep('category');
                 }}
               />
             </Card>
+            {missingGroup && (
+              <SectionFooter themeColor="danger">
+                Pick a category for this exercise before saving.
+              </SectionFooter>
+            )}
 
             <SectionTitle>Exercise Type</SectionTitle>
             <Card>
@@ -156,14 +168,15 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
 
         {step === 'category' && (
           <Card>
-            {MUSCLE_OPTIONS.map((option, index) => (
-              <View key={option}>
+            {EXERCISE_GROUPS.map((option, index) => (
+              <View key={option.id}>
                 {index > 0 && <Separator />}
                 <PickRow
-                  label={titleCase(option)}
-                  selected={option === muscle}
+                  label={option.title}
+                  selected={option.id === group}
                   onPress={() => {
-                    setMuscle(option);
+                    setGroup(option.id);
+                    setMissingGroup(false);
                     setStep('form');
                   }}
                 />
@@ -195,6 +208,8 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
             </View>
           ))}
       </KeyboardScrollView>
+
+      <KeyboardDismissButton />
     </>
   );
 }

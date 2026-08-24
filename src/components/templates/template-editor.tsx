@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 
+import { KeyboardDismissButton } from '@/components/keyboard-dismiss';
 import { KeyboardScrollView } from '@/components/keyboard-scroll-view';
 import { SheetHeader } from '@/components/sheet-header';
 import { ThemedText } from '@/components/themed-text';
@@ -131,7 +132,6 @@ export function TemplateEditor({
           {...SHEET_SCROLL}
           style={{ backgroundColor: theme.background }}
           contentContainerStyle={styles.content}
-          automaticallyAdjustKeyboardInsets
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
           // A lifted row moves with the finger; letting the content scroll under
@@ -196,6 +196,8 @@ export function TemplateEditor({
           )}
         </KeyboardScrollView>
       </ExerciseReorderProvider>
+
+      <KeyboardDismissButton />
     </>
   );
 }

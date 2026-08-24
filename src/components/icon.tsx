@@ -22,6 +22,7 @@ import { FolderPlusIcon } from 'phosphor-react-native/src/icons/FolderPlus';
 import { GearIcon } from 'phosphor-react-native/src/icons/Gear';
 import { HouseIcon } from 'phosphor-react-native/src/icons/House';
 import { InfoIcon } from 'phosphor-react-native/src/icons/Info';
+import { KeyboardIcon } from 'phosphor-react-native/src/icons/Keyboard';
 import { MagnifyingGlassIcon } from 'phosphor-react-native/src/icons/MagnifyingGlass';
 import { MinusIcon } from 'phosphor-react-native/src/icons/Minus';
 import { NoteBlankIcon } from 'phosphor-react-native/src/icons/NoteBlank';
@@ -137,6 +138,10 @@ const ICONS = {
     weight: 'fill',
   },
   info: { symbol: { ios: 'info', android: 'info' }, glyph: InfoIcon },
+  'keyboard.chevron.compact.down': {
+    symbol: { ios: 'keyboard.chevron.compact.down', android: 'keyboard_hide' },
+    glyph: KeyboardIcon,
+  },
   'line.3.horizontal': {
     symbol: { ios: 'line.3.horizontal', android: 'drag_handle' },
     glyph: DotsSixVerticalIcon,

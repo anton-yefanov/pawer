@@ -28,8 +28,8 @@ export const ATTRIBUTE_VALUES = {
     'other',
   ],
   muscle: [
-    'abdominals',
     'abductors',
+    'abs',
     'adductors',
     'biceps',
     'calves',

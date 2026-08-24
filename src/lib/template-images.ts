@@ -61,7 +61,7 @@ const BUCKET_BY_MUSCLE: Record<string, TemplateBucket> = {
   biceps: 'arms',
   triceps: 'arms',
   forearms: 'arms',
-  abdominals: 'core',
+  abs: 'core',
 };
 
 /**

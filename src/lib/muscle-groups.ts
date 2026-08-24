@@ -62,7 +62,7 @@ const GROUP_BY_MUSCLE: Record<string, MuscleGroup> = {
   biceps: 'biceps',
   forearms: 'biceps',
   triceps: 'triceps',
-  abdominals: 'core',
+  abs: 'core',
   quadriceps: 'quads',
   hamstrings: 'hamstrings',
   glutes: 'hamstrings',

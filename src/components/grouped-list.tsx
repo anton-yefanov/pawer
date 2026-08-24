@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
@@ -22,9 +22,15 @@ export function SectionTitle({ children }: { children: ReactNode }) {
   );
 }
 
-export function SectionFooter({ children }: { children: ReactNode }) {
+export function SectionFooter({
+  children,
+  themeColor = 'textSecondary',
+}: {
+  children: ReactNode;
+  themeColor?: ComponentProps<typeof ThemedText>['themeColor'];
+}) {
   return (
-    <ThemedText type="small" themeColor="textSecondary" style={groupedStyles.sectionFooter}>
+    <ThemedText type="small" themeColor={themeColor} style={groupedStyles.sectionFooter}>
       {children}
     </ThemedText>
   );

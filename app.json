@@ -8,7 +8,7 @@
     "scheme": "pawer",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
+      "icon": "./assets/pawer.icon",
       "bundleIdentifier": "com.antonyefanov.pawer",
       "infoPlist": {
         "NSLocalNetworkUsageDescription": "Allow pawer to connect to the development server on your local network.",

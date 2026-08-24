@@ -1,6 +1,7 @@
+import { and, asc, eq, isNull } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { Link, router, type Href } from 'expo-router';
-import { useState } from 'react';
+import { Link, router, useFocusEffect, type Href } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { FlatList, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, {
   Easing,
@@ -15,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CircleButton } from '@/components/circle-button';
 import { ExerciseSearchBar, SEARCH_BAR_CLEARANCE } from '@/components/exercise-search-bar';
 import { Icon } from '@/components/icon';
+import { KeyboardDismissButton } from '@/components/keyboard-dismiss';
 import { ThemedText } from '@/components/themed-text';
 import { SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
@@ -33,6 +35,7 @@ import {
 } from '@/lib/exercise-filters';
 import { EXERCISE_GROUPS, exerciseGroup, type ExerciseGroup } from '@/lib/exercise-groups';
 import * as haptics from '@/lib/haptics';
+import { claimCustomExercise } from '@/lib/new-exercise-handoff';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -86,6 +89,7 @@ export function ExerciseLibrary({
   const [filters, setFilters] = useState<ExerciseFilters>(NO_FILTERS);
   const [searchFocused, setSearchFocused] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [customOpen, setCustomOpen] = useState(false);
 
   const { data } = useLiveQuery(
     db
@@ -94,6 +98,38 @@ export function ExerciseLibrary({
       .where(exerciseFilterWhere(filters))
       .orderBy(...exerciseSearchOrderBy(filters)),
     [filters.search, filters.group, filters.equipment]
+  );
+
+  const { data: customs } = useLiveQuery(
+    db
+      .select()
+      .from(exercises)
+      .where(and(eq(exercises.isCustom, true), isNull(exercises.deletedAt)))
+      .orderBy(asc(exercises.name))
+  );
+
+  // An exercise created from this screen's Add Exercise sheet lands in the
+  // Custom section, so the section opens and — in a picker — the row is picked,
+  // leaving the user one tap from adding what they just wrote. The row is read
+  // back here rather than found in `customs`, which is a live query and so can
+  // still be a render behind the returning sheet.
+  useFocusEffect(
+    useCallback(() => {
+      const id = claimCustomExercise();
+      if (!id) return;
+
+      setCustomOpen(true);
+      setFilters(NO_FILTERS);
+      if (!onSelect) return;
+
+      void db
+        .select()
+        .from(exercises)
+        .where(eq(exercises.id, id))
+        .then(([created]) => {
+          if (created) onSelect(created);
+        });
+    }, [onSelect])
   );
 
   // The two platforms hand us the two edges differently, so each one is added
@@ -155,6 +191,18 @@ export function ExerciseLibrary({
           contentInsetAdjustmentBehavior="always"
           automaticallyAdjustContentInsets={false}
           contentContainerStyle={listPadding}
+          ListHeaderComponent={
+            customs?.length ? (
+              <CustomSection
+                exercises={customs}
+                open={customOpen}
+                onToggle={() => setCustomOpen((open) => !open)}
+                onSelect={onSelect}
+                detailHref={detailHref}
+                selectedIds={selectedIds}
+              />
+            ) : null
+          }
           renderItem={({ item }) => (
             <GroupRow group={item} onPress={() => setFilters({ ...NO_FILTERS, group: item.id })} />
           )}
@@ -211,12 +259,79 @@ export function ExerciseLibrary({
           accessibilityLabel="Dismiss filters"
         />
       )}
+
+      <KeyboardDismissButton />
     </>
   );
 }
 
-function GroupRow({ group, onPress }: { group: ExerciseGroup; onPress: () => void }) {
+/**
+ * The exercises the user wrote themselves, above the muscle groups and closed
+ * until asked for. They stay in their own group and in search as well — this is
+ * a second way in, not a move.
+ */
+function CustomSection({
+  exercises: rows,
+  open,
+  onToggle,
+  onSelect,
+  detailHref,
+  selectedIds,
+}: {
+  exercises: Exercise[];
+  open: boolean;
+  onToggle: () => void;
+  onSelect?: (exercise: Exercise) => void;
+  detailHref?: (exercise: Exercise) => Href;
+  selectedIds?: ReadonlySet<string>;
+}) {
   const theme = useTheme();
+  const separator = (
+    <View style={[styles.separator, { backgroundColor: theme.backgroundElement }]} />
+  );
+
+  return (
+    <View>
+      <GroupRow group={CUSTOM_GROUP} expanded={open} onPress={onToggle} />
+      {open && (
+        <Animated.View entering={FadeIn.duration(160)} exiting={FadeOut.duration(120)}>
+          {rows.map((exercise) => (
+            <View key={exercise.id}>
+              {separator}
+              <ExerciseRow
+                exercise={exercise}
+                onSelect={onSelect}
+                detailHref={detailHref}
+                selected={selectedIds?.has(exercise.id) ?? false}
+              />
+            </View>
+          ))}
+        </Animated.View>
+      )}
+      {/* `ItemSeparatorComponent` never draws under a list header. */}
+      {separator}
+    </View>
+  );
+}
+
+const CUSTOM_GROUP: ExerciseGroup = { id: 'custom', title: 'Custom' };
+
+function GroupRow({
+  group,
+  onPress,
+  expanded,
+}: {
+  group: ExerciseGroup;
+  onPress: () => void;
+  /** Set only by an accordion header: turns the chevron down when open. */
+  expanded?: boolean;
+}) {
+  const theme = useTheme();
+  const turn = useDerivedValue(() => withTiming(expanded ? 1 : 0, TIMING), [expanded]);
+
+  const chevronStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${turn.value * 90}deg` }],
+  }));
 
   return (
     <Pressable
@@ -234,7 +349,9 @@ function GroupRow({ group, onPress }: { group: ExerciseGroup; onPress: () => voi
             },
           ]}>
           <ThemedText style={styles.rowText}>{group.title}</ThemedText>
-          <Icon name="chevron.right" size={16} tintColor={theme.textSecondary} />
+          <Animated.View style={chevronStyle}>
+            <Icon name="chevron.right" size={16} tintColor={theme.textSecondary} />
+          </Animated.View>
         </View>
       )}
     </Pressable>

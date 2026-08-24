@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { KeyboardDismissButton } from '@/components/keyboard-dismiss';
 import { KeyboardScrollView } from '@/components/keyboard-scroll-view';
 import { SheetHeader } from '@/components/sheet-header';
 import { ThemedText } from '@/components/themed-text';
@@ -301,7 +302,6 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
             viewportHeight.current = event.nativeEvent.layout.height;
           }}
           style={{ backgroundColor: theme.background }}
-          automaticallyAdjustKeyboardInsets
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
           // A lifted row moves with the finger; letting the content scroll under
@@ -355,6 +355,8 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
           </View>
         </KeyboardScrollView>
       </ExerciseReorderProvider>
+
+      <KeyboardDismissButton />
 
       <ConfirmAlert
         open={confirmingCancel}

@@ -16,7 +16,7 @@ export type ExerciseGroup = {
  * would change what the body map shades.
  */
 export const EXERCISE_GROUPS: ExerciseGroup[] = [
-  { id: 'abs', title: 'Abs', muscles: ['abdominals'] },
+  { id: 'abs', title: 'Abs', muscles: ['abs'] },
   {
     id: 'back',
     title: 'Back',
@@ -37,4 +37,20 @@ export const EXERCISE_GROUPS: ExerciseGroup[] = [
 
 export function exerciseGroup(id: string): ExerciseGroup | undefined {
   return EXERCISE_GROUPS.find((group) => group.id === id);
+}
+
+/**
+ * The group a custom exercise is created under, in the same vocabulary the
+ * library browses by. The first muscle listed is what the row stores, so the
+ * group's own filter finds it again.
+ */
+export function groupOfExercise(exercise: {
+  category: string;
+  primaryMuscles: string[];
+}): string | null {
+  if (exercise.category === 'cardio') return 'cardio';
+
+  const muscle = exercise.primaryMuscles[0];
+
+  return EXERCISE_GROUPS.find((group) => group.muscles?.includes(muscle))?.id ?? null;
 }

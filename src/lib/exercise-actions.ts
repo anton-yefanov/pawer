@@ -3,26 +3,38 @@ import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { newId } from '@/db/id';
 import { exercises, templateExercises } from '@/db/schema';
+import { exerciseGroup } from '@/lib/exercise-groups';
 import { buildSearchText } from '@/lib/exercise-search';
 import type { TrackingType } from '@/lib/tracking-types';
 
 type ExerciseForm = {
   name: string;
-  muscle: string | null;
+  /** An `EXERCISE_GROUPS` id — the vocabulary the library browses by. */
+  group: string | null;
   trackingType: TrackingType;
   description?: string;
 };
 
-const derived = ({ name, muscle, trackingType, description }: ExerciseForm) => ({
-  name: name.trim(),
-  // NOT NULL columns the form doesn't ask about. `category` only ever surfaces
-  // in the detail facts list, so the tracking type is enough to place it.
-  level: 'beginner',
-  category: trackingType === 'distance_duration' ? 'cardio' : 'strength',
-  trackingType,
-  primaryMuscles: muscle ? [muscle] : [],
-  description: description?.trim() || null,
-});
+const derived = ({ name, group, trackingType, description }: ExerciseForm) => {
+  const picked = group ? exerciseGroup(group) : undefined;
+
+  return {
+    name: name.trim(),
+    // `level` is a NOT NULL column the form doesn't ask about. `category` places
+    // the exercise in the Cardio group, which is the one group not backed by a
+    // muscle, so the tracking type stands in when nothing was picked.
+    level: 'beginner',
+    category: picked
+      ? (picked.category ?? 'strength')
+      : trackingType === 'distance_duration'
+        ? 'cardio'
+        : 'strength',
+    trackingType,
+    // The group's first muscle is what its own filter matches on.
+    primaryMuscles: picked?.muscles ? [picked.muscles[0]] : [],
+    description: description?.trim() || null,
+  };
+};
 
 /**
  * `sourceId` stays null: it keys the seed upsert and the illustration lookup,
