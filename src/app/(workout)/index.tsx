@@ -16,10 +16,6 @@ import { ThemedText } from '@/components/themed-text';
 import { ActiveWorkoutPrompt } from '@/components/workout/active-workout-prompt';
 import { BigButton } from '@/components/workout/big-button';
 import { ElapsedTime } from '@/components/workout/elapsed-time';
-import {
-  MuscleRecoveryCard,
-  RECOVERY_CARD_HEIGHT,
-} from '@/components/workout/muscle-recovery-card';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { type Template } from '@/db/schema';
 import { useTheme } from '@/hooks/use-theme';
@@ -171,15 +167,12 @@ export default function StartWorkoutScreen() {
             </View>
           ) : (
             <View style={styles.section}>
-              <View style={styles.hero}>
-                <MuscleRecoveryCard onPress={() => router.push('/muscle-recovery')} />
-                <View style={[styles.mascot, { width: mascot.width, height: mascot.height }]}>
-                  <Image
-                    source={mascotImage('idle')}
-                    style={[styles.mascotArt, mascot.art]}
-                    contentFit="contain"
-                  />
-                </View>
+              <View style={[styles.mascot, { width: mascot.width, height: mascot.height }]}>
+                <Image
+                  source={mascotImage('idle')}
+                  style={[styles.mascotArt, mascot.art]}
+                  contentFit="contain"
+                />
               </View>
               <BigButton title="Start an Empty Workout" onPress={startEmpty} />
             </View>
@@ -226,19 +219,15 @@ function toCard(template: Template, rows: readonly TemplateCardExercise[]): Temp
 
 /**
  * Where the figure actually sits on the mascot's square canvas, as fractions of
- * it. The art ships with wide empty margins, so the hero places it by this box
- * instead: drawn oversized inside a clipping one, it stands as tall as the
- * board beside it rather than being shrunk to fit padding.
+ * it. The art ships with wide empty margins, so the screen places it by this
+ * box instead: drawn oversized inside a clipping one, it stands full height
+ * rather than being shrunk to fit padding.
  */
 const ART = { left: 0.2725, top: 0.1289, width: 0.498, height: 0.7451 };
 
-/** Capped at just over a third of the row, so the board keeps room for its labels. */
 function mascotBox(windowWidth: number) {
   const page = windowWidth - Spacing.three * 2;
-  const height = Math.min(
-    Math.round(RECOVERY_CARD_HEIGHT * 0.82),
-    Math.round((page * 0.38 * ART.height) / ART.width),
-  );
+  const height = Math.round((page * 0.55 * ART.height) / ART.width);
   const canvas = height / ART.height;
 
   return {
@@ -260,12 +249,8 @@ const styles = StyleSheet.create({
   section: {
     gap: Spacing.two,
   },
-  hero: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: Spacing.three,
-  },
   mascot: {
+    alignSelf: 'center',
     overflow: 'hidden',
   },
   mascotArt: {

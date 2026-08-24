@@ -36,7 +36,6 @@ export default function WorkoutLayout() {
         options={{ title: "Home", ...TAB_ROOT_HEADER }}
       />
       <Stack.Screen name="active" options={{ ...FULL_SHEET, title: "" }} />
-      <Stack.Screen name="muscle-recovery" options={DETAIL_SHEET} />
       {/*
         Both pickers render their own floating search row, so they want no nav
         bar at all. It has to be turned off here: `headerShown: false` from

@@ -10,10 +10,6 @@ export type ExerciseGroup = {
 /**
  * How the library is browsed: a short, gym-legible roll-up of the sixteen
  * free-exercise-db muscles, plus Cardio.
- *
- * Deliberately a third vocabulary — `GROUP_BY_MUSCLE` in lib/muscle-groups.ts
- * (recovery and the body map) merges differently on purpose, and unifying them
- * would change what the body map shades.
  */
 export const EXERCISE_GROUPS: ExerciseGroup[] = [
   { id: 'abs', title: 'Abs', muscles: ['abs'] },
