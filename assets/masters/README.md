@@ -12,7 +12,7 @@ Never hand-edit the generated WebP files. Change a master, re-run the script.
 |---|---|---|---|---|---|
 | Path | `masters/exercises/<slug>_1.png`, `<slug>_2.png` | `masters/mascot/<state>.png` | `masters/attributes/<kind>/<slug>.png` | `masters/backgrounds/<color>.png` | `masters/templates/<name>.png` |
 | Size | 1200 × 1200 | 1024 × 1024 | 1024 × 1024 | square, ≥ 512 | square, ≥ 512 |
-| Format | PNG, transparent background | PNG, transparent background | PNG, transparent background | PNG, opaque | PNG, transparent background |
+| Format | PNG, transparent or opaque | PNG, transparent background | PNG, transparent background | PNG, opaque | PNG, transparent background |
 | Colour | sRGB | sRGB | sRGB | sRGB | sRGB |
 
 `<color>` is a member of `CARD_COLORS` in `src/constants/card-colors.ts` — the

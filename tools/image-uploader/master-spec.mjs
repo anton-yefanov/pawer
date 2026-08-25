@@ -16,20 +16,11 @@ const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 /** Throws a plain Error whose message is shown verbatim on the slot. */
 export async function normalizeSource(buf) {
-  if (!buf.subarray(0, 8).equals(PNG_MAGIC)) {
-    throw new Error('not a PNG — masters must be PNG with a transparent background');
-  }
+  if (!buf.subarray(0, 8).equals(PNG_MAGIC)) throw new Error('not a PNG — masters must be PNG');
   const meta = await sharp(buf).metadata();
   if (meta.format !== 'png') throw new Error(`${meta.format} is not PNG`);
-  if (!meta.hasAlpha) throw new Error('no alpha channel — the background must be transparent');
 
   const warnings = [];
-  // An alpha channel that is fully opaque passes the check above but is still a
-  // flat background — the usual sign of art exported over white.
-  if ((await sharp(buf).stats()).isOpaque) {
-    warnings.push('every pixel is opaque — the background should be transparent, not filled');
-  }
-
   let png = buf;
   let { width, height } = meta;
   const longest = Math.max(width, height);
