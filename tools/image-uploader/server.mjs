@@ -12,7 +12,7 @@ import { createReadStream } from 'node:fs';
 import { extname, resolve } from 'node:path';
 
 import { hasBlobToken } from './local-env.mjs';
-import { listMasters, mascot, sendJson } from './handlers.mjs';
+import { exportSquares, listMasters, mascot, reframe, sendJson } from './handlers.mjs';
 import { ROOT } from './paths.mjs';
 
 const PORT = Number(process.env.PORT ?? 4000);
@@ -43,9 +43,13 @@ async function route(req, res) {
   const path = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
 
   if (req.method === 'GET' && path === '/api/masters') return listMasters(res);
+  if (path === '/api/export') return exportSquares(req, res);
 
-  const match = /^\/api\/mascot\/([A-Za-z0-9_]+)\/([12])$/.exec(path);
-  if (match) return mascot(req, res, match[1], match[2]);
+  const frame = /^\/api\/(mascot|reframe)\/([A-Za-z0-9_]+)\/([12])$/.exec(path);
+  if (frame) {
+    const handler = frame[1] === 'mascot' ? mascot : reframe;
+    return handler(req, res, frame[2], frame[3]);
+  }
 
   if (path.startsWith('/api/')) return sendJson(res, 404, { error: 'not found' });
   if (req.method !== 'GET') return sendJson(res, 405, { error: 'method not allowed' });

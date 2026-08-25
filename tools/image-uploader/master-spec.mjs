@@ -2,23 +2,25 @@
  * The master spec from assets/masters/README.md, as the checks the uploader
  * runs before a file is written into the store. Validation only — the deployed
  * functions import this, so it must not reach for anything on disk.
+ *
+ * An upload keeps whatever aspect ratio it arrives in; the square the app ships
+ * is `renderSquare()` of a crop over it, so reframing never re-encodes a square.
  */
 import sharp from 'sharp';
 
 export const MASTER_SIZE = 1200;
+const SOURCE_MAX = 2400;
 
+const TRANSPARENT = { r: 0, g: 0, b: 0, alpha: 0 };
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 /** Throws a plain Error whose message is shown verbatim on the slot. */
-export async function normalizeMaster(buf) {
+export async function normalizeSource(buf) {
   if (!buf.subarray(0, 8).equals(PNG_MAGIC)) {
     throw new Error('not a PNG — masters must be PNG with a transparent background');
   }
   const meta = await sharp(buf).metadata();
   if (meta.format !== 'png') throw new Error(`${meta.format} is not PNG`);
-  if (meta.width !== meta.height) {
-    throw new Error(`${meta.width}x${meta.height} is not square — masters must be a square canvas`);
-  }
   if (!meta.hasAlpha) throw new Error('no alpha channel — the background must be transparent');
 
   const warnings = [];
@@ -28,20 +30,58 @@ export async function normalizeMaster(buf) {
     warnings.push('every pixel is opaque — the background should be transparent, not filled');
   }
 
-  let out = buf;
-  if (meta.width !== MASTER_SIZE) {
+  let png = buf;
+  let { width, height } = meta;
+  const longest = Math.max(width, height);
+  if (longest > SOURCE_MAX) {
+    const scale = SOURCE_MAX / longest;
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+    warnings.push(`resized from ${meta.width}x${meta.height} to ${width}x${height}`);
+    png = await sharp(buf).resize(width, height).png().toBuffer();
+  } else if (longest < MASTER_SIZE) {
     warnings.push(
-      `resized from ${meta.width}x${meta.width} to ${MASTER_SIZE}x${MASTER_SIZE}` +
-        (meta.width < MASTER_SIZE
-          ? ' — upscaled, so it will look softer than art drawn at full size'
-          : ''),
+      `${width}x${height} is smaller than ${MASTER_SIZE}px — the square will be upscaled and look soft`,
     );
-    out = await sharp(buf)
-      .resize(MASTER_SIZE, MASTER_SIZE, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
-      .png()
-      .toBuffer();
   }
-  return { png: out, warnings };
+  return { png, width, height, warnings };
+}
+
+/** The whole image, squared off around its centre. */
+export function centredCrop(width, height) {
+  const size = Math.min(width, height);
+  return { x: (width - size) / 2, y: (height - size) / 2, size };
+}
+
+/**
+ * A crop may hang off the edge of the source — that is what zooming out looks
+ * like — so the source is padded before the square is cut out of it.
+ */
+export async function renderSquare(source, crop) {
+  const { width, height } = await sharp(source).metadata();
+  const x = Math.round(crop.x);
+  const y = Math.round(crop.y);
+  const size = Math.max(1, Math.round(crop.size));
+
+  const pad = {
+    left: Math.max(0, -x),
+    top: Math.max(0, -y),
+    right: Math.max(0, x + size - width),
+    bottom: Math.max(0, y + size - height),
+  };
+  const padded =
+    pad.left || pad.top || pad.right || pad.bottom
+      ? await sharp(source)
+          .extend({ ...pad, background: TRANSPARENT })
+          .png()
+          .toBuffer()
+      : source;
+
+  return sharp(padded)
+    .extract({ left: x + pad.left, top: y + pad.top, width: size, height: size })
+    .resize(MASTER_SIZE, MASTER_SIZE, { fit: 'fill' })
+    .png()
+    .toBuffer();
 }
 
 /** Tight box around the non-transparent pixels, as a fraction of the canvas. */

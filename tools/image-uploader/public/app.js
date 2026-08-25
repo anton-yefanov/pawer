@@ -190,10 +190,152 @@ function previewFrame(e, index) {
   img.alt = `${e.name} frame ${index + 1}`;
   img.addEventListener('error', () => img.classList.add('missing'));
   img.src = e.mascot[index] ? mascotUrl(e, index + 1) : originalUrl(e.sourceId, index);
+  if (e.sourceUrl[index]) {
+    img.classList.add('editable');
+    img.addEventListener('click', () => startReframe(e, index));
+  }
   return img;
 }
 
+/**
+ * Reframing happens in the preview tile itself: the square keeps its place in
+ * the layout while the whole source hangs out of it, so what is inside the
+ * outline is exactly what ships. The crop lives in source pixels; `scale` is the
+ * only thing that converts it to the tile.
+ */
+let reframing = null;
+
+function startReframe(e, index) {
+  const frame = document.createElement('div');
+  frame.className = 'frame reframing';
+
+  // Two copies of the source at the same position: a dim one that overflows the
+  // tile, and a clipped one on top, so the crop reads crisp against the rest.
+  const ghost = document.createElement('img');
+  const clip = document.createElement('div');
+  clip.className = 'clip';
+  const img = document.createElement('img');
+  clip.append(img);
+  frame.append(ghost, clip);
+
+  const handles = {};
+  for (const corner of ['nw', 'ne', 'se', 'sw']) {
+    const handle = document.createElement('span');
+    handle.className = 'handle';
+    handle.dataset.corner = corner;
+    handles[corner] = handle;
+    frame.append(handle);
+  }
+
+  reframing = { e, index, frame, img, ghost, handles, crop: e.crop[index] };
+  ghost.addEventListener('load', () => {
+    // A master uploaded before crops existed has none stored; the square it
+    // already ships is the centred one, so start there.
+    const size = Math.min(ghost.naturalWidth, ghost.naturalHeight);
+    reframing.crop = reframing.crop ?? {
+      x: (ghost.naturalWidth - size) / 2,
+      y: (ghost.naturalHeight - size) / 2,
+      size,
+    };
+    layoutReframe();
+  });
+  ghost.src = img.src = `${e.sourceUrl[index]}?v=${e.mascot[index]}`;
+  frame.addEventListener('pointerdown', onReframePointerDown);
+  renderPreview();
+}
+
+function endReframe() {
+  reframing = null;
+  renderPreview();
+}
+
+/** Tile pixels per source pixel. */
+const reframeScale = () => reframing.frame.clientWidth / reframing.crop.size;
+
+function layoutReframe() {
+  const { img, ghost, handles, crop } = reframing;
+  const k = reframeScale();
+  const w = ghost.naturalWidth * k;
+  const h = ghost.naturalHeight * k;
+  const left = -crop.x * k;
+  const top = -crop.y * k;
+
+  // .clip is inset:0 of the frame, so both copies share one origin.
+  for (const el of [img, ghost]) {
+    el.style.width = `${w}px`;
+    el.style.left = `${left}px`;
+    el.style.top = `${top}px`;
+  }
+
+  handles.nw.style.left = handles.sw.style.left = `${left}px`;
+  handles.ne.style.left = handles.se.style.left = `${left + w}px`;
+  handles.nw.style.top = handles.ne.style.top = `${top}px`;
+  handles.sw.style.top = handles.se.style.top = `${top + h}px`;
+}
+
+function onReframePointerDown(ev) {
+  const { ghost, crop } = reframing;
+  const corner = ev.target.dataset?.corner;
+  if (!corner && ev.target.tagName !== 'IMG') return;
+  ev.preventDefault();
+
+  const k = reframeScale();
+  const side = reframing.frame.clientWidth;
+  const start = { pointerX: ev.clientX, pointerY: ev.clientY, ...crop };
+  // Displayed size and position of the whole source, which is what a handle drags.
+  const shown = { w: ghost.naturalWidth * k, h: ghost.naturalHeight * k };
+  const origin = { left: -crop.x * k, top: -crop.y * k };
+
+  const move = (m) => {
+    const dx = m.clientX - start.pointerX;
+    const dy = m.clientY - start.pointerY;
+    if (!corner) {
+      crop.x = start.x - dx / k;
+      crop.y = start.y - dy / k;
+    } else {
+      const west = corner === 'nw' || corner === 'sw';
+      const north = corner === 'nw' || corner === 'ne';
+      const w = Math.max(24, shown.w + (west ? -dx : dx));
+      const h = (w / shown.w) * shown.h;
+      // The opposite corner anchors, so only the dragged side moves.
+      const left = west ? origin.left + shown.w - w : origin.left;
+      const top = north ? origin.top + shown.h - h : origin.top;
+      const scale = w / ghost.naturalWidth;
+      crop.size = side / scale;
+      crop.x = -left / scale;
+      crop.y = -top / scale;
+    }
+    layoutReframe();
+  };
+
+  const up = () => {
+    window.removeEventListener('pointermove', move);
+    window.removeEventListener('pointerup', up);
+  };
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', up);
+}
+
+async function saveReframe() {
+  const { e, index, crop } = reframing;
+  const res = await fetch(`/api/reframe/${e.sourceId}/${index + 1}`, {
+    method: 'POST',
+    body: JSON.stringify(crop),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    previewScreen.prepend(row('error', document.createTextNode(body.error ?? `failed with ${res.status}`)));
+    return;
+  }
+  e.mascot[index] = body.mtime;
+  e.mascotUrl[index] = body.url;
+  e.crop[index] = body.crop;
+  endReframe();
+  rerenderCard(e);
+}
+
 function selectPreview(id) {
+  if (reframing && reframing.e.sourceId !== id) reframing = null;
   previewId = id ?? null;
   if (previewId) localStorage.setItem(PREVIEW, previewId);
   list.querySelectorAll('.card.selected').forEach((c) => c.classList.remove('selected'));
@@ -208,7 +350,22 @@ function renderPreview() {
   previewTitle.textContent = e?.name ?? '';
   if (!e) return;
 
-  previewScreen.append(row('frames', previewFrame(e, 0), previewFrame(e, 1)));
+  const frames = [0, 1].map((index) =>
+    reframing?.e === e && reframing.index === index ? reframing.frame : previewFrame(e, index),
+  );
+  previewScreen.append(row('frames', ...frames));
+
+  if (reframing?.e === e) {
+    const save = document.createElement('button');
+    save.textContent = 'Save';
+    save.addEventListener('click', saveReframe);
+    const cancel = document.createElement('button');
+    cancel.textContent = 'Cancel';
+    cancel.addEventListener('click', endReframe);
+    previewScreen.append(row('reframe-bar', save, cancel));
+    requestAnimationFrame(layoutReframe);
+  }
+
   for (const [i, step] of e.instructions.entries()) {
     previewScreen.append(row('step', span('n', String(i + 1)), span('t', step)));
   }
@@ -262,20 +419,19 @@ const MASTER_SIZE = 1200;
 
 /**
  * The server refuses bodies over its limit, so an oversized file is re-encoded
- * to the master canvas here first — the same resize the server would have done
- * anyway, just early enough to fit through.
+ * here first — the same downscale the server would have done anyway, just early
+ * enough to fit through. Aspect ratio is left alone; the crop makes it square.
  */
 function shrinkToMaster(file) {
   return new Promise((res, rej) => {
     const img = new Image();
     img.onerror = () => rej(new Error('could not decode the image'));
     img.onload = () => {
+      const scale = Math.min(1, MASTER_SIZE / Math.max(img.width, img.height));
       const canvas = document.createElement('canvas');
-      canvas.width = canvas.height = MASTER_SIZE;
-      const scale = Math.min(MASTER_SIZE / img.width, MASTER_SIZE / img.height);
-      const w = img.width * scale;
-      const h = img.height * scale;
-      canvas.getContext('2d').drawImage(img, (MASTER_SIZE - w) / 2, (MASTER_SIZE - h) / 2, w, h);
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
       canvas.toBlob((blob) => (blob ? res(blob) : rej(new Error('encode failed'))), 'image/png');
     };
     img.src = URL.createObjectURL(file);
@@ -301,7 +457,11 @@ async function upload(e, frame, file) {
   }
   e.mascot[frame - 1] = body.mtime;
   e.mascotUrl[frame - 1] = body.url;
+  e.crop[frame - 1] = body.crop;
   e.warnings[frame - 1] = body.warnings?.length ? body.warnings : null;
+  // The source blob is written under the same name, so its url only differs by
+  // the prefix — no second listing needed to learn it.
+  e.sourceUrl[frame - 1] = body.url.replace('/masters/exercises/', '/masters/sources/');
   rerenderCard(e);
 }
 
@@ -309,6 +469,8 @@ async function remove(e, frame) {
   await fetch(`/api/mascot/${e.sourceId}/${frame}`, { method: 'DELETE' });
   e.mascot[frame - 1] = null;
   e.mascotUrl[frame - 1] = null;
+  e.sourceUrl[frame - 1] = null;
+  e.crop[frame - 1] = null;
   e.warnings[frame - 1] = null;
   rerenderCard(e);
 }
@@ -415,6 +577,10 @@ document.addEventListener('paste', (ev) => {
   upload(e, Number(focused.dataset.frame), file);
 });
 
+document.getElementById('export').addEventListener('click', () => {
+  window.location.href = '/api/export';
+});
+
 collapseAll.addEventListener('click', () => {
   const expanding = collapsed.size >= exercises.length;
   collapsed.clear();
@@ -484,6 +650,8 @@ async function load(url) {
     ...e,
     mascot: [1, 2].map((frame) => stored[`${e.sourceId}_${frame}.png`]?.mtime ?? null),
     mascotUrl: [1, 2].map((frame) => stored[`${e.sourceId}_${frame}.png`]?.url ?? null),
+    sourceUrl: [1, 2].map((frame) => stored[`${e.sourceId}_${frame}.png`]?.sourceUrl ?? null),
+    crop: [1, 2].map((frame) => stored[`${e.sourceId}_${frame}.png`]?.crop ?? null),
     // Warnings describe an upload, not a stored file, so they live for the session only.
     warnings: [null, null],
   }));

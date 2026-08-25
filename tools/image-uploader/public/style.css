@@ -240,6 +240,70 @@ main {
   visibility: hidden;
 }
 
+.phone .frames img.editable {
+  cursor: zoom-in;
+}
+
+/* The tile keeps its place in the row while the source hangs out of it, so what
+   sits inside the outline is exactly what ships. */
+.phone .frame.reframing {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  aspect-ratio: 1;
+  overflow: visible;
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+  border-radius: 10px;
+  z-index: 1;
+}
+
+.phone .frame.reframing .clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.phone .frame.reframing img {
+  position: absolute;
+  max-width: none;
+  cursor: move;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* The overflowing copy is only there to show what the crop is leaving out. */
+.phone .frame.reframing > img {
+  opacity: 0.3;
+}
+
+.phone .frame.reframing .handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  margin: -6px;
+  border-radius: 3px;
+  background: var(--accent);
+  z-index: 2;
+}
+
+.phone .frame.reframing .handle[data-corner="nw"],
+.phone .frame.reframing .handle[data-corner="se"] {
+  cursor: nwse-resize;
+}
+
+.phone .frame.reframing .handle[data-corner="ne"],
+.phone .frame.reframing .handle[data-corner="sw"] {
+  cursor: nesw-resize;
+}
+
+.phone .reframe-bar {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .phone .facts {
   display: flex;
   flex-direction: column;

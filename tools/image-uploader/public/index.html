@@ -13,14 +13,16 @@
         <input id="search" type="search" placeholder="Search exercises…" autocomplete="off" />
         <label><input id="only-incomplete" type="checkbox" /> Only incomplete</label>
         <span class="spacer"></span>
+        <button id="export" type="button">Export squares</button>
         <button id="collapse-all" type="button">Collapse all</button>
       </div>
       <p class="spec">
-        Mascot frames must be <b>PNG</b>, <b>square</b>, <b>1200×1200</b>, on a
-        <b>transparent</b> background — and both frames of a pair must share one bounding box.
-        Any other square size is resized to 1200×1200 on upload.
-        Drops are stored in Vercel Blob; to ship what is here, run
-        <code>npm run masters:pull &amp;&amp; npm run build:images</code> locally.
+        Mascot frames must be <b>PNG</b> on a <b>transparent</b> background — any aspect
+        ratio, up to 2400px on the longest side. Click a frame in the preview to move and
+        scale it inside the square that ships; both frames of a pair must share one
+        bounding box. <b>Export squares</b> downloads them named for
+        <code>assets/masters/exercises/</code>; locally,
+        <code>npm run masters:pull &amp;&amp; npm run build:images</code> does the same.
       </p>
     </header>
 
