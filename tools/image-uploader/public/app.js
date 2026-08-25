@@ -393,6 +393,10 @@ setScheme(localStorage.getItem(SCHEME) ?? 'light');
 
 const basePrompt = document.getElementById('base-prompt');
 const basePromptCopy = document.getElementById('base-prompt-copy');
+// The markup holds the default; an edit overrides it from then on.
+const BASE_PROMPT = 'pawer.uploader.basePrompt';
+basePrompt.value = localStorage.getItem(BASE_PROMPT) ?? basePrompt.value;
+basePrompt.addEventListener('input', () => localStorage.setItem(BASE_PROMPT, basePrompt.value));
 basePromptCopy.addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(basePrompt.value);
