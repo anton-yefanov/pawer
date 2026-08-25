@@ -6,6 +6,7 @@ const collapseAll = document.getElementById('collapse-all');
 const fileInput = document.getElementById('file-input');
 const lightbox = document.getElementById('lightbox');
 const lightboxImg = document.getElementById('lightbox-img');
+const lightboxStrip = document.getElementById('lightbox-strip');
 
 const phone = document.getElementById('phone');
 const previewScreen = document.getElementById('preview-screen');
@@ -64,7 +65,7 @@ function originalSlot(e, index) {
   img.src = originalUrl(e.sourceId, index);
   slot.append(img);
   slot.addEventListener('click', () => {
-    if (img.isConnected && img.naturalWidth) openLightbox(img.src, img.alt);
+    if (img.isConnected && img.naturalWidth) openLightbox(e, `original ${index + 1}`);
   });
   return slot;
 }
@@ -99,8 +100,7 @@ function mascotSlot(e, frame) {
   slot.addEventListener('click', () => {
     setFocus(slot);
     if (mtime) {
-      const img = slot.querySelector('img');
-      openLightbox(img.src, img.alt);
+      openLightbox(e, `mascot ${frame}`);
     } else {
       pickFile(e, frame);
     }
@@ -322,16 +322,55 @@ function pickFile(e, frame) {
   fileInput.click();
 }
 
-function openLightbox(src, alt) {
-  lightboxImg.crossOrigin = 'anonymous';
-  lightboxImg.src = src;
-  lightboxImg.alt = alt;
+/** Every image the exercise has, in card order — an empty mascot has none. */
+function lightboxFrames(e) {
+  const frames = [0, 1].map((index) => ({
+    label: `original ${index + 1}`,
+    src: originalUrl(e.sourceId, index),
+  }));
+  for (const frame of [1, 2]) {
+    if (e.mascot[frame - 1]) frames.push({ label: `mascot ${frame}`, src: mascotUrl(e, frame) });
+  }
+  return frames;
+}
+
+let frames = [];
+let frameIndex = 0;
+
+function openLightbox(e, label) {
+  frames = lightboxFrames(e);
+  lightboxStrip.replaceChildren(
+    ...frames.map((f, i) => {
+      const thumb = document.createElement('img');
+      thumb.src = f.src;
+      thumb.alt = f.label;
+      thumb.addEventListener('error', () => thumb.classList.add('missing'));
+      thumb.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        showFrame(i);
+      });
+      return thumb;
+    }),
+  );
   lightbox.hidden = false;
+  showFrame(Math.max(0, frames.findIndex((f) => f.label === label)));
+}
+
+function showFrame(i) {
+  frameIndex = (i + frames.length) % frames.length;
+  const frame = frames[frameIndex];
+  lightboxImg.crossOrigin = 'anonymous';
+  lightboxImg.src = frame.src;
+  lightboxImg.alt = frame.label;
+  for (const [n, thumb] of [...lightboxStrip.children].entries()) {
+    thumb.classList.toggle('current', n === frameIndex);
+  }
 }
 
 function closeLightbox() {
   lightbox.hidden = true;
   lightboxImg.removeAttribute('src');
+  lightboxStrip.replaceChildren();
 }
 
 /** The Clipboard API only accepts PNG, so the jpg goes through a canvas first. */
@@ -359,7 +398,12 @@ lightbox.addEventListener('click', (ev) => {
   if (ev.target === lightbox) closeLightbox();
 });
 document.addEventListener('keydown', (ev) => {
-  if (ev.key === 'Escape' && !lightbox.hidden) closeLightbox();
+  if (lightbox.hidden) return;
+  if (ev.key === 'Escape') closeLightbox();
+  else if (ev.key === 'ArrowLeft' || ev.key === ',' || ev.key === '<') showFrame(frameIndex - 1);
+  else if (ev.key === 'ArrowRight' || ev.key === '.' || ev.key === '>') showFrame(frameIndex + 1);
+  else return;
+  ev.preventDefault();
 });
 
 document.addEventListener('paste', (ev) => {
@@ -418,14 +462,23 @@ async function load(url) {
 
 (async () => {
   let seed;
-  let stored;
   try {
     // The seed is a static file; only which masters exist needs the API.
-    [seed, stored] = await Promise.all([load('/exercises.json'), load('/api/masters')]);
+    seed = await load('/exercises.json');
   } catch (err) {
     counter.textContent = `Counter: —`;
     list.innerHTML = `<p class="error">${err.message}</p>`;
     return;
+  }
+
+  // A store that will not answer still leaves the references browsable, but the
+  // banner has to stay up: every slot would otherwise read as "not uploaded yet".
+  let stored = {};
+  let storeError = null;
+  try {
+    stored = await load('/api/masters');
+  } catch (err) {
+    storeError = err.message;
   }
   exercises = seed.map((e) => ({
     ...e,
@@ -436,4 +489,5 @@ async function load(url) {
   }));
   collapseAll.textContent = collapsed.size >= exercises.length ? 'Expand all' : 'Collapse all';
   render();
+  if (storeError) list.prepend(row('error', document.createTextNode(storeError)));
 })();

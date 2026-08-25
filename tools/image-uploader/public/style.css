@@ -475,10 +475,34 @@ main {
   display: none;
 }
 
-#lightbox img {
+#lightbox > img {
   max-width: 100%;
-  max-height: calc(100vh - 100px);
+  max-height: calc(100vh - 200px);
   object-fit: contain;
+}
+
+#lightbox-strip {
+  display: flex;
+  gap: 8px;
+}
+
+#lightbox-strip img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+#lightbox-strip img.current {
+  border-color: var(--accent);
+  opacity: 1;
+}
+
+#lightbox-strip img.missing {
+  display: none;
 }
 
 .lightbox-bar {
