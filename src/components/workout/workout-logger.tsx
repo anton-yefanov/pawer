@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
@@ -31,7 +30,6 @@ import { useTheme } from '@/hooks/use-theme';
 import { useLiveRows } from '@/lib/use-live-rows';
 import { useWeightUnit } from '@/lib/weight-unit';
 import * as haptics from '@/lib/haptics';
-import { mascotImage } from '@/lib/mascot-images';
 import type { LoggedSet, LoggingActions } from '@/lib/logging-model';
 import { move, sortBy } from '@/lib/order';
 import { presentFirstWorkoutPaywall } from '@/lib/pro-gates';
@@ -64,12 +62,7 @@ import {
   workoutQuery,
   workoutSetsQuery,
 } from '@/lib/workout-queries';
-import {
-  hasIncompleteValidSets,
-  mascotStateFor,
-  summarise,
-  trackingByExercise,
-} from '@/lib/workout-stats';
+import { hasIncompleteValidSets, summarise, trackingByExercise } from '@/lib/workout-stats';
 
 /**
  * Module scope keeps the identity stable without a hook. The superset pair is
@@ -259,12 +252,6 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
     );
   }
 
-  const mascot = mascotStateFor({
-    finished: false,
-    resting: rest.setId != null,
-    hasProgress: sets.some((set) => set.completed),
-  });
-
   return (
     <>
       <SheetHeader
@@ -310,10 +297,6 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
           {/* The padding lives on a real view rather than the content container
               so the resting row can be measured against it. */}
           <View ref={contentRef} style={styles.content}>
-            <ReorderDim>
-              <Image source={mascotImage(mascot)} style={styles.mascot} contentFit="contain" />
-            </ReorderDim>
-
             <ReorderDim>
               <WorkoutDetailsCard workout={workout} />
             </ReorderDim>
@@ -407,11 +390,6 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     paddingBottom: 240,
     gap: Spacing.three,
-  },
-  mascot: {
-    width: 120,
-    height: 120,
-    alignSelf: 'center',
   },
   hint: {
     textAlign: 'center',

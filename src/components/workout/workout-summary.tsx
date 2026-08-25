@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { SheetFooter } from '@/components/sheet-footer';
@@ -8,7 +7,6 @@ import { BigButton } from '@/components/workout/big-button';
 import { ExerciseBreakdown, SummaryStats } from '@/components/workout/workout-recap';
 import { SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
-import { mascotImage } from '@/lib/mascot-images';
 import { type WeightUnit } from '@/lib/units';
 import {
   type WorkoutExerciseRow,
@@ -37,7 +35,6 @@ export function WorkoutSummary({
   return (
     <View style={styles.container}>
       <ScrollView {...SHEET_SCROLL} style={styles.scroll} contentContainerStyle={styles.content}>
-        <Image source={mascotImage('celebrating')} style={styles.mascot} contentFit="contain" />
         <ThemedText type="subtitle" style={styles.title}>
           Nice work
         </ThemedText>
@@ -73,11 +70,6 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     gap: Spacing.three,
     paddingBottom: SHEET_FOOTER_HEIGHT + Spacing.three,
-  },
-  mascot: {
-    width: 180,
-    height: 180,
-    alignSelf: 'center',
   },
   title: {
     textAlign: 'center',

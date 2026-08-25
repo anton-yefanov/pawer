@@ -7,26 +7,12 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
-import { ATTRIBUTE_VALUES, attributeSlug } from '../../scripts/attribute-vocabulary.mjs';
-
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 export const MASTERS = resolve(ROOT, 'assets/masters');
 export const MASTER_SIZE = 1200;
-export const ATTRIBUTE_MASTER_SIZE = 1024;
 
 export const masterPath = (sourceId, frame) =>
   resolve(MASTERS, `exercises/${sourceId}_${frame}.png`);
-export const attributePath = (kind, slug) => resolve(MASTERS, `attributes/${kind}/${slug}.png`);
-
-/** kind -> slug -> value, so a request can only address a value from the seed. */
-export const attributesByKind = new Map(
-  Object.entries(ATTRIBUTE_VALUES).map(([kind, values]) => [
-    kind,
-    new Map(values.map((value) => [attributeSlug(value), value])),
-  ]),
-);
-
-export { ATTRIBUTE_VALUES, attributeSlug };
 
 export const exercises = JSON.parse(
   await readFile(resolve(ROOT, 'src/db/seed/exercises.json'), 'utf8'),
@@ -51,7 +37,7 @@ export const byId = new Map(exercises.map((e) => [e.sourceId, e]));
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 /** Throws a plain Error whose message is shown verbatim on the slot. */
-export async function normalizeMaster(buf, size = MASTER_SIZE) {
+export async function normalizeMaster(buf) {
   if (!buf.subarray(0, 8).equals(PNG_MAGIC)) {
     throw new Error('not a PNG — masters must be PNG with a transparent background');
   }
@@ -70,13 +56,15 @@ export async function normalizeMaster(buf, size = MASTER_SIZE) {
   }
 
   let out = buf;
-  if (meta.width !== size) {
+  if (meta.width !== MASTER_SIZE) {
     warnings.push(
-      `resized from ${meta.width}x${meta.width} to ${size}x${size}` +
-        (meta.width < size ? ' — upscaled, so it will look softer than art drawn at full size' : ''),
+      `resized from ${meta.width}x${meta.width} to ${MASTER_SIZE}x${MASTER_SIZE}` +
+        (meta.width < MASTER_SIZE
+          ? ' — upscaled, so it will look softer than art drawn at full size'
+          : ''),
     );
     out = await sharp(buf)
-      .resize(size, size, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .resize(MASTER_SIZE, MASTER_SIZE, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
       .png()
       .toBuffer();
   }

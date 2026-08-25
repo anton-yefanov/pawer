@@ -13,11 +13,8 @@ import { mkdir, rm, stat, writeFile } from 'node:fs/promises';
 import { extname, relative, resolve } from 'node:path';
 
 import {
-  ATTRIBUTE_MASTER_SIZE,
   MASTERS,
   ROOT,
-  attributePath,
-  attributesByKind,
   boundingBoxDrift,
   byId,
   exercises,
@@ -95,24 +92,10 @@ async function listExercises(res) {
   sendJson(res, 200, out);
 }
 
-async function listAttributes(res) {
-  const icons = [];
-  for (const [kind, values] of attributesByKind) {
-    for (const [slug, value] of values) {
-      const file = attributePath(kind, slug);
-      const mtime = await mtimeOf(file);
-      icons.push({ kind, slug, value, mtime, url: mtime ? publicPath(file) : null });
-    }
-  }
-  sendJson(res, 200, icons);
-}
-
-async function writeMaster(req, res, file, size, sibling) {
-  const { png, warnings } = await normalizeMaster(await readBody(req), size);
-  if (sibling) {
-    const drift = await boundingBoxDrift(png, sibling);
-    if (drift) warnings.push(drift);
-  }
+async function writeMaster(req, res, file, sibling) {
+  const { png, warnings } = await normalizeMaster(await readBody(req));
+  const drift = await boundingBoxDrift(png, sibling);
+  if (drift) warnings.push(drift);
   await mkdir(resolve(file, '..'), { recursive: true });
   await writeFile(file, png);
   sendJson(res, 200, { mtime: Date.now(), url: publicPath(file), warnings });
@@ -128,7 +111,6 @@ async function route(req, res) {
   const path = decodeURIComponent(url.pathname);
 
   if (req.method === 'GET' && path === '/api/exercises') return listExercises(res);
-  if (req.method === 'GET' && path === '/api/attributes') return listAttributes(res);
 
   const placeholder = /^\/api\/placeholder\/([12])$/.exec(path);
   if (placeholder && req.method === 'GET') {
@@ -146,20 +128,8 @@ async function route(req, res) {
     if (!byId.has(id)) return sendJson(res, 404, { error: 'unknown exercise' });
     const file = masterPath(id, frame);
     if (req.method === 'PUT') {
-      return writeMaster(req, res, file, undefined, masterPath(id, frame === '1' ? 2 : 1));
+      return writeMaster(req, res, file, masterPath(id, frame === '1' ? 2 : 1));
     }
-    if (req.method === 'DELETE') return deleteMaster(res, file);
-    return sendJson(res, 405, { error: 'method not allowed' });
-  }
-
-  const attribute = /^\/api\/attribute\/([a-z]+)\/([a-z_]+)$/.exec(path);
-  if (attribute) {
-    const [, kind, slug] = attribute;
-    if (!attributesByKind.get(kind)?.has(slug)) {
-      return sendJson(res, 404, { error: 'unknown attribute' });
-    }
-    const file = attributePath(kind, slug);
-    if (req.method === 'PUT') return writeMaster(req, res, file, ATTRIBUTE_MASTER_SIZE);
     if (req.method === 'DELETE') return deleteMaster(res, file);
     return sendJson(res, 405, { error: 'method not allowed' });
   }

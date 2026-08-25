@@ -1,4 +1,3 @@
-import type { MascotState } from '@/lib/mascot-images';
 import { isWorkSet } from '@/lib/set-types';
 import { isValidSet, TRACKING, trackingTypeOf, type TrackingType } from '@/lib/tracking-types';
 import { formatDuration } from '@/lib/units';
@@ -116,18 +115,4 @@ export function summarise(
     completedSets: sets.filter((set) => set.completed && isWorkSet(set)).length,
     exerciseCount: workoutExercises.length,
   };
-}
-
-export function mascotStateFor({
-  finished,
-  resting,
-  hasProgress,
-}: {
-  finished: boolean;
-  resting: boolean;
-  hasProgress: boolean;
-}): MascotState {
-  if (finished) return 'celebrating';
-  if (resting) return 'resting';
-  return hasProgress ? 'encouraging' : 'idle';
 }

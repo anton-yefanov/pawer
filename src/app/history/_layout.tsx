@@ -39,7 +39,7 @@ export default function HistoryLayout() {
         name="workout-add-exercise"
         options={{
           ...FULL_SHEET,
-          title: "",
+          headerShown: false,
           ...surfacePageOptions(theme),
         }}
       />

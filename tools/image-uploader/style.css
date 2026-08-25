@@ -160,6 +160,7 @@ main {
   --fg: #000000;
   --fg-dim: #60646c;
   --hairline: rgba(0, 0, 0, 0.15);
+  --fill: rgba(0, 0, 0, 0.05);
 }
 
 .phone.dark {
@@ -167,6 +168,7 @@ main {
   --fg: #ffffff;
   --fg-dim: #b0b4ba;
   --hairline: rgba(255, 255, 255, 0.15);
+  --fill: rgba(255, 255, 255, 0.08);
 }
 
 .phone .nav {
@@ -193,43 +195,21 @@ main {
 .phone .frames {
   display: flex;
   gap: 8px;
+  /* Stretch would beat the frames' aspect-ratio and letterbox them wide. */
+  align-items: flex-start;
 }
 
 .phone .frames img {
   flex: 1;
   min-width: 0;
   aspect-ratio: 1;
-  object-fit: contain;
+  object-fit: cover;
+  border-radius: 10px;
+  background: var(--fill);
 }
 
-.phone .tiles {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-}
-
-.phone .tile {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.phone .tile img {
-  width: 100%;
-  max-width: 88px;
-  aspect-ratio: 1;
-  object-fit: contain;
-}
-
-.phone .tile span {
-  font-size: 14px;
-  line-height: 20px;
-  color: var(--fg-dim);
-  text-align: center;
-  text-transform: capitalize;
+.phone .frames img.missing {
+  visibility: hidden;
 }
 
 .phone .facts {
@@ -368,35 +348,6 @@ main {
 
 .card.collapsed .grid {
   display: none;
-}
-
-/* The attribute icons sit above the exercise cards: 35 small slots, six across. */
-.attributes {
-  content-visibility: visible;
-}
-
-.attributes.collapsed #attr-groups {
-  display: none;
-}
-
-.attr-kind {
-  color: var(--dim);
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  margin: 12px 0 6px;
-}
-
-.attr-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 10px;
-}
-
-@media (max-width: 700px) {
-  .attr-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
 }
 
 .slot {

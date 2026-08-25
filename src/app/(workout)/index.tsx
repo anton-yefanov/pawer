@@ -1,8 +1,7 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { type FolderCardData } from '@/components/templates/folder-card';
 import { type TemplateCardData } from '@/components/templates/template-card';
@@ -21,7 +20,6 @@ import { type Template } from '@/db/schema';
 import { useTheme } from '@/hooks/use-theme';
 import { moveTemplateToFolder, reorderFolders } from '@/lib/folder-actions';
 import * as haptics from '@/lib/haptics';
-import { mascotImage } from '@/lib/mascot-images';
 import { move, sortBy } from '@/lib/order';
 import { reorderTemplates } from '@/lib/template-actions';
 import {
@@ -37,7 +35,6 @@ import { formatStartTime } from '@/lib/workout-stats';
 export default function StartWorkoutScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const mascot = mascotBox(useWindowDimensions().width);
   const { data } = useLiveQuery(activeWorkoutQuery(), []);
   const active = data?.[0];
 
@@ -166,16 +163,7 @@ export default function StartWorkoutScreen() {
               <BigButton title="Resume Workout" onPress={() => open(active.id)} />
             </View>
           ) : (
-            <View style={styles.section}>
-              <View style={[styles.mascot, { width: mascot.width, height: mascot.height }]}>
-                <Image
-                  source={mascotImage('idle')}
-                  style={[styles.mascotArt, mascot.art]}
-                  contentFit="contain"
-                />
-              </View>
-              <BigButton title="Start an Empty Workout" onPress={startEmpty} />
-            </View>
+            <BigButton title="Start an Empty Workout" onPress={startEmpty} />
           )}
 
           <TemplateSection
@@ -217,26 +205,6 @@ function toCard(template: Template, rows: readonly TemplateCardExercise[]): Temp
   };
 }
 
-/**
- * Where the figure actually sits on the mascot's square canvas, as fractions of
- * it. The art ships with wide empty margins, so the screen places it by this
- * box instead: drawn oversized inside a clipping one, it stands full height
- * rather than being shrunk to fit padding.
- */
-const ART = { left: 0.2725, top: 0.1289, width: 0.498, height: 0.7451 };
-
-function mascotBox(windowWidth: number) {
-  const page = windowWidth - Spacing.three * 2;
-  const height = Math.round((page * 0.55 * ART.height) / ART.width);
-  const canvas = height / ART.height;
-
-  return {
-    width: Math.round((height * ART.width) / ART.height),
-    height,
-    art: { width: canvas, height: canvas, left: -ART.left * canvas, top: -ART.top * canvas },
-  };
-}
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -248,13 +216,6 @@ const styles = StyleSheet.create({
   },
   section: {
     gap: Spacing.two,
-  },
-  mascot: {
-    alignSelf: 'center',
-    overflow: 'hidden',
-  },
-  mascotArt: {
-    position: 'absolute',
   },
   card: {
     borderRadius: 14,
