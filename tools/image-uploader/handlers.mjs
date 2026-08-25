@@ -39,8 +39,12 @@ export function sendJson(res, status, body) {
  * is still an unread stream.
  */
 function readBody(req) {
+  // Vercel's node runtime parses some content types for you: a JSON body may
+  // already be an object by the time the handler runs.
   if (req.body) {
-    return Promise.resolve(Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body));
+    if (Buffer.isBuffer(req.body)) return Promise.resolve(req.body);
+    const raw = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+    return Promise.resolve(Buffer.from(raw));
   }
   return new Promise((ok, fail) => {
     const chunks = [];

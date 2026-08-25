@@ -220,6 +220,11 @@ main {
   overflow: auto;
 }
 
+.phone.reframing,
+.phone.reframing .screen {
+  overflow: visible;
+}
+
 .phone .frames {
   display: flex;
   gap: 8px;
@@ -267,7 +272,13 @@ main {
 
 .phone .frame.reframing img {
   position: absolute;
+  /* The square tile's own rules would cover-crop the source and hide the
+     mismatch between what is on screen and what the crop rectangle means. */
+  aspect-ratio: auto;
+  object-fit: fill;
   max-width: none;
+  border-radius: 0;
+  background: none;
   cursor: move;
   user-select: none;
   -webkit-user-drag: none;
@@ -278,6 +289,7 @@ main {
   opacity: 0.3;
 }
 
+/* On the square's corners, not the source's: the crop box is what you size. */
 .phone .frame.reframing .handle {
   position: absolute;
   width: 12px;
@@ -285,7 +297,28 @@ main {
   margin: -6px;
   border-radius: 3px;
   background: var(--accent);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
   z-index: 2;
+}
+
+.phone .frame.reframing .handle[data-corner="nw"] {
+  top: 0;
+  left: 0;
+}
+
+.phone .frame.reframing .handle[data-corner="ne"] {
+  top: 0;
+  left: 100%;
+}
+
+.phone .frame.reframing .handle[data-corner="se"] {
+  top: 100%;
+  left: 100%;
+}
+
+.phone .frame.reframing .handle[data-corner="sw"] {
+  top: 100%;
+  left: 0;
 }
 
 .phone .frame.reframing .handle[data-corner="nw"],

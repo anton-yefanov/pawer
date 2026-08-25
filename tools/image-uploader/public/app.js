@@ -218,16 +218,15 @@ function startReframe(e, index) {
   clip.append(img);
   frame.append(ghost, clip);
 
-  const handles = {};
   for (const corner of ['nw', 'ne', 'se', 'sw']) {
     const handle = document.createElement('span');
     handle.className = 'handle';
     handle.dataset.corner = corner;
-    handles[corner] = handle;
     frame.append(handle);
   }
 
-  reframing = { e, index, frame, img, ghost, handles, crop: e.crop[index] };
+  // A copy, so Cancel really cancels.
+  reframing = { e, index, frame, img, ghost, crop: e.crop[index] && { ...e.crop[index] } };
   ghost.addEventListener('load', () => {
     // A master uploaded before crops existed has none stored; the square it
     // already ships is the centred one, so start there.
@@ -246,6 +245,7 @@ function startReframe(e, index) {
 
 function endReframe() {
   reframing = null;
+  phone.classList.remove('reframing');
   renderPreview();
 }
 
@@ -253,38 +253,25 @@ function endReframe() {
 const reframeScale = () => reframing.frame.clientWidth / reframing.crop.size;
 
 function layoutReframe() {
-  const { img, ghost, handles, crop } = reframing;
+  const { img, ghost, crop } = reframing;
   const k = reframeScale();
-  const w = ghost.naturalWidth * k;
-  const h = ghost.naturalHeight * k;
-  const left = -crop.x * k;
-  const top = -crop.y * k;
-
   // .clip is inset:0 of the frame, so both copies share one origin.
   for (const el of [img, ghost]) {
-    el.style.width = `${w}px`;
-    el.style.left = `${left}px`;
-    el.style.top = `${top}px`;
+    el.style.width = `${ghost.naturalWidth * k}px`;
+    el.style.left = `${-crop.x * k}px`;
+    el.style.top = `${-crop.y * k}px`;
   }
-
-  handles.nw.style.left = handles.sw.style.left = `${left}px`;
-  handles.ne.style.left = handles.se.style.left = `${left + w}px`;
-  handles.nw.style.top = handles.ne.style.top = `${top}px`;
-  handles.sw.style.top = handles.se.style.top = `${top + h}px`;
 }
 
 function onReframePointerDown(ev) {
-  const { ghost, crop } = reframing;
+  const { crop } = reframing;
   const corner = ev.target.dataset?.corner;
   if (!corner && ev.target.tagName !== 'IMG') return;
   ev.preventDefault();
 
-  const k = reframeScale();
   const side = reframing.frame.clientWidth;
+  const k = reframeScale();
   const start = { pointerX: ev.clientX, pointerY: ev.clientY, ...crop };
-  // Displayed size and position of the whole source, which is what a handle drags.
-  const shown = { w: ghost.naturalWidth * k, h: ghost.naturalHeight * k };
-  const origin = { left: -crop.x * k, top: -crop.y * k };
 
   const move = (m) => {
     const dx = m.clientX - start.pointerX;
@@ -295,15 +282,13 @@ function onReframePointerDown(ev) {
     } else {
       const west = corner === 'nw' || corner === 'sw';
       const north = corner === 'nw' || corner === 'ne';
-      const w = Math.max(24, shown.w + (west ? -dx : dx));
-      const h = (w / shown.w) * shown.h;
-      // The opposite corner anchors, so only the dragged side moves.
-      const left = west ? origin.left + shown.w - w : origin.left;
-      const top = north ? origin.top + shown.h - h : origin.top;
-      const scale = w / ghost.naturalWidth;
-      crop.size = side / scale;
-      crop.x = -left / scale;
-      crop.y = -top / scale;
+      // The box cannot actually grow — the tile is fixed — so dragging a corner
+      // outward means the square should take in more of the source.
+      const pulled = ((west ? -dx : dx) + (north ? -dy : dy)) / 2;
+      crop.size = start.size * (Math.max(24, side + pulled) / side);
+      // The opposite corner of the square is the anchor.
+      crop.x = west ? start.x + start.size - crop.size : start.x;
+      crop.y = north ? start.y + start.size - crop.size : start.y;
     }
     layoutReframe();
   };
@@ -355,6 +340,7 @@ function renderPreview() {
   );
   previewScreen.append(row('frames', ...frames));
 
+  phone.classList.toggle('reframing', reframing?.e === e);
   if (reframing?.e === e) {
     const save = document.createElement('button');
     save.textContent = 'Save';
@@ -591,7 +577,8 @@ collapseAll.addEventListener('click', () => {
 });
 
 function setScheme(scheme) {
-  phone.className = `phone ${scheme}`;
+  phone.classList.toggle('dark', scheme === 'dark');
+  phone.classList.toggle('light', scheme !== 'dark');
   previewScheme.textContent = scheme === 'dark' ? 'Light' : 'Dark';
   localStorage.setItem(SCHEME, scheme);
 }
