@@ -27,7 +27,7 @@ import {
 const BODY_LIMIT = 32 * 1024 * 1024;
 
 /** A blob key stays inside the masters prefix; the page only offers seed ids. */
-const ID = /^[A-Za-z0-9_]+$/;
+const ID = /^[A-Za-z0-9_-]+$/;
 
 export function sendJson(res, status, body) {
   res.writeHead(status, { 'content-type': 'application/json' });

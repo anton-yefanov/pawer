@@ -45,7 +45,7 @@ async function route(req, res) {
   if (req.method === 'GET' && path === '/api/masters') return listMasters(res);
   if (path === '/api/export') return exportSquares(req, res);
 
-  const frame = /^\/api\/(mascot|reframe)\/([A-Za-z0-9_]+)\/([12])$/.exec(path);
+  const frame = /^\/api\/(mascot|reframe)\/([A-Za-z0-9_-]+)\/([12])$/.exec(path);
   if (frame) {
     const handler = frame[1] === 'mascot' ? mascot : reframe;
     return handler(req, res, frame[2], frame[3]);
