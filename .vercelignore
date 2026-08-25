@@ -1,0 +1,14 @@
+# The deploy only builds tools/image-uploader — the app's own tree is dead weight.
+ios
+android
+.expo
+assets
+drizzle
+patches
+plugins
+src/app
+src/components
+src/lib
+src/hooks
+src/constants
+src/db/seed/*.ts
