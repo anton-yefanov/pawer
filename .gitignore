@@ -46,3 +46,6 @@ example
 /android
 .vercel
 .env*
+
+# generated for the image uploader
+tools/image-uploader/public/exercises.json

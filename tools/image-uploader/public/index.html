@@ -19,8 +19,8 @@
         Mascot frames must be <b>PNG</b>, <b>square</b>, <b>1200×1200</b>, on a
         <b>transparent</b> background — and both frames of a pair must share one bounding box.
         Any other square size is resized to 1200×1200 on upload.
-        Drops are written straight into <code>assets/masters/</code>; run
-        <code>npm run build:images</code> to ship what is here.
+        Drops are stored in Vercel Blob; to ship what is here, run
+        <code>npm run masters:pull &amp;&amp; npm run build:images</code> locally.
       </p>
     </header>
 

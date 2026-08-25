@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "dependencies": {
     "@expo/ui": "~57.0.9",
+    "@vercel/blob": "^2.8.0",
     "drizzle-orm": "^0.45.2",
     "expo": "~57.0.11",
     "expo-constants": "~57.0.9",
@@ -61,7 +62,10 @@
     "build:seed": "node ./scripts/build-exercise-seed.mjs",
     "build:images": "node ./scripts/build-images.mjs",
     "build:placeholders": "node ./scripts/make-placeholder-masters.mjs && npm run build:images",
-    "images:web": "node ./tools/image-uploader/server.mjs",
+    "images:web": "npm run uploader:seed && node ./tools/image-uploader/server.mjs",
+    "uploader:seed": "node ./scripts/uploader-seed.mjs",
+    "masters:pull": "node ./scripts/masters-pull.mjs",
+    "masters:push": "node ./scripts/masters-push.mjs",
     "postinstall": "patch-package"
   },
   "private": true

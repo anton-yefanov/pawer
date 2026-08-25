@@ -307,7 +307,9 @@ function showError(id, frame, message) {
   grid.append(p);
 }
 
-const BODY_LIMIT = 32 * 1024 * 1024;
+// Well under what a Vercel function will buffer, so an oversized drop is
+// re-encoded here rather than refused there.
+const BODY_LIMIT = 4 * 1024 * 1024;
 const MASTER_SIZE = 1200;
 
 /**
@@ -444,16 +446,30 @@ setScheme(localStorage.getItem(SCHEME) ?? 'light');
 search.addEventListener('input', render);
 onlyIncomplete.addEventListener('change', render);
 
+async function load(url) {
+  const res = await fetch(url);
+  if (res.ok) return res.json();
+  throw new Error(`${url} failed with ${res.status}. ${(await res.text()).trim()}`);
+}
+
 (async () => {
-  const res = await fetch('/api/exercises');
-  if (!res.ok) {
+  let seed;
+  let stored;
+  try {
+    // The seed is a static file; only which masters exist needs the API.
+    [seed, stored] = await Promise.all([load('/exercises.json'), load('/api/masters')]);
+  } catch (err) {
     counter.textContent = `Counter: —`;
-    list.innerHTML = `<p class="error">/api/exercises failed with ${res.status}. ${(await res.text()).trim()}</p>`;
+    list.innerHTML = `<p class="error">${err.message}</p>`;
     return;
   }
-  exercises = await res.json();
-  // Warnings describe an upload, not a stored file, so they live for the session only.
-  for (const e of exercises) e.warnings = [null, null];
+  exercises = seed.map((e) => ({
+    ...e,
+    mascot: [1, 2].map((frame) => stored[`${e.sourceId}_${frame}.png`]?.mtime ?? null),
+    mascotUrl: [1, 2].map((frame) => stored[`${e.sourceId}_${frame}.png`]?.url ?? null),
+    // Warnings describe an upload, not a stored file, so they live for the session only.
+    warnings: [null, null],
+  }));
   collapseAll.textContent = collapsed.size >= exercises.length ? 'Expand all' : 'Collapse all';
   render();
 })();

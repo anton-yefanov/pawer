@@ -1,38 +1,11 @@
 /**
  * The master spec from assets/masters/README.md, as the checks the uploader
- * runs before a file is written into assets/masters/.
+ * runs before a file is written into the store. Validation only — the deployed
+ * functions import this, so it must not reach for anything on disk.
  */
-import { readFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
-export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-export const MASTERS = resolve(ROOT, 'assets/masters');
 export const MASTER_SIZE = 1200;
-
-export const masterPath = (sourceId, frame) =>
-  resolve(MASTERS, `exercises/${sourceId}_${frame}.png`);
-
-export const exercises = JSON.parse(
-  await readFile(resolve(ROOT, 'src/db/seed/exercises.json'), 'utf8'),
-).map(
-  ({ sourceId, name, category, equipment, force, level, mechanic, primaryMuscles, secondaryMuscles, instructions }) => ({
-    sourceId,
-    name,
-    category,
-    equipment,
-    muscle: primaryMuscles[0] ?? null,
-    force,
-    level,
-    mechanic,
-    primaryMuscles,
-    secondaryMuscles,
-    instructions,
-  }),
-);
-
-export const byId = new Map(exercises.map((e) => [e.sourceId, e]));
 
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
@@ -87,9 +60,9 @@ async function alphaBox(buf) {
  * both frames must sit in the same bounding box, or toggling reads as a glitch
  * rather than a rep.
  */
-export async function boundingBoxDrift(png, siblingFile) {
+export async function boundingBoxDrift(png, sibling) {
+  if (!sibling) return null;
   try {
-    const sibling = await readFile(siblingFile);
     const [a, b] = await Promise.all([alphaBox(png), alphaBox(sibling)]);
     const drift = Math.max(
       Math.abs(a.left - b.left),
@@ -101,6 +74,6 @@ export async function boundingBoxDrift(png, siblingFile) {
     if (drift <= tolerance) return null;
     return `art sits ${Math.round(drift)}px off the other frame's bounding box — lock the hips to a fixed point so toggling reads as a rep, not a jump`;
   } catch {
-    return null; // no sibling yet, or a fully transparent frame with no box to compare
+    return null; // a fully transparent frame has no box to compare
   }
 }
