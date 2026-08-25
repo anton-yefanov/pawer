@@ -132,6 +132,34 @@ main {
   }
 }
 
+.base-prompt {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding-bottom: 10px;
+}
+
+.base-prompt textarea {
+  flex: 1;
+  min-width: 0;
+  /* wrap="off" keeps it to the one line the height allows; it scrolls sideways. */
+  height: 32px;
+  line-height: 18px;
+  resize: none;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 6px 10px;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+}
+
+.base-prompt textarea:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
 .preview-bar {
   display: flex;
   align-items: center;

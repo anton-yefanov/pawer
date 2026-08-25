@@ -391,6 +391,18 @@ previewScheme.addEventListener('click', () =>
 );
 setScheme(localStorage.getItem(SCHEME) ?? 'light');
 
+const basePrompt = document.getElementById('base-prompt');
+const basePromptCopy = document.getElementById('base-prompt-copy');
+basePromptCopy.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(basePrompt.value);
+    basePromptCopy.textContent = 'Copied';
+  } catch (err) {
+    basePromptCopy.textContent = err.message;
+  }
+  setTimeout(() => (basePromptCopy.textContent = 'Copy'), 1500);
+});
+
 search.addEventListener('input', render);
 onlyIncomplete.addEventListener('change', render);
 
