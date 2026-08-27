@@ -43,9 +43,7 @@ export function WorkoutLogRow({
           <ThemedText style={styles.name} numberOfLines={1}>
             {workout.name?.trim() || 'Workout'}
           </ThemedText>
-          {workout.prCount > 0 && (
-            <PrChip label={`${workout.prCount} ${workout.prCount === 1 ? 'PR' : 'PRs'}`} />
-          )}
+          {workout.prCount > 0 && <PrChip label={String(workout.prCount)} />}
         </View>
         {shown.map((exercise, index) => (
           <ThemedText key={`${exercise.position}-${index}`} type="small" numberOfLines={1}>

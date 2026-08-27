@@ -18,6 +18,7 @@ import { ElapsedTime } from '@/components/workout/elapsed-time';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { type Template } from '@/db/schema';
 import { useTheme } from '@/hooks/use-theme';
+import { asCardArtwork } from '@/lib/card-artwork';
 import { moveTemplateToFolder, reorderFolders } from '@/lib/folder-actions';
 import * as haptics from '@/lib/haptics';
 import { move, sortBy } from '@/lib/order';
@@ -199,9 +200,8 @@ function toCard(template: Template, rows: readonly TemplateCardExercise[]): Temp
     isBuiltIn: template.isBuiltIn,
     folderId: template.folderId,
     color: template.color,
-    image: template.image,
+    artwork: asCardArtwork(template.artwork),
     exerciseNames: rows.map((row) => row.name),
-    primaryMuscles: rows.flatMap((row) => row.primaryMuscles),
   };
 }
 

@@ -24,6 +24,8 @@ import { ThemedTextInput } from '@/components/themed-text-input';
 import { useTheme } from '@/hooks/use-theme';
 import type { ExerciseFilters, FacetMenu } from '@/lib/exercise-filters';
 import * as haptics from '@/lib/haptics';
+import { allowNewCustomExercise } from '@/lib/pro-gates';
+import { usePro } from '@/lib/purchases';
 
 const SEARCH_BAR_HEIGHT = 48;
 const TOP_GAP = Spacing.one;
@@ -119,6 +121,7 @@ export function ExerciseSearchBar({
   const theme = useTheme();
   const action = useActionColors();
   const input = useRef<TextInput>(null);
+  const isPro = usePro();
 
   // Leaving the screen gives up the field for good. Without this UIKit restores
   // first responder to the last focused field when the detail screen pops, so
@@ -254,7 +257,9 @@ export function ExerciseSearchBar({
               style={styles.capsuleContent}
               onPress={() => {
                 haptics.tap();
-                router.push(newExerciseHref);
+                void allowNewCustomExercise(isPro).then((allowed) => {
+                  if (allowed) router.push(newExerciseHref);
+                });
               }}
               accessibilityRole="button"
               accessibilityLabel="New exercise">

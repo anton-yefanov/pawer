@@ -21,9 +21,16 @@ export default function ExercisesLayout() {
       {/* Title and header buttons change per step, so the screen sets them. */}
       <Stack.Screen name="new" options={FULL_SHEET} />
       <Stack.Screen name="edit" options={FULL_SHEET} />
+      {/* The exercise name and its buttons live in the content, under the
+          images — an empty nav bar would only be a band of white above them,
+          and turning it off from inside the screen never takes. */}
       <Stack.Screen
         name="[id]"
-        options={DETAIL_SHEET}
+        options={{
+          ...DETAIL_SHEET,
+          headerShown: false,
+          ...surfacePageOptions(theme),
+        }}
       />
     </Stack>
   );

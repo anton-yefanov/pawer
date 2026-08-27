@@ -25,6 +25,8 @@ export type MenuItem = {
   destructive?: boolean;
   /** Marks the row the way a SwiftUI Picker's checkmark does on iOS. */
   selected?: boolean;
+  /** Marks the row as Pro-only; it still fires. */
+  locked?: boolean;
   /** Draws a divider above this row. */
   separated?: boolean;
   /** Makes this row open a nested level instead of firing. */
@@ -149,7 +151,15 @@ export function Menu({
                 <Row
                   label={item.label}
                   color={item.destructive ? 'danger' : 'text'}
-                  trailing={item.selected ? 'checkmark' : item.items ? 'chevron.right' : undefined}
+                  trailing={
+                    item.locked
+                      ? 'lock.fill'
+                      : item.selected
+                        ? 'checkmark'
+                        : item.items
+                          ? 'chevron.right'
+                          : undefined
+                  }
                   onPress={() => press(item)}
                 />
               </View>
@@ -229,7 +239,7 @@ function Row({
   label: string;
   color: 'text' | 'danger' | 'textSecondary';
   leading?: 'chevron.left';
-  trailing?: 'checkmark' | 'chevron.right';
+  trailing?: 'checkmark' | 'chevron.right' | 'lock.fill';
   onPress: () => void;
 }) {
   const theme = useTheme();

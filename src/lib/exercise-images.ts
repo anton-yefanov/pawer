@@ -1,37 +1,26 @@
 import type { ImageSource } from 'expo-image';
 
-/**
- * Resolves an exercise's illustrations from its upstream slug (`sourceId`).
- *
- * Right now every exercise resolves to the same placeholder pair. When the real
- * art lands, replace the bodies of these two functions with a lookup into a
- * generated require-map — nothing else in the app needs to change, because no
- * screen ever builds an asset path itself.
- *
- * Metro requires static literal paths, so the eventual map has to be generated
- * (one `require` line per slug) rather than assembled at runtime.
- */
+import { EXERCISE_ART } from '@/lib/exercise-image-map';
 
 const PLACEHOLDER_THUMB = require('@/assets/exercises/thumb/placeholder.webp') as ImageSource;
-const PLACEHOLDER_DETAIL: readonly [ImageSource, ImageSource] = [
-  require('@/assets/exercises/detail/placeholder_1.webp') as ImageSource,
-  require('@/assets/exercises/detail/placeholder_2.webp') as ImageSource,
-];
 
 /** 150px square, for 48pt list rows. */
-export function exerciseThumbnail(_sourceId: string | null): ImageSource {
-  return PLACEHOLDER_THUMB;
+export function exerciseThumbnail(sourceId: string | null): ImageSource {
+  return (sourceId && EXERCISE_ART[sourceId]?.thumb) || PLACEHOLDER_THUMB;
 }
 
 /**
- * The two 600px frames for the detail view, in order. Cross-fade between them
- * at ~150ms — a hard cut reads as a broken image loader, not as a rep.
+ * The two 600px frames for the detail view, in order. A frame is null when no
+ * master exists for it — the caller draws its own empty square, so a missing
+ * second frame never silently repeats the first.
  */
-export function exerciseFrames(_sourceId: string | null): readonly [ImageSource, ImageSource] {
-  return PLACEHOLDER_DETAIL;
+export function exerciseFrames(
+  sourceId: string | null,
+): readonly [ImageSource | null, ImageSource | null] {
+  return (sourceId && EXERCISE_ART[sourceId]?.frames) || [null, null];
 }
 
 /** True once real art exists for this exercise — drives "illustration coming soon" UI. */
-export function hasRealArtwork(_sourceId: string | null): boolean {
-  return false;
+export function hasRealArtwork(sourceId: string | null): boolean {
+  return sourceId !== null && sourceId in EXERCISE_ART;
 }

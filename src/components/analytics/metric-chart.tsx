@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { BarChart } from '@/components/analytics/bar-chart';
+import { AreaChart } from '@/components/analytics/area-chart';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -25,8 +25,7 @@ export function MetricChart({
   const [selected, setSelected] = useState<number | null>(null);
 
   const point = selected === null ? undefined : series.points[selected];
-  const first = series.points[0];
-  const last = series.points[series.points.length - 1];
+  const empty = series.points.length === 0;
 
   return (
     <View style={[styles.card, { backgroundColor: theme.surface }]}>
@@ -37,7 +36,7 @@ export function MetricChart({
         </ThemedText>
       </View>
 
-      {first && last ? (
+      {!empty ? (
         <>
           <View style={styles.readout}>
             <ThemedText type="subtitle" style={styles.value}>
@@ -48,16 +47,13 @@ export function MetricChart({
             </ThemedText>
           </View>
 
-          <BarChart points={series.points} selected={selected} onSelect={setSelected} />
-
-          <View style={styles.axis}>
-            <ThemedText type="small" themeColor="textSecondary">
-              {formatBucketRange(first, series.bucket)}
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {formatBucketRange(last, series.bucket)}
-            </ThemedText>
-          </View>
+          <AreaChart
+            points={series.points}
+            bucket={series.bucket}
+            selected={selected}
+            onSelect={setSelected}
+            formatValue={format}
+          />
         </>
       ) : (
         <ThemedText type="small" themeColor="textSecondary" style={styles.empty}>
@@ -85,11 +81,6 @@ const styles = StyleSheet.create({
   },
   value: {
     fontVariant: ['tabular-nums'],
-  },
-  axis: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: Spacing.two,
   },
   empty: {
     paddingBottom: Spacing.one,

@@ -39,7 +39,6 @@ export function templateCardExercisesQuery() {
       templateId: templateExercises.templateId,
       position: templateExercises.position,
       name: exercises.name,
-      primaryMuscles: exercises.primaryMuscles,
     })
     .from(templateExercises)
     .innerJoin(exercises, eq(templateExercises.exerciseId, exercises.id))

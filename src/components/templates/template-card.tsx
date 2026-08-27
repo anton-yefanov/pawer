@@ -1,12 +1,11 @@
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
+import { ArtworkLayer } from '@/components/templates/artwork-layer';
 import { DraggableCell } from '@/components/templates/draggable-cell';
-import { CARD_BORDER, cardSlot, GridCard } from '@/components/templates/grid-card';
+import { CARD_BORDER, cardSlot, COVER_RATIO, GridCard } from '@/components/templates/grid-card';
 import { type CardColor } from '@/constants/card-colors';
-import { type CardPose } from '@/constants/card-poses';
-import { templateCover } from '@/lib/template-images';
+import { type CardArtwork } from '@/lib/card-artwork';
 
 export type TemplateCardData = {
   id: string;
@@ -14,9 +13,8 @@ export type TemplateCardData = {
   isBuiltIn: boolean;
   folderId: string | null;
   color: CardColor | null;
-  image: CardPose | null;
+  artwork: CardArtwork | null;
   exerciseNames: readonly string[];
-  primaryMuscles: readonly string[];
 };
 
 type Props = {
@@ -27,9 +25,10 @@ type Props = {
 };
 
 export function TemplateCard({ template, width, index, draggable = false }: Props) {
+  const cardWidth = width - CARD_BORDER * 2;
   const card = (
     <GridCard
-      width={width - CARD_BORDER * 2}
+      width={cardWidth}
       title={template.name}
       color={template.color}
       subtitle={template.exerciseNames.join(', ')}
@@ -37,11 +36,7 @@ export function TemplateCard({ template, width, index, draggable = false }: Prop
         router.push({ pathname: '/template/[id]', params: { id: template.id } })
       }
       cover={
-        <Image
-          source={templateCover(template.image, template.primaryMuscles)}
-          style={styles.cover}
-          contentFit="contain"
-        />
+        <ArtworkLayer artwork={template.artwork} coverHeight={cardWidth * COVER_RATIO} />
       }
     />
   );
@@ -56,10 +51,3 @@ export function TemplateCard({ template, width, index, draggable = false }: Prop
     <View style={[cardSlot, { width }]}>{card}</View>
   );
 }
-
-const styles = StyleSheet.create({
-  cover: {
-    width: '100%',
-    height: '100%',
-  },
-});

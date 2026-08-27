@@ -1,11 +1,10 @@
 /**
- * Cover artwork for template and folder cards. Stored per row as an id, never
- * as a path, so `src/lib/card-backgrounds.ts` stays the only resolver. `null`
- * means `grey`.
+ * Cover hues for template and folder cards. Stored per row as an id, never as
+ * colours, so `src/lib/card-gradients.ts` stays the only resolver. `null` means
+ * `grey`.
  *
- * A cover does not follow the colour scheme — the mascot artwork is
- * dark-outlined and sits directly on it, so every cover but `black` is pastel
- * in both schemes.
+ * A cover does not follow the colour scheme — artwork sits directly on it, so
+ * every cover but `black` is pastel in both schemes.
  */
 export const CARD_COLORS = [
   'grey',

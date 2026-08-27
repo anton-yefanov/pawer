@@ -3,11 +3,11 @@ import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { DayPicker } from '@/components/analytics/day-picker';
-import { PeriodPicker } from '@/components/analytics/period-picker';
 import { MetricChart } from '@/components/analytics/metric-chart';
 import { QuickSummary } from '@/components/analytics/quick-summary';
 import { RecordsCard } from '@/components/analytics/records-card';
 import { StatRows, type StatRow } from '@/components/analytics/stat-rows';
+import { PeriodMenu } from '@/components/exercises/period-menu';
 import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -21,7 +21,15 @@ import {
   setTotalsQuery,
   workoutTotalsQuery,
 } from '@/lib/analytics-queries';
-import { DEFAULT_PERIOD, rangeFor, type PeriodId } from '@/lib/analytics-period';
+import {
+  DEFAULT_PERIOD,
+  PERIODS,
+  isPeriodLocked,
+  rangeFor,
+  type PeriodId,
+} from '@/lib/analytics-period';
+import { allowPeriod } from '@/lib/pro-gates';
+import { usePro } from '@/lib/purchases';
 import { comparisonLabel, delta, previousRange } from '@/lib/analytics-compare';
 import { buildQuickSummary } from '@/lib/analytics-insights';
 import { buildSeries } from '@/lib/analytics-series';
@@ -31,11 +39,18 @@ import { formatHoursMinutes } from '@/lib/workout-stats';
 export default function AnalyticsScreen() {
   const theme = useTheme();
   const unit = useWeightUnit();
+  const isPro = usePro();
 
   const [period, setPeriod] = useState<PeriodId>(DEFAULT_PERIOD);
-  const [customFrom, setCustomFrom] = useState(() => rangeFor('d30').from);
+  const [customFrom, setCustomFrom] = useState(() => rangeFor('d7').from);
   const [customTo, setCustomTo] = useState(() => Date.now());
   const [today] = useState(() => Date.now());
+
+  const selectPeriod = (next: PeriodId) => {
+    allowPeriod(next, isPro).then((allowed) => {
+      if (allowed) setPeriod(next);
+    });
+  };
 
   const range = useMemo(
     () => rangeFor(period, { from: new Date(customFrom), to: new Date(customTo) }),
@@ -153,33 +168,38 @@ export default function AnalyticsScreen() {
       style={{ backgroundColor: theme.background }}
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic">
-      <View style={[styles.card, { backgroundColor: theme.surface }]}>
-        <PeriodPicker value={period} onChange={setPeriod} />
-
-        {period === 'custom' && (
-          <>
-            <View style={[styles.divider, { backgroundColor: theme.backgroundElement }]} />
-            <View style={styles.cardRow}>
-              <ThemedText themeColor="textSecondary">From</ThemedText>
-              <DayPicker
-                value={new Date(customFrom)}
-                max={new Date(Math.min(customTo, today))}
-                onChange={(next) => setCustomFrom(next.getTime())}
-              />
-            </View>
-            <View style={[styles.divider, { backgroundColor: theme.backgroundElement }]} />
-            <View style={styles.cardRow}>
-              <ThemedText themeColor="textSecondary">To</ThemedText>
-              <DayPicker
-                value={new Date(customTo)}
-                min={new Date(customFrom)}
-                max={new Date(today)}
-                onChange={(next) => setCustomTo(next.getTime())}
-              />
-            </View>
-          </>
-        )}
+      <View style={styles.periodRow}>
+        <PeriodMenu
+          value={period}
+          periods={PERIODS}
+          raised
+          locked={(id) => isPeriodLocked(id, isPro)}
+          onChange={selectPeriod}
+        />
       </View>
+
+      {period === 'custom' && (
+        <View style={[styles.card, { backgroundColor: theme.surface }]}>
+          <View style={styles.cardRow}>
+            <ThemedText themeColor="textSecondary">From</ThemedText>
+            <DayPicker
+              value={new Date(customFrom)}
+              max={new Date(Math.min(customTo, today))}
+              onChange={(next) => setCustomFrom(next.getTime())}
+            />
+          </View>
+          <View style={[styles.divider, { backgroundColor: theme.backgroundElement }]} />
+          <View style={styles.cardRow}>
+            <ThemedText themeColor="textSecondary">To</ThemedText>
+            <DayPicker
+              value={new Date(customTo)}
+              min={new Date(customFrom)}
+              max={new Date(today)}
+              onChange={(next) => setCustomTo(next.getTime())}
+            />
+          </View>
+        </View>
+      )}
 
       <QuickSummary summary={summary} />
 
@@ -221,6 +241,10 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 14,
     paddingHorizontal: Spacing.three,
+  },
+  periodRow: {
+    alignItems: 'flex-start',
+    paddingBottom: Spacing.one,
   },
   cardRow: {
     flexDirection: 'row',

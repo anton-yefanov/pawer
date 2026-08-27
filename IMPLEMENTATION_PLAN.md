@@ -133,6 +133,7 @@ layer only. Mixing storage units is a data-corruption bug you will not notice fo
 - Unlimited workouts logged, forever
 - Full exercise library
 - 3 custom templates
+- 3 custom exercises
 - Rest timer, PR notifications
 - Last 3 months of history
 - Base mascot
@@ -141,7 +142,7 @@ layer only. Mixing storage units is a data-corruption bug you will not notice fo
 
 - Unlimited custom templates
 - Full history + progress charts, volume by muscle group, 1RM trends
-- Custom exercises
+- Unlimited custom exercises
 - Apple Health sync, CSV export, iCloud backup
 
 ### Pricing

@@ -1,3 +1,5 @@
+import { Spacing } from '@/constants/theme';
+
 /**
  * `formSheet` is a Material bottom sheet (`BottomSheetBehaviour`) here, so
  * `sheetExpandsWhenScrolledToEdge` is left off. `sheetGrabberVisible` is worse
@@ -36,6 +38,9 @@ export const PINNED_CORNER_RADIUS = 28;
  * Top inset for content that positions itself absolutely inside a sheet: the
  * rounded top corners, plus the pill `SheetGrabber` floats over them.
  */
+/** Concentric inner radius for a card inset from the sheet edge; see the iOS file. */
+export const SHEET_INNER_RADIUS = PINNED_CORNER_RADIUS - Spacing.three;
+
 export const SHEET_TOP_INSET = 20;
 
 /**

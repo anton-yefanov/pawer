@@ -1,7 +1,6 @@
 import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
 import { type CardColor } from '@/constants/card-colors';
-import { type CardPose } from '@/constants/card-poses';
 import { db } from '@/db/client';
 import { newId } from '@/db/id';
 import {
@@ -12,6 +11,7 @@ import {
   workoutExercises,
   workouts,
 } from '@/db/schema';
+import { type CardArtwork, serializeArtwork } from '@/lib/card-artwork';
 import { type SetType } from '@/lib/set-types';
 import { remapSuperset } from '@/lib/supersets';
 import { type TrackedSet } from '@/lib/tracking-types';
@@ -272,16 +272,15 @@ export async function updateTemplate({
   }
 }
 
-/** App-shipped templates keep the color they ship with, so the guard matters. */
-/** A `null` image restores the muscle-derived cover. */
+/** App-shipped templates keep the appearance they ship with, so the guard matters. */
 export async function setTemplateAppearance(
   templateId: string,
   color: CardColor,
-  image: CardPose | null,
+  artwork: CardArtwork | null,
 ): Promise<void> {
   await db
     .update(templates)
-    .set({ color, image, ...touch() })
+    .set({ color, artwork: serializeArtwork(artwork), ...touch() })
     .where(and(eq(templates.id, templateId), eq(templates.isBuiltIn, false)));
 }
 
@@ -314,7 +313,7 @@ export async function duplicateTemplate(templateId: string): Promise<string> {
     isBuiltIn: false,
     folderId: source.isBuiltIn ? null : source.folderId,
     color: source.color,
-    image: source.image,
+    artwork: source.artwork,
   });
 
   if (rows.length > 0) {

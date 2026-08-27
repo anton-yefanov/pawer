@@ -2,7 +2,6 @@ import { sql } from 'drizzle-orm';
 import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 import type { CardColor } from '../constants/card-colors';
-import type { CardPose } from '../constants/card-poses';
 
 /**
  * Conventions, per IMPLEMENTATION_PLAN.md §1:
@@ -66,10 +65,6 @@ export const exercises = sqliteTable(
       .$type<string[]>()
       .notNull()
       .default([]),
-    instructions: text('instructions', { mode: 'json' }).$type<string[]>().notNull().default([]),
-
-    /** Free text, custom exercises only — the seed ships numbered `instructions` instead. */
-    description: text('description'),
 
     /**
      * Search vocabulary the name lacks — muscles, equipment, gym slang. Authored
@@ -185,8 +180,8 @@ export const templates = sqliteTable(
     folderId: text('folder_id').references(() => folders.id),
     color: text('color').$type<CardColor>(),
 
-    /** Pinned cover pose; null lets the cover follow the template's muscles. */
-    image: text('image').$type<CardPose>(),
+    /** Cover artwork as JSON; null is the bare gradient. See src/lib/card-artwork.ts. */
+    artwork: text('artwork'),
     ...timestamps,
   },
   (t) => [

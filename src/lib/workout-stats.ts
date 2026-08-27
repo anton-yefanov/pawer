@@ -28,6 +28,20 @@ export function monthKey(epochMs: number): string {
   return `${date.getFullYear()}-${date.getMonth()}`;
 }
 
+/**
+ * "26 Aug" this year, "26 Aug 2025" before it. A year every reader can infer is
+ * noise on a list where most rows are recent.
+ */
+export function formatDay(epochMs: number): string {
+  const date = new Date(epochMs);
+  const thisYear = date.getFullYear() === new Date().getFullYear();
+  return date.toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: thisYear ? undefined : 'numeric',
+  });
+}
+
 /** "Sat, 8 Aug at 17:53" */
 export function formatStartTime(epochMs: number): string {
   const date = new Date(epochMs);

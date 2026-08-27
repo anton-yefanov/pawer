@@ -1,3 +1,5 @@
+import { Spacing } from '@/constants/theme';
+
 /**
  * Shared by every tab stack that presents workout sheets. See the header comment
  * in src/app/workout/_layout.tsx for the rules that come with them.
@@ -23,6 +25,14 @@ export const SHEET = {
  * every sheet already carries one radius.
  */
 export const PINNED_CORNER_RADIUS = 38;
+
+/**
+ * The radius for a card inset from a sheet's own edges by `Spacing.three`.
+ * Concentric with the sheet rather than equal to it: two arcs of the same
+ * radius at different insets read as mismatched, a tighter inner one reads as
+ * one shape.
+ */
+export const SHEET_INNER_RADIUS = PINNED_CORNER_RADIUS - Spacing.three;
 
 /** A sheet that only ever sits at full height. */
 export const FULL_SHEET = { ...SHEET, sheetAllowedDetents: [1] };

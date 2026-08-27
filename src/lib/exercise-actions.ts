@@ -12,10 +12,9 @@ type ExerciseForm = {
   /** An `EXERCISE_GROUPS` id — the vocabulary the library browses by. */
   group: string | null;
   trackingType: TrackingType;
-  description?: string;
 };
 
-const derived = ({ name, group, trackingType, description }: ExerciseForm) => {
+const derived = ({ name, group, trackingType }: ExerciseForm) => {
   const picked = group ? exerciseGroup(group) : undefined;
 
   return {
@@ -32,7 +31,6 @@ const derived = ({ name, group, trackingType, description }: ExerciseForm) => {
     trackingType,
     // The group's first muscle is what its own filter matches on.
     primaryMuscles: picked?.muscles ? [picked.muscles[0]] : [],
-    description: description?.trim() || null,
   };
 };
 

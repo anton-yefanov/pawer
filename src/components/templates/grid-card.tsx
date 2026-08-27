@@ -1,11 +1,10 @@
-import { Image } from 'expo-image';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { CardCover } from '@/components/templates/card-cover';
 import { ThemedText } from '@/components/themed-text';
 import { type CardColor } from '@/constants/card-colors';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { cardBackground } from '@/lib/card-backgrounds';
 import * as haptics from '@/lib/haptics';
 
 /** The shell shared by template and folder cards. */
@@ -35,11 +34,7 @@ export function GridCard({
         }}
         style={({ pressed }) => [pressed && styles.pressed]}>
         <View style={styles.cover}>
-          <Image
-            source={cardBackground(color)}
-            style={StyleSheet.absoluteFill}
-            contentFit="cover"
-          />
+          <CardCover color={color} />
           {cover}
         </View>
         <View style={styles.body}>
@@ -75,7 +70,8 @@ export const cardSlot = {
 const TITLE_LINE = 24;
 const SUBTITLE_LINE = 20;
 const SUBTITLE_LINES = 2;
-const COVER_RATIO = 3 / 4;
+/** Cover height as a fraction of card width — what artwork sizes itself against. */
+export const COVER_RATIO = 3 / 4;
 const BODY_HEIGHT = Spacing.two * 2 + TITLE_LINE + Spacing.one + SUBTITLE_LINE * SUBTITLE_LINES;
 
 /** Height of a whole slot, border included, for a given slot width. */

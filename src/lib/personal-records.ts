@@ -12,7 +12,7 @@ export type PrKind = (typeof PR_KINDS)[number];
 
 export const PR_LABELS: Record<PrKind, string> = {
   heaviest_weight: 'Weight',
-  best_1rm: '1RM',
+  best_1rm: 'e1RM',
   best_volume: 'Volume',
   most_reps: 'Reps',
 };

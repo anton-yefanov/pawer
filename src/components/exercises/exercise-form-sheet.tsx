@@ -55,9 +55,8 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
   const [name, setName] = useState(exercise?.name ?? '');
   const [group, setGroup] = useState<string | null>(exercise ? groupOfExercise(exercise) : null);
   const [trackingType, setTrackingType] = useState<TrackingType>(
-    trackingTypeOf(exercise?.trackingType),
+    trackingTypeOf(exercise?.trackingType)
   );
-  const [description, setDescription] = useState(exercise?.description ?? '');
   // Category and tracking type are what every set already logged was recorded
   // under — re-reading 60 kg × 8 as 60 seconds is not an edit anyone means to
   // make — so both are settled at creation and read-only afterwards.
@@ -70,7 +69,7 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
       setMissingGroup(true);
       return;
     }
-    const form = { name, group, trackingType, description };
+    const form = { name, group, trackingType };
     if (exercise) await updateCustomExercise(exercise.id, form);
     else announceCustomExercise(await createCustomExercise(form));
     router.back();
@@ -149,20 +148,6 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
                 changed afterwards.
               </SectionFooter>
             )}
-
-            <SectionTitle>Description</SectionTitle>
-            <Card>
-              <View style={groupedStyles.row}>
-                <ThemedTextInput
-                  value={description}
-                  onChangeText={setDescription}
-                  placeholder="How to perform this exercise"
-                  style={[styles.input, styles.descriptionInput]}
-                  multiline
-                  textAlignVertical="top"
-                />
-              </View>
-            </Card>
           </>
         )}
 
@@ -230,8 +215,5 @@ const styles = StyleSheet.create({
     fontSize: 17,
     minHeight: ROW_HEIGHT - Spacing.two * 2,
     paddingVertical: 0,
-  },
-  descriptionInput: {
-    minHeight: 96,
   },
 });

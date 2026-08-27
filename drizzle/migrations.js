@@ -15,6 +15,9 @@ import m0010 from './0010_giant_marauders.sql';
 import m0011 from './0011_damp_terrax.sql';
 import m0012 from './0012_charming_tempest.sql';
 import m0013 from './0013_careful_orphan.sql';
+import m0014 from './0014_flowery_thunderball.sql';
+import m0015 from './0015_tough_eternity.sql';
+import m0016 from './0016_icy_doorman.sql';
 
   export default {
     journal,
@@ -32,7 +35,10 @@ m0009,
 m0010,
 m0011,
 m0012,
-m0013
+m0013,
+m0014,
+m0015,
+m0016
     }
   }
   

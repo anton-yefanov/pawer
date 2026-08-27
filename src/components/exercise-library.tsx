@@ -1,5 +1,6 @@
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
+import { Image } from 'expo-image';
 import { Link, router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -13,10 +14,12 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { CircleButton } from '@/components/circle-button';
+import { CircleButton, CIRCLE_BUTTON_SIZE } from '@/components/circle-button';
 import { ExerciseSearchBar, SEARCH_BAR_CLEARANCE } from '@/components/exercise-search-bar';
+import { FloatingSurface } from '@/components/floating-surface';
 import { Icon } from '@/components/icon';
 import { KeyboardDismissButton } from '@/components/keyboard-dismiss';
+import { Pressable as PressableButton } from '@/components/pressable';
 import { ThemedText } from '@/components/themed-text';
 import { SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
@@ -34,6 +37,7 @@ import {
   type ExerciseFilters,
 } from '@/lib/exercise-filters';
 import { EXERCISE_GROUPS, exerciseGroup, type ExerciseGroup } from '@/lib/exercise-groups';
+import { exerciseThumbnail, hasRealArtwork } from '@/lib/exercise-images';
 import * as haptics from '@/lib/haptics';
 import { claimCustomExercise } from '@/lib/new-exercise-handoff';
 
@@ -148,6 +152,13 @@ export function ExerciseLibrary({
     paddingBottom: bottomInset,
   };
 
+  // The empty state overlays the pane rather than the content, so it clears the
+  // same two edges by hand — iOS's automatic insets only reach a scroll view.
+  const emptyPadding = {
+    paddingTop: (topInset ?? insets.top) + SEARCH_BAR_CLEARANCE,
+    paddingBottom: bottomInset + (Platform.OS === 'ios' ? insets.bottom : 0),
+  };
+
   const isFiltered = filters.search.trim() !== '' || activeFilterCount(filters) > 0;
   const browsing = isBrowsing(filters);
   const group = filters.group === ANY ? undefined : exerciseGroup(filters.group);
@@ -234,14 +245,25 @@ export function ExerciseLibrary({
           ItemSeparatorComponent={() => (
             <View style={[styles.separator, { backgroundColor: theme.backgroundElement }]} />
           )}
-          ListEmptyComponent={
-            <ThemedText style={styles.empty} themeColor="textSecondary">
+        />
+
+        {/*
+          Not `ListEmptyComponent`: that sits inside the content, under the
+          search row's padding, so it can neither centre on the visible pane nor
+          stay put — a filled content box scrolls. This is the pane itself.
+        */}
+        {data?.length === 0 && (
+          <View style={[styles.empty, emptyPadding]} pointerEvents="box-none">
+            <ThemedText style={styles.emptyText} themeColor="textSecondary">
               {isFiltered || group
                 ? 'No exercises match these filters.'
                 : 'No exercises. The library seeds on first launch.'}
             </ThemedText>
-          }
-        />
+            {(isFiltered || group) && (
+              <ClearFiltersButton onPress={() => setFilters(NO_FILTERS)} />
+            )}
+          </View>
+        )}
       </Animated.View>
 
       {/*
@@ -314,7 +336,30 @@ function CustomSection({
   );
 }
 
+const CLEAR_HEIGHT = 40;
+
+function ClearFiltersButton({ onPress }: { onPress: () => void }) {
+  const theme = useTheme();
+
+  return (
+    <FloatingSurface style={styles.clear}>
+      <PressableButton
+        onPress={() => {
+          haptics.tap();
+          onPress();
+        }}
+        accessibilityRole="button"
+        style={({ pressed }) => [styles.clearBody, pressed && styles.clearPressed]}>
+        <ThemedText style={[styles.clearLabel, { color: theme.accent }]}>Clear filters</ThemedText>
+      </PressableButton>
+    </FloatingSurface>
+  );
+}
+
 const CUSTOM_GROUP: ExerciseGroup = { id: 'custom', title: 'Custom' };
+
+/** Matched to the search row's back button, which it sits directly under. */
+const THUMB_SIZE = CIRCLE_BUTTON_SIZE;
 
 function GroupRow({
   group,
@@ -375,6 +420,15 @@ function ExerciseRow({
   const body = ({ pressed }: { pressed: boolean }) => (
     <View
       style={[styles.row, { backgroundColor: pressed ? theme.backgroundSelected : theme.surface }]}>
+      <View style={[styles.thumb, { backgroundColor: theme.backgroundElement }]}>
+        {hasRealArtwork(exercise.sourceId) && (
+          <Image
+            source={exerciseThumbnail(exercise.sourceId)}
+            style={styles.thumbImage}
+            contentFit="cover"
+          />
+        )}
+      </View>
       <View style={styles.rowText}>
         <ThemedText numberOfLines={1}>{exercise.name}</ThemedText>
         {detail !== '' && (
@@ -434,6 +488,15 @@ const styles = StyleSheet.create({
   rowText: {
     flex: 1,
   },
+  thumb: {
+    width: THUMB_SIZE,
+    height: THUMB_SIZE,
+    borderRadius: THUMB_SIZE / 2,
+    overflow: 'hidden',
+  },
+  thumbImage: {
+    flex: 1,
+  },
   groupRow: {
     paddingVertical: Spacing.three,
   },
@@ -442,8 +505,33 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.three,
   },
   empty: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.three,
+    paddingHorizontal: Spacing.six,
+  },
+  emptyText: {
     textAlign: 'center',
-    padding: Spacing.six,
+  },
+  clear: {
+    borderRadius: CLEAR_HEIGHT / 2,
+  },
+  clearBody: {
+    minHeight: CLEAR_HEIGHT,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.four,
+  },
+  clearLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  clearPressed: {
+    opacity: 0.6,
   },
   scrim: {
     position: 'absolute',

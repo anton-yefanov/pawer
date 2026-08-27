@@ -6,11 +6,14 @@ import { ArrowSquareOutIcon } from 'phosphor-react-native/src/icons/ArrowSquareO
 import { ArrowUpRightIcon } from 'phosphor-react-native/src/icons/ArrowUpRight';
 import { ArrowsClockwiseIcon } from 'phosphor-react-native/src/icons/ArrowsClockwise';
 import { BarbellIcon } from 'phosphor-react-native/src/icons/Barbell';
+import { CalendarBlankIcon } from 'phosphor-react-native/src/icons/CalendarBlank';
+import { CaretDownIcon } from 'phosphor-react-native/src/icons/CaretDown';
 import { CaretLeftIcon } from 'phosphor-react-native/src/icons/CaretLeft';
 import { CaretRightIcon } from 'phosphor-react-native/src/icons/CaretRight';
 import { ChartBarIcon } from 'phosphor-react-native/src/icons/ChartBar';
 import { CheckIcon } from 'phosphor-react-native/src/icons/Check';
 import { ClockIcon } from 'phosphor-react-native/src/icons/Clock';
+import { ClockCounterClockwiseIcon } from 'phosphor-react-native/src/icons/ClockCounterClockwise';
 import { CopyIcon } from 'phosphor-react-native/src/icons/Copy';
 import { DotsSixVerticalIcon } from 'phosphor-react-native/src/icons/DotsSixVertical';
 import { DotsThreeIcon } from 'phosphor-react-native/src/icons/DotsThree';
@@ -23,6 +26,7 @@ import { GearIcon } from 'phosphor-react-native/src/icons/Gear';
 import { HouseIcon } from 'phosphor-react-native/src/icons/House';
 import { InfoIcon } from 'phosphor-react-native/src/icons/Info';
 import { KeyboardIcon } from 'phosphor-react-native/src/icons/Keyboard';
+import { LockSimpleIcon } from 'phosphor-react-native/src/icons/LockSimple';
 import { MagnifyingGlassIcon } from 'phosphor-react-native/src/icons/MagnifyingGlass';
 import { MinusIcon } from 'phosphor-react-native/src/icons/Minus';
 import { NoteBlankIcon } from 'phosphor-react-native/src/icons/NoteBlank';
@@ -37,6 +41,7 @@ import { TimerIcon } from 'phosphor-react-native/src/icons/Timer';
 import { TrashIcon } from 'phosphor-react-native/src/icons/Trash';
 import { TrophyIcon } from 'phosphor-react-native/src/icons/Trophy';
 import { XIcon } from 'phosphor-react-native/src/icons/X';
+import { YoutubeLogoIcon } from 'phosphor-react-native/src/icons/YoutubeLogo';
 import { Platform } from 'react-native';
 
 type SymbolMapping = Extract<SymbolViewProps['name'], object>;
@@ -87,7 +92,15 @@ const ICONS = {
     glyph: ChartBarIcon,
     weight: 'fill',
   },
-  'chevron.left': { symbol: { ios: 'chevron.left', android: 'chevron_left' }, glyph: CaretLeftIcon },
+  calendar: { symbol: { ios: 'calendar', android: 'calendar_today' }, glyph: CalendarBlankIcon },
+  'chevron.down': {
+    symbol: { ios: 'chevron.down', android: 'expand_more' },
+    glyph: CaretDownIcon,
+  },
+  'chevron.left': {
+    symbol: { ios: 'chevron.left', android: 'chevron_left' },
+    glyph: CaretLeftIcon,
+  },
   'chevron.right': {
     symbol: { ios: 'chevron.right', android: 'chevron_right' },
     glyph: CaretRightIcon,
@@ -97,6 +110,10 @@ const ICONS = {
     symbol: { ios: 'clock.fill', android: 'access_time_filled' },
     glyph: ClockIcon,
     weight: 'fill',
+  },
+  'clock.arrow.circlepath': {
+    symbol: { ios: 'clock.arrow.circlepath', android: 'history' },
+    glyph: ClockCounterClockwiseIcon,
   },
   'doc.badge.plus': { symbol: { ios: 'doc.badge.plus', android: 'note_add' }, glyph: FilePlusIcon },
   dumbbell: { symbol: { ios: 'dumbbell', android: 'fitness_center' }, glyph: BarbellIcon },
@@ -146,6 +163,11 @@ const ICONS = {
     symbol: { ios: 'line.3.horizontal', android: 'drag_handle' },
     glyph: DotsSixVerticalIcon,
   },
+  'lock.fill': {
+    symbol: { ios: 'lock.fill', android: 'lock' },
+    glyph: LockSimpleIcon,
+    weight: 'fill',
+  },
   magnifyingglass: {
     symbol: { ios: 'magnifyingglass', android: 'search' },
     glyph: MagnifyingGlassIcon,
@@ -180,6 +202,10 @@ const ICONS = {
     weight: 'fill',
   },
   xmark: { symbol: { ios: 'xmark', android: 'close' }, glyph: XIcon },
+  'play.rectangle': {
+    symbol: { ios: 'play.rectangle', android: 'smart_display' },
+    glyph: YoutubeLogoIcon,
+  },
 } as const satisfies Record<string, IconEntry>;
 
 export type IconName = keyof typeof ICONS;
@@ -208,13 +234,36 @@ export function Icon({ name, ...props }: Props) {
 }
 
 /**
+ * The Phosphor glyph on every platform, where `Icon` draws an SF Symbol on iOS.
+ * A row of small icons set inline with text only looks deliberate when they all
+ * come from one family and one stroke weight, which SF Symbols mixed with
+ * artwork does not give.
+ */
+export function Glyph({
+  name,
+  size = 18,
+  color,
+}: {
+  name: IconName;
+  size?: number;
+  color: string;
+}) {
+  const entry: IconEntry = ICONS[name];
+  const Drawing = entry.glyph;
+  return <Drawing size={size} color={color} weight={entry.weight ?? 'regular'} />;
+}
+
+/**
  * `NativeTabs.Trigger.Icon` takes the two platforms as separate props rather
  * than a mapping object, so the pair is spread in from here.
  */
 export function tabIcon(defaultName: IconName, selectedName: IconName) {
   return {
     sf: { default: ICONS[defaultName].symbol.ios, selected: ICONS[selectedName].symbol.ios },
-    md: { default: ICONS[defaultName].symbol.android, selected: ICONS[selectedName].symbol.android },
+    md: {
+      default: ICONS[defaultName].symbol.android,
+      selected: ICONS[selectedName].symbol.android,
+    },
   };
 }
 

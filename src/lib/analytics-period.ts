@@ -3,22 +3,24 @@ export type PeriodId = 'd7' | 'd30' | 'd90' | 'd180' | 'y1' | 'all' | 'custom';
 /** Epoch ms, half-open `[from, to)`. */
 export type DateRange = { from: number; to: number };
 
-/** `label` reads on its own (chart captions); `short` only has to fit a chip. */
-export const PERIODS: readonly {
-  id: PeriodId;
-  label: string;
-  short: string;
-}[] = [
-  { id: 'd7', label: 'Last 7 days', short: '7D' },
-  { id: 'd30', label: 'Last 30 days', short: '30D' },
-  { id: 'd90', label: 'Last 90 days', short: '90D' },
-  { id: 'd180', label: 'Last 180 days', short: '180D' },
-  { id: 'y1', label: 'Last year', short: '1Y' },
-  { id: 'all', label: 'All time', short: 'All' },
-  { id: 'custom', label: 'Custom', short: 'Custom' },
+export const PERIODS: readonly { id: PeriodId; label: string }[] = [
+  { id: 'd7', label: 'Last 7 days' },
+  { id: 'd30', label: 'Last 30 days' },
+  { id: 'd90', label: 'Last 90 days' },
+  { id: 'd180', label: 'Last 180 days' },
+  { id: 'y1', label: 'Last year' },
+  { id: 'all', label: 'All time' },
+  { id: 'custom', label: 'Custom' },
 ];
 
-export const DEFAULT_PERIOD: PeriodId = 'd30';
+export const DEFAULT_PERIOD: PeriodId = 'd7';
+
+/** The free tier sees the two shortest windows; anything wider is Pro. */
+export const FREE_PERIODS: readonly PeriodId[] = ['d7', 'd30'];
+
+export function isPeriodLocked(id: PeriodId, isPro: boolean): boolean {
+  return !isPro && !FREE_PERIODS.includes(id);
+}
 
 export function periodLabel(id: PeriodId): string {
   return PERIODS.find((period) => period.id === id)?.label ?? '';

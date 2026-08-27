@@ -1,6 +1,7 @@
 import { eq, inArray, sql } from 'drizzle-orm';
 
 import { asCardColor } from '@/constants/card-colors';
+import { emojiArtwork, serializeArtwork } from '@/lib/card-artwork';
 import { buildSearchText } from '@/lib/exercise-search';
 
 import { newId } from './id';
@@ -17,7 +18,7 @@ import seedTemplateData from './seed/templates.json';
  * scripts/build-exercise-seed.mjs), and template rows keep the id they were
  * first inserted with, so `workouts.template_id` references survive.
  */
-export const SEED_VERSION = 9;
+export const SEED_VERSION = 11;
 
 const SEED_VERSION_KEY = 'seed_version';
 
@@ -58,7 +59,9 @@ export async function seedIfNeeded(db: Database): Promise<{ seeded: boolean; cou
     await db
       .insert(exercises)
       .values(
-        chunk.map((e) => ({
+        // `instructions` stays in the seed JSON for tools/image-uploader's
+        // reference panel; the app has no column for it.
+        chunk.map(({ instructions: _instructions, ...e }) => ({
           ...e,
           searchText: buildSearchText(e),
           isCustom: false,
@@ -77,7 +80,6 @@ export async function seedIfNeeded(db: Database): Promise<{ seeded: boolean; cou
           trackingType: sql`excluded.tracking_type`,
           primaryMuscles: sql`excluded.primary_muscles`,
           secondaryMuscles: sql`excluded.secondary_muscles`,
-          instructions: sql`excluded.instructions`,
           tags: sql`excluded.tags`,
           searchText: sql`excluded.search_text`,
           deletedAt: null,
@@ -116,6 +118,7 @@ async function seedTemplates(db: Database): Promise<void> {
         name: template.name,
         position: template.position,
         color: asCardColor(template.color),
+        artwork: serializeArtwork(emojiArtwork([template.artwork])),
         isBuiltIn: true,
       })
       .onConflictDoUpdate({
@@ -124,6 +127,7 @@ async function seedTemplates(db: Database): Promise<void> {
           name: sql`excluded.name`,
           position: sql`excluded.position`,
           color: sql`excluded.color`,
+          artwork: sql`excluded.artwork`,
           isBuiltIn: true,
           deletedAt: null,
           updatedAt: sql`(unixepoch() * 1000)`,
