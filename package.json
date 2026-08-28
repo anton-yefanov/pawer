@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "dependencies": {
     "@expo/ui": "~57.0.9",
+    "@sentry/react-native": "^8.24.0",
     "@vercel/blob": "^2.8.0",
     "drizzle-orm": "^0.45.2",
     "expo": "~57.0.11",

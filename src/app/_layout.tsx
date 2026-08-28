@@ -19,8 +19,16 @@ import { RestTimerProvider } from '@/lib/rest-timer';
 import { PromptHost } from '@/lib/text-prompt';
 import { ThemePreferenceProvider } from '@/lib/theme-preference';
 import { WeightUnitProvider } from '@/lib/weight-unit';
+import * as Sentry from '@sentry/react-native';
 
 SplashScreen.preventAutoHideAsync();
+
+
+Sentry.init({
+  dsn: 'https://baaae22a7e2848c8239e8c0705151a05@o4511989296398336.ingest.us.sentry.io/4511989300461568',
+  sendDefaultPii: true,
+  enableLogs: true,
+});
 
 export default function TabLayout() {
   return (

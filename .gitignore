@@ -54,3 +54,5 @@ tools/image-uploader/public/exercises.json
 assets/new_exercises_data/complete-exercise-library-*/
 !assets/new_exercises_data/complete-exercise-library-metadata/
 assets/exercise-videos/
+
+.env.local
