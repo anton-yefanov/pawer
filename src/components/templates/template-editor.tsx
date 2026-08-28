@@ -183,8 +183,7 @@ export function TemplateEditor({
           <ReorderDim>
             <BigButton
               title="Add Exercises"
-              variant="tinted"
-              symbol="plus"
+              symbol="plus.circle"
               onPress={() => router.push('/template/add-exercises')}
             />
           </ReorderDim>

@@ -37,6 +37,7 @@ import { PersonArmsSpreadIcon } from 'phosphor-react-native/src/icons/PersonArms
 import { PlusIcon } from 'phosphor-react-native/src/icons/Plus';
 import { PlusCircleIcon } from 'phosphor-react-native/src/icons/PlusCircle';
 import { SlidersHorizontalIcon } from 'phosphor-react-native/src/icons/SlidersHorizontal';
+import { StackPlusIcon } from 'phosphor-react-native/src/icons/StackPlus';
 import { TimerIcon } from 'phosphor-react-native/src/icons/Timer';
 import { TrashIcon } from 'phosphor-react-native/src/icons/Trash';
 import { TrophyIcon } from 'phosphor-react-native/src/icons/Trophy';
@@ -185,6 +186,10 @@ const ICONS = {
   'slider.horizontal.3': {
     symbol: { ios: 'slider.horizontal.3', android: 'tune' },
     glyph: SlidersHorizontalIcon,
+  },
+  'rectangle.stack.badge.plus': {
+    symbol: { ios: 'rectangle.stack.badge.plus', android: 'library_add' },
+    glyph: StackPlusIcon,
   },
   'square.and.arrow.down': {
     symbol: { ios: 'square.and.arrow.down', android: 'download' },

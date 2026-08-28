@@ -64,10 +64,12 @@ const androidChannels =
     : Promise.resolve();
 
 /**
- * Asked on the first rest timer, never at launch — a permission prompt before
- * the user has seen the app work is the one most reliably denied. Denial is not
- * fatal: the in-app countdown still runs off the stored end timestamp, only the
- * background ping is lost.
+ * Asked once during onboarding, behind a screen that says what the alert is
+ * for — a bare system prompt with no context is the one most reliably denied.
+ * The call here stays as the fallback for anyone who chose "Not Now": it
+ * re-asks on the first rest timer and self-guards on `canAskAgain`. Denial is
+ * not fatal either way: the in-app countdown still runs off the stored end
+ * timestamp, only the background ping is lost.
  */
 export async function ensureNotificationPermission(): Promise<boolean> {
   if (Platform.OS === 'web') return false;

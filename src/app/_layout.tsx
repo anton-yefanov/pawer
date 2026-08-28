@@ -4,6 +4,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
+import { Onboarding } from '@/components/onboarding/onboarding';
 import { DatabaseProvider } from '@/db/provider';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AutofillWeightProvider } from '@/lib/autofill-weight';
@@ -11,6 +12,7 @@ import { FinishReminderProvider } from '@/lib/finish-reminder';
 import { KeyboardProvider } from '@/lib/keyboard-provider';
 import { WorkoutActivityProvider } from '@/lib/live-activity';
 import { NoticeHost } from '@/lib/notice';
+import { OnboardingProvider } from '@/lib/onboarding';
 import { PurchasesProvider } from '@/lib/purchases';
 import { RestTimerProvider } from '@/lib/rest-timer';
 import { PromptHost } from '@/lib/text-prompt';
@@ -27,11 +29,13 @@ export default function TabLayout() {
           <PurchasesProvider>
             <ThemePreferenceProvider>
               <WeightUnitProvider>
-                <AutofillWeightProvider>
-                  <FinishReminderProvider>
-                    <ThemedApp />
-                  </FinishReminderProvider>
-                </AutofillWeightProvider>
+                <OnboardingProvider>
+                  <AutofillWeightProvider>
+                    <FinishReminderProvider>
+                      <ThemedApp />
+                    </FinishReminderProvider>
+                  </AutofillWeightProvider>
+                </OnboardingProvider>
               </WeightUnitProvider>
             </ThemePreferenceProvider>
           </PurchasesProvider>
@@ -51,6 +55,7 @@ function ThemedApp() {
         <WorkoutActivityProvider>
           <AnimatedSplashOverlay />
           <AppTabs />
+          <Onboarding />
           <PromptHost />
           <NoticeHost />
         </WorkoutActivityProvider>

@@ -46,6 +46,10 @@ export async function setSetting(db: Database, key: string, value: string): Prom
     });
 }
 
+export async function clearSetting(db: Database, key: string): Promise<void> {
+  await db.delete(settings).where(eq(settings.key, key));
+}
+
 /**
  * Seeds the bundled exercise library. Idempotent: safe to call on every launch,
  * cheap when already current.

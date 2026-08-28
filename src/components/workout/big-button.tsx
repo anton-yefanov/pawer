@@ -9,7 +9,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import * as haptics from '@/lib/haptics';
 
-const HEIGHT = 50;
+export const BIG_BUTTON_HEIGHT = 50;
 
 type Props = {
   title: string;
@@ -22,9 +22,18 @@ type Props = {
   icon?: ReactNode;
   /** `complete` for the buttons that commit a batch rather than open something. */
   feedback?: 'complete';
+  disabled?: boolean;
 };
 
-export function BigButton({ title, onPress, variant = 'filled', symbol, icon, feedback }: Props) {
+export function BigButton({
+  title,
+  onPress,
+  variant = 'filled',
+  symbol,
+  icon,
+  feedback,
+  disabled,
+}: Props) {
   const theme = useTheme();
   const filled = variant === 'filled';
   const danger = variant === 'danger';
@@ -35,6 +44,7 @@ export function BigButton({ title, onPress, variant = 'filled', symbol, icon, fe
   // A Material surface doesn't, so there the filled one dims too.
   const body = (
     <Pressable
+      disabled={disabled}
       onPress={() => {
         if (feedback === 'complete') haptics.complete();
         else if (variant === 'danger') haptics.warn();
@@ -42,8 +52,10 @@ export function BigButton({ title, onPress, variant = 'filled', symbol, icon, fe
         onPress();
       }}
       accessibilityRole="button"
+      accessibilityState={{ disabled }}
       style={({ pressed }) => [
         styles.body,
+        disabled && styles.disabled,
         pressed && !(filled && SURFACE_HANDLES_PRESS) && styles.pressed,
       ]}>
       {icon ?? (symbol && <Icon name={symbol} size={20} tintColor={label} />)}
@@ -74,17 +86,20 @@ const styles = StyleSheet.create({
   // `overflow: 'hidden'` would clip the glass stretch to the button rect — see
   // the note in circle-button.tsx.
   button: {
-    borderRadius: HEIGHT / 2,
+    borderRadius: BIG_BUTTON_HEIGHT / 2,
   },
   pressed: {
     opacity: 0.7,
+  },
+  disabled: {
+    opacity: 0.4,
   },
   body: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.two,
-    minHeight: HEIGHT,
+    minHeight: BIG_BUTTON_HEIGHT,
     paddingHorizontal: Spacing.three,
   },
   label: {
