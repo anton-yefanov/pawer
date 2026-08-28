@@ -14,27 +14,36 @@ const config = (Constants.expoConfig?.extra?.posthog ?? {}) as {
 };
 
 /**
- * The client is deliberately not exported. `flush()` rejects when the network is
- * down, and this app has to survive a gym basement — keeping the instance
+ * Null rather than a client on an empty key: constructing one with `''` makes
+ * the SDK `console.error`, which in dev is a red LogBox screen on every launch
+ * for anyone who cloned the repo without the key.
+ *
+ * The instance is also deliberately not exported. `flush()` rejects when the
+ * network is down, and this app has to survive a gym basement — keeping it
  * private means no call site can ever reach it. Everything below enqueues to
  * disk and returns immediately; the batch POST is the SDK's own problem.
  */
-const client = new PostHog(config.apiKey ?? '', {
-  host: config.host,
-  disabled: !config.apiKey || (__DEV__ && !TRACK_IN_DEV),
-  captureAppLifecycleEvents: true,
-  enableSessionReplay: false,
-  // Everything this SDK can be talked out of asking for, it is: left at their
-  // defaults, flags and push registration fire on every launch and retry three
-  // times over a bad connection for answers nothing here reads. One GET for
-  // remote config survives — `disableRemoteConfig` is a deprecated no-op — but
-  // it runs after init with no retries, a 3s timeout and its own catch.
-  preloadFeatureFlags: false,
-  disableRemoteFeatureFlags: true,
-  disableSurveys: true,
-  capturePushNotificationSubscriptions: false,
-  capturePushNotificationOpened: false,
-});
+const client = config.apiKey
+  ? new PostHog(config.apiKey, {
+      host: config.host,
+      disabled: __DEV__ && !TRACK_IN_DEV,
+      captureAppLifecycleEvents: true,
+      enableSessionReplay: false,
+      // Everything this SDK can be talked out of asking for, it is: left at
+      // their defaults, flags and push registration fire on every launch and
+      // retry three times over a bad connection for answers nothing here reads.
+      // One GET for remote config survives — `disableRemoteConfig` is a
+      // deprecated no-op — but it runs after init, with no retries, a 3s
+      // timeout and its own catch.
+      preloadFeatureFlags: false,
+      disableRemoteFeatureFlags: true,
+      disableSurveys: true,
+      capturePushNotificationSubscriptions: false,
+      capturePushNotificationOpened: false,
+    })
+  : null;
+
+if (!client) console.warn('[telemetry] no posthog.apiKey in app.json extra; analytics is off');
 
 /**
  * Property values stay flat primitives so nothing inside the SDK can throw on
@@ -66,6 +75,7 @@ export function track<K extends keyof TelemetryEvents>(
   event: K,
   properties: TelemetryEvents[K]
 ): void {
+  if (!client) return;
   try {
     client.capture(event, properties);
   } catch (error) {
@@ -74,6 +84,7 @@ export function track<K extends keyof TelemetryEvents>(
 }
 
 export function screen(name: string): void {
+  if (!client) return;
   try {
     void client.screen(name).catch((error: unknown) => warn('screen', error));
   } catch (error) {
@@ -83,6 +94,7 @@ export function screen(name: string): void {
 
 /** Super properties, so every event is filterable by plan and unit. */
 export function registerContext(context: { isPro: boolean; weightUnit: WeightUnit }): void {
+  if (!client) return;
   try {
     void client
       .register({ is_pro: context.isPro, weight_unit: context.weightUnit })
@@ -98,6 +110,7 @@ export function registerContext(context: { isPro: boolean; weightUnit: WeightUni
  * rather than a decoration.
  */
 export function setOptedOut(next: boolean): void {
+  if (!client) return;
   try {
     void (next ? client.optOut() : client.optIn()).catch((error: unknown) =>
       warn('optOut', error)
@@ -113,6 +126,7 @@ export function setOptedOut(next: boolean): void {
  * needs to attribute a subscription to the same person.
  */
 export function distinctId(): string | null {
+  if (!client) return null;
   try {
     return client.getDistinctId() || null;
   } catch (error) {
