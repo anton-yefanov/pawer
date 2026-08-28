@@ -7,6 +7,7 @@ import {
   type ConfirmRequest,
   templateActions,
 } from '@/components/templates/card-actions';
+import { ExerciseThumb } from '@/components/exercise-thumb';
 import { CardMenu } from '@/components/templates/card-menu';
 import { ThemedText } from '@/components/themed-text';
 import { ActiveWorkoutPrompt } from '@/components/workout/active-workout-prompt';
@@ -85,6 +86,7 @@ export function TemplatePreview({ id }: { id: string }) {
                 params: { id: exercise.exerciseId },
               })
             }>
+            <ExerciseThumb sourceId={exercise.sourceId} />
             <View style={styles.rowText}>
               <ThemedText numberOfLines={1}>
                 {Math.max(1, exercise.setCount)} × {exercise.name}

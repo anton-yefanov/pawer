@@ -1,15 +1,14 @@
 #!/usr/bin/env node
 /**
- * Builds the bundled exercise seed from a local checkout of
- * https://github.com/yuhonas/free-exercise-db (public domain).
+ * Builds the bundled exercise seed from the purchased library's metadata.
  *
- *   node scripts/build-exercise-seed.mjs [path-to-free-exercise-db]
+ *   node scripts/build-exercise-seed.mjs
  *
  * Output: src/db/seed/exercises.json
  *
- * Exercise UUIDs are derived deterministically (UUIDv5) from the upstream slug,
- * so re-running this script after an upstream refresh keeps the same ids and
- * never orphans logged sets.
+ * Exercise UUIDs are derived deterministically (UUIDv5) from the vendor slug,
+ * so re-running this after a metadata refresh keeps the same ids and never
+ * orphans logged sets.
  */
 import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -17,10 +16,11 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { tagsFor, unknownAliasIds } from './exercise-tags.mjs';
+import { METADATA_PATH, groupOf, isCardio } from './exercise-taxonomy.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const SOURCE = resolve(process.argv[2] ?? resolve(ROOT, '../free-exercise-db'));
 const OUT = resolve(ROOT, 'src/db/seed/exercises.json');
+const TEMPLATES = resolve(ROOT, 'src/db/seed/templates.json');
 
 /** Fixed namespace UUID for this app. Changing it re-ids the entire library. */
 const NAMESPACE = '6f1c2d3e-4b5a-4c7d-8e9f-0a1b2c3d4e5f';
@@ -38,102 +38,9 @@ function uuidv5(name, namespace) {
 }
 
 const FORCE = new Set(['push', 'pull', 'static']);
-const LEVEL = new Set(['beginner', 'intermediate', 'expert']);
+const LEVEL = new Set(['beginner', 'intermediate', 'advanced']);
 const MECHANIC = new Set(['compound', 'isolation']);
-const CATEGORY = new Set([
-  'strength',
-  'powerlifting',
-  'cardio',
-  'olympic weightlifting',
-  'plyometrics',
-  'stretching',
-  'strongman',
-]);
-
-/**
- * Which fields a set logs. Upstream has no such field, so it is derived here —
- * see `src/lib/tracking-types.ts` for what each value renders.
- *
- * The rules cover the bulk; the overrides are the exercises where equipment and
- * category lie about how the movement is actually loaded. A loadable bodyweight
- * move gets `weighted_bodyweight` rather than `bodyweight_reps` because the
- * weight cell is optional either way, so it is strictly the more capable of the
- * two.
- */
-const TRACKING_OVERRIDES = new Map(
-  Object.entries({
-    duration: ['Rope_Jumping', 'Battling_Ropes'],
-    assisted_bodyweight: [
-      'Band_Assisted_Pull-Up',
-      'x_Assisted_Pull-Up_Machine',
-      'x_Assisted_Chin-Up_Machine',
-    ],
-    weighted_bodyweight: [
-      'Pullups',
-      'Chin-Up',
-      'Wide-Grip_Rear_Pull-Up',
-      'Muscle_Up',
-      'Dips_-_Triceps_Version',
-      'Dips_-_Chest_Version',
-      'Bench_Dips',
-      'Ab_Roller',
-      'Hanging_Leg_Raise',
-      'Knee_Hip_Raise_On_Parallel_Bars',
-      'Hyperextensions_Back_Extensions',
-    ],
-    bodyweight_reps: [
-      'Inverted_Row',
-      'Bodyweight_Walking_Lunge',
-      'Mountain_Climbers',
-      'Front_Box_Jump',
-      'Lateral_Box_Jump',
-    ],
-  }).flatMap(([type, ids]) => ids.map((id) => [id, type]))
-);
-
-/**
- * Exercises upstream is missing, in the upstream record shape. Their ids are
- * namespaced with an `x_` prefix so an upstream slug can never collide with one.
- */
-const ADDITIONS = [
-  {
-    id: 'x_Assisted_Pull-Up_Machine',
-    name: 'Assisted Pull-Up (Machine)',
-    force: 'pull',
-    level: 'beginner',
-    mechanic: 'compound',
-    equipment: 'machine',
-    category: 'strength',
-    primaryMuscles: ['lats'],
-    secondaryMuscles: ['biceps', 'forearms', 'middle back', 'shoulders'],
-    instructions: [
-      'Set the assistance weight on the stack. More weight means more help, so a lighter setting is the harder one.',
-      'Take a wide overhand grip on the bar and kneel or stand on the pad, letting it carry your weight. Keep your chest up and your torso close to vertical. This is your starting position.',
-      'Pull yourself up by driving your elbows down and back until your chin clears the bar, squeezing the lats at the top.',
-      'Lower yourself under control until your arms are fully extended, breathing in on the way down.',
-      'Repeat for the prescribed amount of repetitions.',
-    ],
-  },
-  {
-    id: 'x_Assisted_Chin-Up_Machine',
-    name: 'Assisted Chin-Up (Machine)',
-    force: 'pull',
-    level: 'beginner',
-    mechanic: 'compound',
-    equipment: 'machine',
-    category: 'strength',
-    primaryMuscles: ['lats'],
-    secondaryMuscles: ['biceps', 'forearms', 'middle back'],
-    instructions: [
-      'Set the assistance weight on the stack. More weight means more help, so a lighter setting is the harder one.',
-      'Take an underhand grip slightly inside shoulder width and kneel or stand on the pad, letting it carry your weight. This is your starting position.',
-      'Pull your torso up until your head reaches the level of the bar, concentrating on the biceps and keeping the elbows close to your body.',
-      'Squeeze at the top, then lower yourself slowly until your arms are fully extended.',
-      'Repeat for the prescribed amount of repetitions.',
-    ],
-  },
-];
-
+const CATEGORY = new Set(['strength', 'cardio', 'plyometrics', 'stretching']);
 const TRACKING_TYPE = new Set([
   'weight_reps',
   'bodyweight_reps',
@@ -143,71 +50,162 @@ const TRACKING_TYPE = new Set([
   'distance_duration',
 ]);
 
-function trackingTypeFor(e) {
-  const override = TRACKING_OVERRIDES.get(e.id);
+/**
+ * Which fields a set logs. The vendor has no such field, so it is derived here —
+ * see `src/lib/tracking-types.ts` for what each value renders.
+ *
+ * The rules below cover the bulk; these are the movements where equipment and
+ * movement pattern lie about how the exercise is actually loaded.
+ */
+const TRACKING_OVERRIDES = new Map(
+  Object.entries({
+    // Cardio the app cannot measure a distance for.
+    'battle-ropes': 'duration',
+    'jump-rope': 'duration',
+    'jumping-jack': 'duration',
+    'shadow-boxing': 'duration',
+
+    // Isometric holds: a rep count says nothing, the clock is the whole set.
+    'dead-hang': 'duration',
+    'elbow-side-plank': 'duration',
+    'front-plank': 'duration',
+    'hand-plank': 'duration',
+    'kettlebell-farmers-carry': 'duration',
+    'split-squat-isometric-hold': 'duration',
+    'wall-sit': 'duration',
+
+    // Tagged Stretch, but loaded and counted in reps.
+    'barbell-spinal-jefferson-curl': 'weight_reps',
+    'dumbbell-spinal-jefferson-curl': 'weight_reps',
+    'kettlebell-spinal-jefferson-curl': 'weight_reps',
+    'bodyweight-spinal-jefferson-curl': 'bodyweight_reps',
+
+    // The machine and the band take weight off rather than adding it. Matched
+    // by name, not by an "assisted" substring: the kettlebell-assisted split
+    // squat is a loaded movement that happens to share the word.
+    'band-assisted-pull-up': 'assisted_bodyweight',
+    'machine-assisted-pull-up': 'assisted_bodyweight',
+
+    // Loadable with a belt or a dumbbell between the feet. `weighted_bodyweight`
+    // rather than `bodyweight_reps` because the weight cell is optional in
+    // both, so it is strictly the more capable of the two.
+    'back-extension': 'weighted_bodyweight',
+    'bench-dips': 'weighted_bodyweight',
+    'captains-chair-knee-raise': 'weighted_bodyweight',
+    'chin-ups': 'weighted_bodyweight',
+    'decline-sit-up': 'weighted_bodyweight',
+    'hanging-knee-raises': 'weighted_bodyweight',
+    'neutral-grip-pull-up': 'weighted_bodyweight',
+    'parralel-bar-dips': 'weighted_bodyweight',
+    'pull-ups': 'weighted_bodyweight',
+    'single-leg-back-extension': 'weighted_bodyweight',
+    'toes-to-bar': 'weighted_bodyweight',
+    'weighted-pull-ups': 'weighted_bodyweight',
+    'wide-grip-pull-up': 'weighted_bodyweight',
+
+    // The stack takes weight off rather than adding it.
+    'machine-dips': 'assisted_bodyweight',
+
+    // Listed as bodyweight, but the load is the whole movement.
+    'man-maker': 'weight_reps',
+    'wall-ball': 'weight_reps',
+  })
+);
+
+const onlyMobility = (entry) =>
+  entry.movementPattern.every((p) => p === 'Stretch' || p === 'Mobility');
+
+function trackingTypeFor(entry) {
+  const override = TRACKING_OVERRIDES.get(entry.slug);
   if (override) return override;
-  if (e.category === 'cardio') return 'distance_duration';
-  if (e.force === 'static') return 'duration';
-  if (e.equipment === 'body only') return 'bodyweight_reps';
+  if (isCardio(entry)) return 'distance_duration';
+  if (onlyMobility(entry)) return 'duration';
+  if (entry.equipment[0] === 'Bodyweight') return 'bodyweight_reps';
   return 'weight_reps';
 }
 
-// Upstream's anatomical names where the app's vocabulary reads better in a row
-// subtitle. src/lib/attribute-images.ts and the group tables use these.
-const MUSCLE_RENAMES = { abdominals: 'abs' };
-const renameMuscle = (muscle) => MUSCLE_RENAMES[muscle] ?? muscle;
+function categoryFor(entry) {
+  if (isCardio(entry)) return 'cardio';
+  if (entry.movementPattern.includes('Plyometric')) return 'plyometrics';
+  if (onlyMobility(entry)) return 'stretching';
+  return 'strength';
+}
 
-const raw = JSON.parse(readFileSync(resolve(SOURCE, 'dist/exercises.json'), 'utf8'));
+function forceFor(entry) {
+  if (entry.movementPattern.includes('Push')) return 'push';
+  if (entry.movementPattern.includes('Pull')) return 'pull';
+  return null;
+}
+
+const raw = JSON.parse(readFileSync(resolve(ROOT, METADATA_PATH), 'utf8'));
 if (!Array.isArray(raw) || raw.length === 0) {
-  throw new Error(`No exercises found at ${SOURCE}/dist/exercises.json`);
+  throw new Error(`No exercises found at ${METADATA_PATH}`);
 }
 
 const seen = new Set();
 const problems = [];
 
-const exercises = [...raw, ...ADDITIONS]
-  .map((e) => {
-    if (!e.id) problems.push(`missing id: ${e.name}`);
-    if (seen.has(e.id)) problems.push(`duplicate id: ${e.id}`);
-    seen.add(e.id);
-    if (e.force != null && !FORCE.has(e.force)) problems.push(`${e.id}: bad force "${e.force}"`);
-    if (!LEVEL.has(e.level)) problems.push(`${e.id}: bad level "${e.level}"`);
-    if (e.mechanic != null && !MECHANIC.has(e.mechanic)) {
-      problems.push(`${e.id}: bad mechanic "${e.mechanic}"`);
-    }
-    if (!CATEGORY.has(e.category)) problems.push(`${e.id}: bad category "${e.category}"`);
+const exercises = raw
+  .map((entry) => {
+    if (!entry.slug) problems.push(`missing slug: ${entry.name}`);
+    if (seen.has(entry.slug)) problems.push(`duplicate slug: ${entry.slug}`);
+    seen.add(entry.slug);
 
-    const trackingType = trackingTypeFor(e);
+    const level = entry.difficulty;
+    const category = categoryFor(entry);
+    const force = forceFor(entry);
+    const trackingType = trackingTypeFor(entry);
+
+    if (!LEVEL.has(level)) problems.push(`${entry.slug}: bad level "${level}"`);
+    if (!CATEGORY.has(category)) problems.push(`${entry.slug}: bad category "${category}"`);
+    if (force != null && !FORCE.has(force)) problems.push(`${entry.slug}: bad force "${force}"`);
     if (!TRACKING_TYPE.has(trackingType)) {
-      problems.push(`${e.id}: bad tracking type "${trackingType}"`);
+      problems.push(`${entry.slug}: bad tracking type "${trackingType}"`);
     }
+    if (entry.equipment.length === 0) problems.push(`${entry.slug}: no equipment`);
+
+    // Throws when a muscle has no home, which is what stops a browse group
+    // from silently going empty.
+    groupOf(entry);
+
+    const mechanic = entry.movementPattern.includes('Isolation') ? 'isolation' : 'compound';
+    if (!MECHANIC.has(mechanic)) problems.push(`${entry.slug}: bad mechanic "${mechanic}"`);
 
     return {
-      id: uuidv5(e.id, NAMESPACE),
-      sourceId: e.id,
-      name: e.name,
-      force: e.force ?? null,
-      level: e.level,
-      mechanic: e.mechanic ?? null,
-      equipment: e.equipment ?? null,
-      category: e.category,
+      id: uuidv5(entry.slug, NAMESPACE),
+      sourceId: entry.slug,
+      name: entry.name,
+      force,
+      level,
+      mechanic,
+      // Two of 412 list a second option; the row subtitle and the filter menu
+      // both hold one value, so the first is the one that ships.
+      equipment: entry.equipment[0].toLowerCase(),
+      category,
       trackingType,
-      primaryMuscles: (e.primaryMuscles ?? []).map(renameMuscle),
-      secondaryMuscles: (e.secondaryMuscles ?? []).map(renameMuscle),
-      instructions: e.instructions ?? [],
-      tags: tagsFor(e),
-      // `images` is deliberately dropped: upstream ships stock photos, we ship
-      // our own mascot illustrations keyed by sourceId.
+      primaryMuscles: entry.primaryMuscles.map((m) => m.toLowerCase()),
+      secondaryMuscles: entry.secondaryMuscles.map((m) => m.toLowerCase()),
+      tags: tagsFor(entry),
     };
   })
   .sort((a, b) => a.name.localeCompare(b.name));
 
-for (const id of TRACKING_OVERRIDES.keys()) {
-  if (!seen.has(id)) problems.push(`tracking override for unknown exercise "${id}"`);
+for (const slug of TRACKING_OVERRIDES.keys()) {
+  if (!seen.has(slug)) problems.push(`tracking override for unknown exercise "${slug}"`);
 }
 
-for (const id of unknownAliasIds(seen)) {
-  problems.push(`search alias for unknown exercise "${id}"`);
+for (const slug of unknownAliasIds(seen)) {
+  problems.push(`search alias for unknown exercise "${slug}"`);
+}
+
+// A template entry that resolves to nothing is dropped in silence at seed time
+// (see seedTemplates in src/db/seed.ts), so it has to fail here instead.
+for (const template of JSON.parse(readFileSync(TEMPLATES, 'utf8'))) {
+  for (const { exerciseSourceId } of template.exercises) {
+    if (!seen.has(exerciseSourceId)) {
+      problems.push(`template "${template.sourceId}" references unknown "${exerciseSourceId}"`);
+    }
+  }
 }
 
 if (problems.length > 0) {
@@ -219,7 +217,7 @@ if (problems.length > 0) {
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, `${JSON.stringify(exercises, null, 2)}\n`);
 
-const equipment = new Set(exercises.map((e) => e.equipment ?? 'none'));
+const equipment = new Set(exercises.map((e) => e.equipment));
 const muscles = new Set(exercises.flatMap((e) => e.primaryMuscles));
 console.log(`Wrote ${exercises.length} exercises to ${OUT}`);
 console.log(`  equipment types: ${[...equipment].sort().join(', ')}`);

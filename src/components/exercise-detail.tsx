@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { CircleButton } from '@/components/circle-button';
-import { ExerciseFrames } from '@/components/exercise-frames';
+import { ExerciseVideo } from '@/components/exercise-video';
 import { ExerciseInsights } from '@/components/exercises/exercise-insights';
 import { SheetGrabber } from '@/components/sheet-grabber';
 import { ThemedText } from '@/components/themed-text';
@@ -87,7 +87,7 @@ export function ExerciseDetail({ id, editHref }: { id: string; editHref?: Href }
               </View>
             ) : null}
 
-            <ExerciseFrames sourceId={exercise.sourceId} />
+            <ExerciseVideo sourceId={exercise.sourceId} />
 
             <ThemedText style={styles.name}>{exercise.name}</ThemedText>
 
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: Spacing.three,
     /* No padding of its own: a grabber-bearing sheet already insets its content
-       by about `Spacing.three`, which is what puts the images the same distance
+       by about `Spacing.three`, which is what puts the clip the same distance
        from the top as from the sides. */
     paddingTop: 0,
     paddingBottom: Spacing.three,

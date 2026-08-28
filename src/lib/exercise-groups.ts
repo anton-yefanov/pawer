@@ -8,26 +8,25 @@ export type ExerciseGroup = {
 };
 
 /**
- * How the library is browsed: a short, gym-legible roll-up of the sixteen
- * free-exercise-db muscles, plus Cardio.
+ * How the library is browsed: a gym-legible roll-up of the sixteen muscles the
+ * exercise metadata names, plus Cardio.
+ *
+ * Glutes and quads are the two biggest muscles in this library, so a single
+ * Legs row would hold well over a third of it. Glutes, calves and traps get
+ * their own rows to keep every group scannable.
  */
 export const EXERCISE_GROUPS: ExerciseGroup[] = [
-  { id: 'abs', title: 'Abs', muscles: ['abs'] },
-  {
-    id: 'back',
-    title: 'Back',
-    muscles: ['lats', 'traps', 'middle back', 'lower back'],
-  },
+  { id: 'abs', title: 'Abs', muscles: ['core'] },
+  { id: 'back', title: 'Back', muscles: ['back', 'lower back'] },
   { id: 'biceps', title: 'Biceps', muscles: ['biceps'] },
+  { id: 'calves', title: 'Calves', muscles: ['calves', 'tibialis'] },
   { id: 'cardio', title: 'Cardio', category: 'cardio' },
   { id: 'chest', title: 'Chest', muscles: ['chest'] },
   { id: 'forearms', title: 'Forearms', muscles: ['forearms'] },
-  {
-    id: 'legs',
-    title: 'Legs',
-    muscles: ['quadriceps', 'hamstrings', 'glutes', 'calves', 'abductors', 'adductors'],
-  },
+  { id: 'glutes', title: 'Glutes', muscles: ['glutes'] },
+  { id: 'legs', title: 'Legs', muscles: ['quadriceps', 'hamstrings', 'adductors'] },
   { id: 'shoulders', title: 'Shoulders', muscles: ['shoulders'] },
+  { id: 'traps', title: 'Traps', muscles: ['trapezius', 'neck'] },
   { id: 'triceps', title: 'Triceps', muscles: ['triceps'] },
 ];
 

@@ -1,195 +1,146 @@
 #!/usr/bin/env node
 /**
- * Master → shipped-asset image pipeline (IMPLEMENTATION_PLAN.md §5.1).
+ * Vendor stills and mascot masters → the WebP the app bundles.
  *
  *   node scripts/build-images.mjs
  *
- * Input  assets/masters/exercises/<slug>_1.png   1200x1200, PNG, alpha
- *        assets/masters/exercises/<slug>_2.png   same bounding box as _1
- *        assets/masters/mascot/<state>.png       1024x1024, PNG, alpha
- *        assets/masters/attributes/<kind>/<slug>.png  1024x1024, PNG, alpha
+ * Input  assets/new_exercises_data/posters/<slug>.webp   720x402, the video's first frame
+ *        assets/masters/mascot/<state>.png               1024x1024, PNG, alpha
  *
- * Output assets/exercises/detail/<slug>_1.webp   600x600  q85 + alpha
- *        assets/exercises/detail/<slug>_2.webp   600x600
- *        assets/exercises/thumb/<slug>.webp      150x150  (from frame 1)
- *        src/lib/exercise-image-map.ts             the require map screens read
- *        assets/mascot/<state>.webp              512x512
- *        assets/attributes/<kind>/<slug>.webp    256x256
+ * Output assets/exercises/poster/<slug>.webp   720x402  the detail sheet's still
+ *        assets/exercises/thumb/<slug>.webp    150x150  centre-cropped, the list row
+ *        src/lib/exercise-media-map.ts         the require map screens read
+ *        assets/mascot/<state>.webp            512x512
+ *
+ * The poster is what a row and a detail sheet draw before the clip has its
+ * first frame, so it ships even though the clip ships beside it.
  *
  * Everything ships as lossy WebP q85 with a lossless alpha channel: ~half the
  * size of optimised PNG, natively decoded by expo-image, and unlike JPEG it
  * keeps transparency and does not smear crisp outlines.
- *
- * Resizing the detail view later is a re-run of this script, never a recrop.
  */
-import { mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
-import { ATTRIBUTE_VALUES, attributeSlug } from './attribute-vocabulary.mjs';
+import { METADATA_PATH, POSTERS_DIR, groupOf } from './exercise-taxonomy.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 const WEBP = { quality: 85, alphaQuality: 100, effort: 6 };
-
-const SIZES = {
-  detail: 600,
-  thumb: 150,
-  mascot: 512,
-  attribute: 256,
-};
-
-/** Masters must all be square so thumb and detail share one bounding box. */
-const MASTER_SIZE = { exercises: 1200, mascot: 1024, attributes: 1024 };
-
-function listPngs(dir) {
-  try {
-    if (!statSync(dir).isDirectory()) return [];
-  } catch {
-    return [];
-  }
-  return readdirSync(dir)
-    .filter((f) => f.toLowerCase().endsWith('.png'))
-    .sort();
-}
-
-async function toWebp(input, output, size) {
-  mkdirSync(dirname(output), { recursive: true });
-  const buf = await sharp(input)
-    .resize(size, size, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
-    .webp(WEBP)
-    .toBuffer();
-  writeFileSync(output, buf);
-  return buf.length;
-}
-
-async function checkSquare(file, expected, warnings) {
-  const { width, height } = await sharp(file).metadata();
-  if (width !== height) {
-    warnings.push(`${basename(file)}: ${width}x${height} is not square — thumb crop will drift`);
-  } else if (width !== expected) {
-    warnings.push(`${basename(file)}: ${width}px master, expected ${expected}px`);
-  }
-}
+const SIZES = { thumb: 150, mascot: 512 };
+const MASCOT_MASTER = 1024;
 
 const warnings = [];
 let bytes = 0;
 let count = 0;
 
-// --- Exercises -------------------------------------------------------------
-const exerciseMasters = resolve(ROOT, 'assets/masters/exercises');
-const frames = listPngs(exerciseMasters);
+const write = (output, buf) => {
+  mkdirSync(dirname(output), { recursive: true });
+  writeFileSync(output, buf);
+  bytes += buf.length;
+  count++;
+};
 
-for (const file of frames) {
-  const src = resolve(exerciseMasters, file);
-  const name = basename(file, '.png');
-  if (!/_[12]$/.test(name)) {
-    warnings.push(`${file}: expected a _1 / _2 frame suffix, skipped`);
+// --- Exercise stills -------------------------------------------------------
+const meta = JSON.parse(readFileSync(resolve(ROOT, METADATA_PATH), 'utf8'));
+
+for (const entry of meta) {
+  const src = resolve(ROOT, POSTERS_DIR, `${entry.slug}.webp`);
+  try {
+    statSync(src);
+  } catch {
+    warnings.push(`${entry.slug}: no poster at ${POSTERS_DIR}`);
     continue;
   }
-  await checkSquare(src, MASTER_SIZE.exercises, warnings);
 
-  bytes += await toWebp(src, resolve(ROOT, `assets/exercises/detail/${name}.webp`), SIZES.detail);
-  count++;
-
-  if (name.endsWith('_1')) {
-    const slug = name.slice(0, -2);
-    bytes += await toWebp(src, resolve(ROOT, `assets/exercises/thumb/${slug}.webp`), SIZES.thumb);
-    count++;
+  // The generated map `require`s the clip, so a missing one fails Metro rather
+  // than this script. Catch it here where the message says what to do.
+  const clip = resolve(ROOT, `assets/exercise-videos/${groupOf(entry)}/${entry.slug}.mp4`);
+  try {
+    statSync(clip);
+  } catch {
+    warnings.push(`${entry.slug}: no clip — run \`npm run videos:pull\``);
   }
+
+  write(resolve(ROOT, `assets/exercises/poster/${entry.slug}.webp`), readFileSync(src));
+
+  // The row draws a 48pt circle. Cropping to a square here rather than letting
+  // expo-image do it keeps a 720px frame out of every cell of a long list.
+  const thumb = await sharp(src)
+    .resize(SIZES.thumb, SIZES.thumb, { fit: 'cover', position: 'centre' })
+    .webp(WEBP)
+    .toBuffer();
+  write(resolve(ROOT, `assets/exercises/thumb/${entry.slug}.webp`), thumb);
 }
 
-// Every _1 needs a matching _2 or the cross-fade has nothing to fade to.
-const slugs = new Set(frames.map((f) => basename(f, '.png').replace(/_[12]$/, '')));
-for (const slug of slugs) {
-  for (const frame of ['_1', '_2']) {
-    if (!frames.includes(`${slug}${frame}.png`)) {
-      warnings.push(`${slug}: missing frame ${slug}${frame}.png`);
-    }
-  }
-}
-
-writeExerciseImageMap(slugs);
+writeExerciseMediaMap(meta);
 
 // --- Mascot ----------------------------------------------------------------
 const mascotMasters = resolve(ROOT, 'assets/masters/mascot');
-for (const file of listPngs(mascotMasters)) {
+const mascotFiles = (() => {
+  try {
+    return readdirSync(mascotMasters).filter((f) => f.toLowerCase().endsWith('.png')).sort();
+  } catch {
+    return [];
+  }
+})();
+
+for (const file of mascotFiles) {
   const src = resolve(mascotMasters, file);
-  await checkSquare(src, MASTER_SIZE.mascot, warnings);
-  bytes += await toWebp(src, resolve(ROOT, `assets/mascot/${basename(file, '.png')}.webp`), SIZES.mascot);
-  count++;
+  const { width, height } = await sharp(src).metadata();
+  if (width !== height) {
+    warnings.push(`${file}: ${width}x${height} is not square`);
+  } else if (width !== MASCOT_MASTER) {
+    warnings.push(`${file}: ${width}px master, expected ${MASCOT_MASTER}px`);
+  }
+  const buf = await sharp(src)
+    .resize(SIZES.mascot, SIZES.mascot, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .webp(WEBP)
+    .toBuffer();
+  write(resolve(ROOT, `assets/mascot/${basename(file, '.png')}.webp`), buf);
 }
 
-// --- Attributes ------------------------------------------------------------
-for (const [kind, values] of Object.entries(ATTRIBUTE_VALUES)) {
-  const dir = resolve(ROOT, `assets/masters/attributes/${kind}`);
-  const files = listPngs(dir);
-  const expected = new Set(values.map(attributeSlug));
-
-  for (const file of files) {
-    const slug = basename(file, '.png');
-    if (!expected.has(slug)) {
-      warnings.push(`attributes/${kind}/${file}: not a ${kind} value in the seed, skipped`);
-      continue;
-    }
-    const src = resolve(dir, file);
-    await checkSquare(src, MASTER_SIZE.attributes, warnings);
-    bytes += await toWebp(
-      src,
-      resolve(ROOT, `assets/attributes/${kind}/${slug}.webp`),
-      SIZES.attribute,
-    );
-    count++;
-  }
-
-  for (const slug of expected) {
-    if (!files.includes(`${slug}.png`)) {
-      warnings.push(`attributes/${kind}: missing ${slug}.png`);
-    }
-  }
-}
-
-console.log(`Wrote ${count} WebP files, ${(bytes / 1024).toFixed(1)} KB total`);
+console.log(`Wrote ${count} WebP files, ${(bytes / 1024 / 1024).toFixed(1)} MB total`);
 if (warnings.length > 0) {
   console.warn(`\n${warnings.length} warning(s):`);
   for (const w of warnings) console.warn(`  - ${w}`);
 }
 
 /**
- * Metro only resolves static `require` literals, so the slug -> asset lookup has
- * to be written out. It is emitted here, from the frames that actually built.
+ * Metro only resolves static `require` literals, so the slug -> asset lookup
+ * has to be written out. The clip requires are what pull the 412 mp4s into the
+ * bundle, so a missing one is a Metro resolution error rather than a silently
+ * still library.
  */
-function writeExerciseImageMap(slugs) {
-  const asset = (path) => `require('@/assets/exercises/${path}')`;
-
-  const rows = [...slugs]
-    .filter((slug) => slug !== 'placeholder' && frames.includes(`${slug}_1.png`))
-    .sort()
-    .map((slug) => {
-      const pair = ['_1', '_2']
-        .map((f) => (frames.includes(`${slug}${f}.png`) ? asset(`detail/${slug}${f}.webp`) : 'null'))
-        .join(', ');
-      return [
-        `  '${slug}': {`,
-        `    thumb: ${asset(`thumb/${slug}.webp`)},`,
-        `    frames: [${pair}],`,
+function writeExerciseMediaMap(entries) {
+  const rows = [...entries]
+    .sort((a, b) => a.slug.localeCompare(b.slug))
+    .map((entry) =>
+      [
+        `  '${entry.slug}': {`,
+        `    poster: require('@/assets/exercises/poster/${entry.slug}.webp'),`,
+        `    thumb: require('@/assets/exercises/thumb/${entry.slug}.webp'),`,
+        `    video: require('@/assets/exercise-videos/${groupOf(entry)}/${entry.slug}.mp4'),`,
         '  },',
-      ].join('\n');
-    });
+      ].join('\n')
+    );
 
   const file = `import type { ImageSource } from 'expo-image';
 
-// Generated by scripts/build-images.mjs from assets/masters/exercises — do not edit.
+// Generated by scripts/build-images.mjs — do not edit.
 
-export type ExerciseArt = {
+export type ExerciseMedia = {
+  poster: ImageSource;
   thumb: ImageSource;
-  frames: readonly [ImageSource | null, ImageSource | null];
+  /** The bundled demo clip, as the asset module id \`require\` returns. */
+  video: number;
 };
 
-export const EXERCISE_ART: Record<string, ExerciseArt> = {
+export const EXERCISE_MEDIA: Record<string, ExerciseMedia> = {
 ${rows.join('\n')}
 };
 `;
-  writeFileSync(resolve(ROOT, 'src/lib/exercise-image-map.ts'), file);
+  writeFileSync(resolve(ROOT, 'src/lib/exercise-media-map.ts'), file);
 }

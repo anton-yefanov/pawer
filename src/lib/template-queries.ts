@@ -39,6 +39,7 @@ export function templateCardExercisesQuery() {
       templateId: templateExercises.templateId,
       position: templateExercises.position,
       name: exercises.name,
+      sourceId: exercises.sourceId,
     })
     .from(templateExercises)
     .innerJoin(exercises, eq(templateExercises.exerciseId, exercises.id))

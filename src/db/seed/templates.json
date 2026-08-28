@@ -2,60 +2,56 @@
   {
     "sourceId": "back_and_biceps",
     "color": "blue",
-    "artwork": "💪",
     "name": "Back & Biceps",
     "position": 0,
     "exercises": [
-      { "exerciseSourceId": "Pullups", "targetSets": 3, "targetReps": 8 },
-      { "exerciseSourceId": "Wide-Grip_Lat_Pulldown", "targetSets": 3, "targetReps": 10 },
-      { "exerciseSourceId": "Seated_Cable_Rows", "targetSets": 3, "targetReps": 10 },
-      { "exerciseSourceId": "Underhand_Cable_Pulldowns", "targetSets": 3, "targetReps": 12 },
-      { "exerciseSourceId": "Barbell_Curl", "targetSets": 3, "targetReps": 10 },
-      { "exerciseSourceId": "Hammer_Curls", "targetSets": 3, "targetReps": 12 }
+      { "exerciseSourceId": "pull-ups", "targetSets": 3, "targetReps": 8 },
+      { "exerciseSourceId": "wide-grip-lat-pulldown", "targetSets": 3, "targetReps": 10 },
+      { "exerciseSourceId": "machine-seated-cable-row", "targetSets": 3, "targetReps": 10 },
+      { "exerciseSourceId": "narrow-pulldown", "targetSets": 3, "targetReps": 12 },
+      { "exerciseSourceId": "barbell-curl", "targetSets": 3, "targetReps": 10 },
+      { "exerciseSourceId": "dumbbell-hammer-curl", "targetSets": 3, "targetReps": 12 }
     ]
   },
   {
     "sourceId": "chest_and_triceps",
     "color": "red",
-    "artwork": "🏋️",
     "name": "Chest & Triceps",
     "position": 1,
     "exercises": [
-      { "exerciseSourceId": "Barbell_Bench_Press_-_Medium_Grip", "targetSets": 4, "targetReps": 8 },
-      { "exerciseSourceId": "Incline_Dumbbell_Press", "targetSets": 3, "targetReps": 10 },
-      { "exerciseSourceId": "Cable_Crossover", "targetSets": 3, "targetReps": 12 },
-      { "exerciseSourceId": "Close-Grip_Barbell_Bench_Press", "targetSets": 3, "targetReps": 10 },
-      { "exerciseSourceId": "Triceps_Pushdown", "targetSets": 3, "targetReps": 12 }
+      { "exerciseSourceId": "barbell-bench-press", "targetSets": 4, "targetReps": 8 },
+      { "exerciseSourceId": "dumbbell-incline-bench-press", "targetSets": 3, "targetReps": 10 },
+      { "exerciseSourceId": "cable-pec-fly", "targetSets": 3, "targetReps": 12 },
+      { "exerciseSourceId": "barbell-close-grip-bench-press", "targetSets": 3, "targetReps": 10 },
+      { "exerciseSourceId": "cable-bar-pushdown", "targetSets": 3, "targetReps": 12 }
     ]
   },
   {
     "sourceId": "legs",
     "color": "green",
-    "artwork": "🦵",
     "name": "Legs",
     "position": 2,
     "exercises": [
-      { "exerciseSourceId": "Barbell_Squat", "targetSets": 4, "targetReps": 6 },
-      { "exerciseSourceId": "Romanian_Deadlift", "targetSets": 3, "targetReps": 10 },
-      { "exerciseSourceId": "Leg_Press", "targetSets": 3, "targetReps": 12 },
-      { "exerciseSourceId": "Leg_Extensions", "targetSets": 3, "targetReps": 12 },
-      { "exerciseSourceId": "Lying_Leg_Curls", "targetSets": 3, "targetReps": 12 },
-      { "exerciseSourceId": "Standing_Calf_Raises", "targetSets": 4, "targetReps": 15 }
+      { "exerciseSourceId": "barbell-squat", "targetSets": 4, "targetReps": 6 },
+      { "exerciseSourceId": "barbell-romanian-deadlift", "targetSets": 3, "targetReps": 10 },
+      { "exerciseSourceId": "machine-leg-press", "targetSets": 3, "targetReps": 12 },
+      { "exerciseSourceId": "machine-leg-extension", "targetSets": 3, "targetReps": 12 },
+      { "exerciseSourceId": "lying-leg-curl", "targetSets": 3, "targetReps": 12 },
+      { "exerciseSourceId": "standing-calf-raise-machine", "targetSets": 4, "targetReps": 15 }
     ]
   },
   {
     "sourceId": "shoulders_and_arms",
     "color": "purple",
-    "artwork": "🤸",
     "name": "Shoulders & Arms",
     "position": 3,
     "exercises": [
-      { "exerciseSourceId": "Seated_Dumbbell_Press", "targetSets": 4, "targetReps": 8 },
-      { "exerciseSourceId": "Side_Lateral_Raise", "targetSets": 3, "targetReps": 15 },
-      { "exerciseSourceId": "Face_Pull", "targetSets": 3, "targetReps": 15 },
-      { "exerciseSourceId": "Dumbbell_Bicep_Curl", "targetSets": 3, "targetReps": 12 },
+      { "exerciseSourceId": "dumbbell-seated-overhead-press", "targetSets": 4, "targetReps": 8 },
+      { "exerciseSourceId": "dumbbell-lateral-raise", "targetSets": 3, "targetReps": 15 },
+      { "exerciseSourceId": "cable-seated-rope-face-pull", "targetSets": 3, "targetReps": 15 },
+      { "exerciseSourceId": "dumbbell-curl", "targetSets": 3, "targetReps": 12 },
       {
-        "exerciseSourceId": "Cable_Rope_Overhead_Triceps_Extension",
+        "exerciseSourceId": "cable-rope-overhead-tricep-extension",
         "targetSets": 3,
         "targetReps": 12
       }
@@ -64,47 +60,44 @@
   {
     "sourceId": "push_day",
     "color": "orange",
-    "artwork": "⬆️",
     "name": "Push",
     "position": 4,
     "exercises": [
-      { "exerciseSourceId": "Barbell_Bench_Press_-_Medium_Grip", "targetSets": 4, "targetReps": 6 },
-      { "exerciseSourceId": "Standing_Military_Press", "targetSets": 3, "targetReps": 8 },
+      { "exerciseSourceId": "barbell-bench-press", "targetSets": 4, "targetReps": 6 },
+      { "exerciseSourceId": "barbell-overhead-press", "targetSets": 3, "targetReps": 8 },
       {
-        "exerciseSourceId": "Barbell_Incline_Bench_Press_-_Medium_Grip",
+        "exerciseSourceId": "barbell-incline-bench-press",
         "targetSets": 3,
         "targetReps": 10
       },
-      { "exerciseSourceId": "Side_Lateral_Raise", "targetSets": 3, "targetReps": 15 },
-      { "exerciseSourceId": "Triceps_Pushdown", "targetSets": 3, "targetReps": 12 }
+      { "exerciseSourceId": "dumbbell-lateral-raise", "targetSets": 3, "targetReps": 15 },
+      { "exerciseSourceId": "cable-bar-pushdown", "targetSets": 3, "targetReps": 12 }
     ]
   },
   {
     "sourceId": "pull_day",
     "color": "black",
-    "artwork": "⬇️",
     "name": "Pull",
     "position": 5,
     "exercises": [
-      { "exerciseSourceId": "Barbell_Deadlift", "targetSets": 3, "targetReps": 5 },
-      { "exerciseSourceId": "Pullups", "targetSets": 3, "targetReps": 8 },
-      { "exerciseSourceId": "Bent_Over_Barbell_Row", "targetSets": 3, "targetReps": 10 },
-      { "exerciseSourceId": "Seated_Cable_Rows", "targetSets": 3, "targetReps": 12 },
-      { "exerciseSourceId": "Barbell_Curl", "targetSets": 3, "targetReps": 10 }
+      { "exerciseSourceId": "barbell-deadlift", "targetSets": 3, "targetReps": 5 },
+      { "exerciseSourceId": "pull-ups", "targetSets": 3, "targetReps": 8 },
+      { "exerciseSourceId": "barbell-bent-over-row", "targetSets": 3, "targetReps": 10 },
+      { "exerciseSourceId": "machine-seated-cable-row", "targetSets": 3, "targetReps": 12 },
+      { "exerciseSourceId": "barbell-curl", "targetSets": 3, "targetReps": 10 }
     ]
   },
   {
     "sourceId": "full_body",
     "color": "pink",
-    "artwork": "🔥",
     "name": "Full Body",
     "position": 6,
     "exercises": [
-      { "exerciseSourceId": "Barbell_Squat", "targetSets": 3, "targetReps": 8 },
-      { "exerciseSourceId": "Barbell_Bench_Press_-_Medium_Grip", "targetSets": 3, "targetReps": 8 },
-      { "exerciseSourceId": "Bent_Over_Barbell_Row", "targetSets": 3, "targetReps": 10 },
-      { "exerciseSourceId": "Seated_Dumbbell_Press", "targetSets": 3, "targetReps": 10 },
-      { "exerciseSourceId": "Plank", "targetSets": 3, "targetReps": null }
+      { "exerciseSourceId": "barbell-squat", "targetSets": 3, "targetReps": 8 },
+      { "exerciseSourceId": "barbell-bench-press", "targetSets": 3, "targetReps": 8 },
+      { "exerciseSourceId": "barbell-bent-over-row", "targetSets": 3, "targetReps": 10 },
+      { "exerciseSourceId": "dumbbell-seated-overhead-press", "targetSets": 3, "targetReps": 10 },
+      { "exerciseSourceId": "front-plank", "targetSets": 3, "targetReps": null }
     ]
   }
 ]

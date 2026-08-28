@@ -202,6 +202,7 @@ function toCard(template: Template, rows: readonly TemplateCardExercise[]): Temp
     color: template.color,
     artwork: asCardArtwork(template.artwork),
     exerciseNames: rows.map((row) => row.name),
+    exerciseSourceIds: rows.map((row) => row.sourceId),
   };
 }
 

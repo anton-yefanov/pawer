@@ -15,6 +15,7 @@ export type TemplateCardData = {
   color: CardColor | null;
   artwork: CardArtwork | null;
   exerciseNames: readonly string[];
+  exerciseSourceIds: readonly (string | null)[];
 };
 
 type Props = {
@@ -36,7 +37,11 @@ export function TemplateCard({ template, width, index, draggable = false }: Prop
         router.push({ pathname: '/template/[id]', params: { id: template.id } })
       }
       cover={
-        <ArtworkLayer artwork={template.artwork} coverHeight={cardWidth * COVER_RATIO} />
+        <ArtworkLayer
+          artwork={template.artwork}
+          coverHeight={cardWidth * COVER_RATIO}
+          exerciseSourceIds={template.exerciseSourceIds}
+        />
       }
     />
   );

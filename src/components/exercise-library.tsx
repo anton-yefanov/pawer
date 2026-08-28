@@ -1,6 +1,5 @@
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { Image } from 'expo-image';
 import { Link, router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -14,7 +13,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { CircleButton, CIRCLE_BUTTON_SIZE } from '@/components/circle-button';
+import { CircleButton } from '@/components/circle-button';
+import { ExerciseThumb } from '@/components/exercise-thumb';
 import { ExerciseSearchBar, SEARCH_BAR_CLEARANCE } from '@/components/exercise-search-bar';
 import { FloatingSurface } from '@/components/floating-surface';
 import { Icon } from '@/components/icon';
@@ -37,7 +37,6 @@ import {
   type ExerciseFilters,
 } from '@/lib/exercise-filters';
 import { EXERCISE_GROUPS, exerciseGroup, type ExerciseGroup } from '@/lib/exercise-groups';
-import { exerciseThumbnail, hasRealArtwork } from '@/lib/exercise-images';
 import * as haptics from '@/lib/haptics';
 import { claimCustomExercise } from '@/lib/new-exercise-handoff';
 
@@ -358,9 +357,6 @@ function ClearFiltersButton({ onPress }: { onPress: () => void }) {
 
 const CUSTOM_GROUP: ExerciseGroup = { id: 'custom', title: 'Custom' };
 
-/** Matched to the search row's back button, which it sits directly under. */
-const THUMB_SIZE = CIRCLE_BUTTON_SIZE;
-
 function GroupRow({
   group,
   onPress,
@@ -420,15 +416,7 @@ function ExerciseRow({
   const body = ({ pressed }: { pressed: boolean }) => (
     <View
       style={[styles.row, { backgroundColor: pressed ? theme.backgroundSelected : theme.surface }]}>
-      <View style={[styles.thumb, { backgroundColor: theme.backgroundElement }]}>
-        {hasRealArtwork(exercise.sourceId) && (
-          <Image
-            source={exerciseThumbnail(exercise.sourceId)}
-            style={styles.thumbImage}
-            contentFit="cover"
-          />
-        )}
-      </View>
+      <ExerciseThumb sourceId={exercise.sourceId} />
       <View style={styles.rowText}>
         <ThemedText numberOfLines={1}>{exercise.name}</ThemedText>
         {detail !== '' && (
@@ -486,15 +474,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
   },
   rowText: {
-    flex: 1,
-  },
-  thumb: {
-    width: THUMB_SIZE,
-    height: THUMB_SIZE,
-    borderRadius: THUMB_SIZE / 2,
-    overflow: 'hidden',
-  },
-  thumbImage: {
     flex: 1,
   },
   groupRow: {

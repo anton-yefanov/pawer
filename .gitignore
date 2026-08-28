@@ -49,3 +49,8 @@ example
 
 # generated for the image uploader
 tools/image-uploader/public/exercises.json
+
+# purchased exercise footage: vendor originals stay local, compressed clips live in Vercel Blob
+assets/new_exercises_data/complete-exercise-library-*/
+!assets/new_exercises_data/complete-exercise-library-metadata/
+assets/exercise-videos/

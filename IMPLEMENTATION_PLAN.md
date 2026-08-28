@@ -85,9 +85,14 @@ Warn users clearly in onboarding that data is local-only.
 
 ### Exercise data
 
-Use **`yuhonas/free-exercise-db`** (GitHub, public domain, ~800 exercises with
-muscle/equipment metadata). Curate down to ~200, bundle as JSON, seed SQLite on first
-launch. **Do not fetch at runtime.**
+A **purchased 412-exercise library** (`assets/new_exercises_data/`) with muscle,
+equipment, movement-pattern and difficulty metadata, plus a demo clip and a poster
+frame for every exercise. `npm run build:seed` derives the bundled JSON, which seeds
+SQLite on first launch. **Nothing leaves the bundle.** The clips ship inside the binary
+alongside the metadata, so the library is complete the moment the app installs.
+
+Superseded: the library was originally `yuhonas/free-exercise-db` curated to ~200,
+illustrated by two hand-made stills per exercise. See CLAUDE.md §Assets.
 
 ---
 
@@ -163,49 +168,31 @@ segment that would otherwise pay nothing.
 work once. RevenueCat's remote config lets you A/B this without shipping a build.
 
 ---
-
 ### 5 Export specs
-
-Measured against reference screenshots (1179px @ 3x):
 
 | Use | Display size | Export size | Count |
 |---|---|---|---|
-| List thumbnail | 48pt | **150px** | 1 per exercise |
-| Detail view | ~200pt | **600px** | 2 per exercise |
+| List thumbnail | 48pt | **150x150** WebP | 1 per exercise |
+| Detail poster | ~360pt | **720x402** WebP | 1 per exercise |
+| Detail clip | ~360pt | **1084x600** HEVC | 1 per exercise |
 
-**Format: WebP, lossy q85, with alpha.** ~50% smaller than optimized PNG, native support
+**Stills: WebP, lossy q85, with alpha.** ~50% smaller than optimized PNG, native support
 in `expo-image`. Never JPEG — no alpha channel, and DCT compression destroys crisp outlines.
 
-Estimated bundle: 200 thumbnails (~1.6 MB) + 400 detail images (~16 MB) = **~18 MB**.
+**Clips: HEVC CRF 26, no audio, `hvc1`-tagged.** 1084px is exactly how wide the detail
+sheet draws the video on a 3x iPhone, so nothing is spent on pixels nobody sees. Measured
+8.6x smaller than the vendor masters at VMAF 84-85; `-tag:v hvc1` is what makes AVPlayer
+accept HEVC in an mp4, and the vendor masters carry no audio track to begin with.
 
-**Critical:** trim both frames of a pair to the **same** bounding box. Cropping each frame
-to its own tight box silently breaks the illusion — if the cat shifts 8px between frames,
-toggling reads as a glitch, not a rep. Lock hip/center-of-mass to a fixed guide.
+Bundle: 412 thumbnails + 412 posters = **3.7 MB**, plus **106 MB** of clips. All of it
+ships in the binary — see CLAUDE.md §Assets for why on-demand delivery was dropped.
 
-In-app: **cross-fade at ~150ms** rather than hard-cutting. Two decent stills with a fade
-read as movement; a hard snap reads as a broken image loader.
+### 5.1 The pipeline
 
-Thumbnail frame choice: use whichever frame has the most distinctive silhouette — usually
-the stretched/bottom position. At 48pt, pose legibility is all you have.
+`npm run build:videos` and `npm run build:images` regenerate everything from
+`assets/new_exercises_data/`. Both read `scripts/exercise-taxonomy.mjs`, so the browse
+group, the asset-pack folder and the seeded `primaryMuscles` value cannot drift apart.
 
-### 5.1 Build the pipeline before image #3
-
-Keep one **master per frame** (1200px PNG, alpha, consistent bounding box) and generate
-both output sizes by script:
-
-```bash
-# Detail images — both frames
-for f in masters/*.png; do
-  n=$(basename "$f" .png)
-  cwebp -q 85 -alpha_q 100 -resize 600 0 "$f" -o "assets/detail/$n.webp"
-done
-
-# Thumbnails — frame 1 only
-for f in masters/*_1.png; do
-  n=$(basename "$f" _1.png)
-  cwebp -q 85 -alpha_q 100 -resize 150 0 "$f" -o "assets/thumb/$n.webp"
-done
-```
-
-Then resizing the detail view from 200pt to 240pt is a re-run, not a re-commission.
-Doing 400 images by hand through a GUI is how the project dies.
+Superseded: the original plan was two hand-made 1200px master frames per exercise sharing
+one bounding box, cross-faded at ~150ms to imply movement. The purchased library ships
+real video, so the masters, the uploader that filled them and the cross-fade are all gone.

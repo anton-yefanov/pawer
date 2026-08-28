@@ -1,7 +1,7 @@
 import { eq, inArray, sql } from 'drizzle-orm';
 
 import { asCardColor } from '@/constants/card-colors';
-import { emojiArtwork, serializeArtwork } from '@/lib/card-artwork';
+import { EXERCISES_ARTWORK, serializeArtwork } from '@/lib/card-artwork';
 import { buildSearchText } from '@/lib/exercise-search';
 
 import { newId } from './id';
@@ -14,11 +14,15 @@ import seedTemplateData from './seed/templates.json';
  * Bump when src/db/seed/exercises.json or seed/templates.json changes so
  * existing installs re-seed on next launch. Seeding is an upsert keyed on
  * `sourceId`, so bumping this never touches logged sets — exercise UUIDs are
- * derived from the upstream slug and stay stable across rebuilds (see
+ * derived from the vendor slug and stay stable across rebuilds (see
  * scripts/build-exercise-seed.mjs), and template rows keep the id they were
  * first inserted with, so `workouts.template_id` references survive.
+ *
+ * Version 12 is the one exception: the library changed source, so
+ * drizzle/0017_wipe_seeded_exercises.sql clears every app-owned exercise and
+ * the history hanging off it before this runs.
  */
-export const SEED_VERSION = 11;
+export const SEED_VERSION = 13;
 
 const SEED_VERSION_KEY = 'seed_version';
 
@@ -59,9 +63,7 @@ export async function seedIfNeeded(db: Database): Promise<{ seeded: boolean; cou
     await db
       .insert(exercises)
       .values(
-        // `instructions` stays in the seed JSON for tools/image-uploader's
-        // reference panel; the app has no column for it.
-        chunk.map(({ instructions: _instructions, ...e }) => ({
+        chunk.map((e) => ({
           ...e,
           searchText: buildSearchText(e),
           isCustom: false,
@@ -118,7 +120,7 @@ async function seedTemplates(db: Database): Promise<void> {
         name: template.name,
         position: template.position,
         color: asCardColor(template.color),
-        artwork: serializeArtwork(emojiArtwork([template.artwork])),
+        artwork: serializeArtwork(EXERCISES_ARTWORK),
         isBuiltIn: true,
       })
       .onConflictDoUpdate({

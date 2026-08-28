@@ -11,7 +11,15 @@ import {
   workoutExercises,
   workouts,
 } from '@/db/schema';
-import { type CardArtwork, serializeArtwork } from '@/lib/card-artwork';
+import {
+  artworkPhotoFile,
+  asCardArtwork,
+  type CardArtwork,
+  EXERCISES_ARTWORK,
+  photoArtwork,
+  serializeArtwork,
+} from '@/lib/card-artwork';
+import { copyCoverPhoto, deleteCoverPhoto } from '@/lib/card-photos';
 import { type SetType } from '@/lib/set-types';
 import { remapSuperset } from '@/lib/supersets';
 import { type TrackedSet } from '@/lib/tracking-types';
@@ -34,6 +42,9 @@ export type TemplateExerciseInput = {
 };
 
 const touch = () => ({ updatedAt: Date.now() });
+
+/** A new cover shows what is in the template, and keeps up as that changes. */
+const DEFAULT_ARTWORK = serializeArtwork(EXERCISES_ARTWORK);
 
 function setValues(set: TemplateSetInput, templateExerciseId: string, position: number) {
   return {
@@ -73,6 +84,7 @@ export async function createTemplate({
     name,
     position: await nextPersonalPosition(),
     isBuiltIn: false,
+    artwork: DEFAULT_ARTWORK,
   });
 
   if (exercises.length > 0) {
@@ -146,6 +158,7 @@ export async function createTemplateFromWorkout(workoutId: string): Promise<stri
     name: workout?.name?.trim() || 'Workout',
     position: await nextPersonalPosition(),
     isBuiltIn: false,
+    artwork: DEFAULT_ARTWORK,
   });
 
   if (rows.length > 0) {
@@ -278,10 +291,22 @@ export async function setTemplateAppearance(
   color: CardColor,
   artwork: CardArtwork | null,
 ): Promise<void> {
+  const previous = await db
+    .select({ artwork: templates.artwork, isBuiltIn: templates.isBuiltIn })
+    .from(templates)
+    .where(eq(templates.id, templateId))
+    .get();
+  if (!previous || previous.isBuiltIn) return;
+
   await db
     .update(templates)
     .set({ color, artwork: serializeArtwork(artwork), ...touch() })
-    .where(and(eq(templates.id, templateId), eq(templates.isBuiltIn, false)));
+    .where(eq(templates.id, templateId));
+
+  // The single write path for the column, so the only place a cover photo can
+  // be orphaned by one replacing it.
+  const dropped = artworkPhotoFile(asCardArtwork(previous.artwork));
+  if (dropped && dropped !== artworkPhotoFile(artwork)) deleteCoverPhoto(dropped);
 }
 
 /** `position` is rewritten wholesale — gaps from a soft delete never matter. */
@@ -304,6 +329,14 @@ export async function duplicateTemplate(templateId: string): Promise<string> {
     .orderBy(asc(templateExercises.position))
     .all();
 
+  // A cover photo is copied rather than shared: two rows pointing at one file
+  // would have the first delete take the other's cover with it.
+  const sourceArtwork = asCardArtwork(source.artwork);
+  const sourcePhoto = artworkPhotoFile(sourceArtwork);
+  const artwork = sourcePhoto
+    ? serializeArtwork(photoArtwork(await copyCoverPhoto(sourcePhoto)))
+    : source.artwork;
+
   const id = newId();
   await db.insert(templates).values({
     id,
@@ -313,7 +346,7 @@ export async function duplicateTemplate(templateId: string): Promise<string> {
     isBuiltIn: false,
     folderId: source.isBuiltIn ? null : source.folderId,
     color: source.color,
-    artwork: source.artwork,
+    artwork,
   });
 
   if (rows.length > 0) {
