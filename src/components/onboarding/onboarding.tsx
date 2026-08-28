@@ -15,6 +15,7 @@ import { useTheme } from '@/hooks/use-theme';
 import * as haptics from '@/lib/haptics';
 import { ensureNotificationPermission } from '@/lib/notifications';
 import { useOnboarding } from '@/lib/onboarding';
+import { track } from '@/lib/telemetry';
 import type { WeightUnit } from '@/lib/units';
 import { useWeightUnitPreference } from '@/lib/weight-unit';
 
@@ -24,6 +25,8 @@ const UNITS: { id: WeightUnit; label: string; system: string }[] = [
   { id: 'kg', label: 'kg', system: 'Metric' },
   { id: 'lb', label: 'lb', system: 'Imperial' },
 ];
+
+const STEP_NAMES = ['welcome', 'units', 'notifications'] as const;
 
 export function Onboarding() {
   const { done } = useOnboarding();
@@ -44,14 +47,26 @@ function OnboardingFlow() {
     offset.set(withTiming(-step * width, { duration: 300, easing: Easing.out(Easing.cubic) }));
   }, [offset, step, width]);
 
-  const track = useAnimatedStyle(() => ({ transform: [{ translateX: offset.get() }] }));
+  useEffect(() => {
+    track('onboarding_step_viewed', { step, name: STEP_NAMES[step] });
+  }, [step]);
+
+  const trackStyle = useAnimatedStyle(() => ({ transform: [{ translateX: offset.get() }] }));
 
   const next = () => setStep((current) => current + 1);
   const back = () => setStep((current) => current - 1);
 
+  const finish = async (notificationsGranted: boolean) => {
+    track('onboarding_completed', {
+      unit: picked ?? 'kg',
+      notifications_granted: notificationsGranted,
+    });
+    await complete();
+  };
+
   return (
     <View style={[styles.overlay, { backgroundColor: theme.surface }]}>
-      <Animated.View style={[styles.track, track]}>
+      <Animated.View style={[styles.track, trackStyle]}>
         <View style={{ width }}>
           <Step
             index={0}
@@ -63,7 +78,7 @@ function OnboardingFlow() {
             <BigButton title="Get Started" onPress={next} />
             <View style={styles.secondSlot}>
               <ThemedText type="small" themeColor="textSecondary" style={styles.note}>
-                Everything you log stays on this phone
+                Your workouts stay on this phone
               </ThemedText>
             </View>
           </Step>
@@ -113,10 +128,13 @@ function OnboardingFlow() {
               <BigButton
                 title="Allow Notifications"
                 onPress={() => {
-                  void ensureNotificationPermission().finally(() => void complete());
+                  void ensureNotificationPermission().then(
+                    (granted) => void finish(granted),
+                    () => void finish(false)
+                  );
                 }}
               />
-              <BigButton title="Not Now" variant="tinted" onPress={() => void complete()} />
+              <BigButton title="Not Now" variant="tinted" onPress={() => void finish(false)} />
             </View>
           </Step>
         </View>

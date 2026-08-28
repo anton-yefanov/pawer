@@ -26,7 +26,7 @@ export async function allowNewTemplate(isPro: boolean): Promise<boolean> {
     .get();
 
   if ((row?.total ?? 0) < FREE_TEMPLATE_LIMIT) return true;
-  return (await presentPaywall()) === 'purchased';
+  return (await presentPaywall('template_limit')) === 'purchased';
 }
 
 /** Resolves true once the user may create another custom exercise — buying counts. */
@@ -40,13 +40,13 @@ export async function allowNewCustomExercise(isPro: boolean): Promise<boolean> {
     .get();
 
   if ((row?.total ?? 0) < FREE_CUSTOM_EXERCISE_LIMIT) return true;
-  return (await presentPaywall()) === 'purchased';
+  return (await presentPaywall('custom_exercise_limit')) === 'purchased';
 }
 
 /** Resolves true once the analytics range may be shown — buying counts. */
 export async function allowPeriod(id: PeriodId, isPro: boolean): Promise<boolean> {
   if (!isPeriodLocked(id, isPro)) return true;
-  return (await presentPaywall()) === 'purchased';
+  return (await presentPaywall('analytics_period')) === 'purchased';
 }
 
 /**
@@ -60,5 +60,5 @@ export async function presentFirstWorkoutPaywall(isPro: boolean): Promise<void> 
   if (await getSetting(db, FIRST_WORKOUT_PAYWALL_KEY)) return;
 
   await setSetting(db, FIRST_WORKOUT_PAYWALL_KEY, String(Date.now()));
-  await presentPaywall();
+  await presentPaywall('first_workout');
 }

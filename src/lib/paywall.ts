@@ -1,6 +1,7 @@
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 
 import { PRO_ENTITLEMENT } from '@/lib/purchases';
+import { track } from '@/lib/telemetry';
 
 /**
  * The paywall and the Customer Center are native screens built in the
@@ -11,7 +12,27 @@ import { PRO_ENTITLEMENT } from '@/lib/purchases';
 
 export type PaywallOutcome = 'purchased' | 'dismissed' | 'error';
 
-export async function presentPaywall(): Promise<PaywallOutcome> {
+/**
+ * Which gate raised the paywall. RevenueCat's own events can't know this, and
+ * it is the whole point of measuring the placement at all — §4 of the plan bets
+ * on the first-workout one, and this is what tells us whether the bet paid.
+ */
+export type PaywallSource =
+  | 'first_workout'
+  | 'template_limit'
+  | 'custom_exercise_limit'
+  | 'analytics_period'
+  | 'settings'
+  | 'exercise_progress';
+
+export async function presentPaywall(source: PaywallSource): Promise<PaywallOutcome> {
+  track('paywall_shown', { source });
+  const outcome = await present();
+  track('paywall_result', { source, outcome });
+  return outcome;
+}
+
+async function present(): Promise<PaywallOutcome> {
   try {
     return outcomeOf(await RevenueCatUI.presentPaywall());
   } catch (error) {

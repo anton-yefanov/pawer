@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 
 import {
@@ -16,6 +17,7 @@ import { FINISH_REMINDER_OPTIONS, useFinishReminder } from '@/lib/finish-reminde
 import { notice } from '@/lib/notice';
 import { presentCustomerCenter, presentPaywall } from '@/lib/paywall';
 import { PRO_NAME, usePurchases } from '@/lib/purchases';
+import { readTelemetryOptOut, writeTelemetryOptOut } from '@/lib/telemetry-opt-out';
 import { THEME_PREFERENCES, useThemePreference } from '@/lib/theme-preference';
 import { useWeightUnit } from '@/lib/weight-unit';
 
@@ -31,6 +33,17 @@ export default function SettingsScreen() {
   const { enabled: autofillWeight, setEnabled: setAutofillWeight } = useAutofillWeightPreference();
   const { option: finishReminder } = useFinishReminder();
   const { isPro, restore } = usePurchases();
+  const [shareUsage, setShareUsage] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    readTelemetryOptOut().then((optedOut) => {
+      if (!cancelled) setShareUsage(!optedOut);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const onRestorePressed = async () => {
     const result = await restore();
@@ -58,7 +71,7 @@ export default function SettingsScreen() {
             <DisclosureRow
               label={`Upgrade to ${PRO_NAME}`}
               detail="Unlimited templates, full history, custom exercises"
-              onPress={() => void presentPaywall()}
+              onPress={() => void presentPaywall('settings')}
             />
             <Separator />
             <DisclosureRow label="Restore Purchases" onPress={() => void onRestorePressed()} />
@@ -100,6 +113,22 @@ export default function SettingsScreen() {
           onPress={() => router.push('/settings/finish-reminder')}
         />
       </Card>
+
+      <SectionTitle>Privacy</SectionTitle>
+      <Card>
+        <ToggleRow
+          label="Share Anonymous Usage Data"
+          value={shareUsage}
+          onChange={(next) => {
+            setShareUsage(next);
+            void writeTelemetryOptOut(!next);
+          }}
+        />
+      </Card>
+      <SectionFooter>
+        Your workouts, notes and photos never leave this phone. This shares only which screens and
+        features get used, with nothing that identifies you, so the app can be improved.
+      </SectionFooter>
     </ScrollView>
   );
 }

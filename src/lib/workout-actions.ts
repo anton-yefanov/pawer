@@ -6,6 +6,7 @@ import { personalRecords, sets, workoutExercises, workouts } from '@/db/schema';
 import { recordPersonalRecords } from '@/lib/personal-records';
 import type { SetType } from '@/lib/set-types';
 import { joinPlan, leavePlan, remapSuperset } from '@/lib/supersets';
+import { track } from '@/lib/telemetry';
 
 const touch = () => ({ updatedAt: Date.now() });
 
@@ -37,6 +38,7 @@ export async function startEmptyWorkout(): Promise<StartWorkoutResult> {
   const id = newId();
   const startedAt = Date.now();
   await db.insert(workouts).values({ id, startedAt, createdAt: startedAt, updatedAt: startedAt });
+  track('workout_started', { source: 'empty', exercise_count: 0 });
   return { status: 'started', workoutId: id };
 }
 
@@ -401,6 +403,7 @@ export async function repeatWorkout(workoutId: string): Promise<StartWorkoutResu
     );
   }
 
+  track('workout_started', { source: 'repeat', exercise_count: planned.length });
   return { status: 'started', workoutId: id };
 }
 

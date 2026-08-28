@@ -1,4 +1,4 @@
-import { and, asc, countDistinct, desc, eq, isNotNull, isNull, ne, sql } from 'drizzle-orm';
+import { and, asc, count, countDistinct, desc, eq, isNotNull, isNull, ne, sql } from 'drizzle-orm';
 
 import { db } from '@/db/client';
 import { exercises, personalRecords, sets, workoutExercises, workouts } from '@/db/schema';
@@ -80,6 +80,20 @@ export async function activeWorkoutForReminder() {
  * read as 23 kg of work; this must stay in step with `countsVolume` in
  * src/lib/tracking-types.ts, which the summary card uses on the same data.
  */
+/**
+ * Awaited, unlike everything else here — it answers "which workout was that,
+ * their first or their fortieth", which only makes sense at the moment one is
+ * finished and never needs to be live.
+ */
+export async function finishedWorkoutCount(): Promise<number> {
+  const row = await db
+    .select({ total: count() })
+    .from(workouts)
+    .where(and(isNotNull(workouts.finishedAt), isNull(workouts.deletedAt)))
+    .get();
+  return row?.total ?? 0;
+}
+
 export function finishedWorkoutsQuery() {
   return db
     .select({

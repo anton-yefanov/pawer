@@ -6,6 +6,7 @@ import { exercises, templateExercises } from '@/db/schema';
 import { exerciseGroup } from '@/lib/exercise-groups';
 import { deleteExercisePhoto } from '@/lib/exercise-photos';
 import { buildSearchText } from '@/lib/exercise-search';
+import { track } from '@/lib/telemetry';
 import type { TrackingType } from '@/lib/tracking-types';
 
 type ExerciseForm = {
@@ -50,6 +51,7 @@ export async function createCustomExercise(form: ExerciseForm): Promise<string> 
 
   await db.insert(exercises).values({ ...row, searchText: buildSearchText(row) });
 
+  track('custom_exercise_created', { tracking_type: form.trackingType });
   return id;
 }
 

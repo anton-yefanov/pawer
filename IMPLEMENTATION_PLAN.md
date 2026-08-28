@@ -72,7 +72,7 @@ Warn users clearly in onboarding that data is local-only.
 | Database | `expo-sqlite` + **Drizzle ORM** | Typed queries, real migrations, local-first |
 | State | Zustand | Active-workout state is the only complex bit |
 | Payments | RevenueCat + StoreKit 2 | Plus their remote paywall builder |
-| Analytics | PostHog (free tier) | Funnels + session replay |
+| Analytics | PostHog (free tier) | Funnels + retention; session replay deferred (needs a native module, and records the screen) |
 | Crash reporting | Sentry (free tier) | |
 | Notifications | `expo-notifications` | Rest timer + streak nudges |
 | Charts | Victory Native XL or react-native-skia | Post-MVP, for paid analytics |

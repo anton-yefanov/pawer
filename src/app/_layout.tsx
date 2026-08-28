@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
 import { Onboarding } from '@/components/onboarding/onboarding';
+import { TelemetrySync } from '@/components/telemetry-sync';
 import { DatabaseProvider } from '@/db/provider';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AutofillWeightProvider } from '@/lib/autofill-weight';
@@ -58,6 +59,7 @@ function ThemedApp() {
           <Onboarding />
           <PromptHost />
           <NoticeHost />
+          <TelemetrySync />
         </WorkoutActivityProvider>
       </RestTimerProvider>
     </ThemeProvider>

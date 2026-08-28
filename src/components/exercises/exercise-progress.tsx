@@ -154,7 +154,7 @@ export function ExerciseProgress({
             <Pressable
               onPress={() => {
                 haptics.tap();
-                void presentPaywall();
+                void presentPaywall('exercise_progress');
               }}
               style={({ pressed }) => [
                 styles.lock,

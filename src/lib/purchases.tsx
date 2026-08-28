@@ -5,6 +5,7 @@ import Purchases, { LOG_LEVEL, type CustomerInfo } from 'react-native-purchases'
 
 import { db } from '@/db/client';
 import { getSetting, setSetting } from '@/db/seed';
+import { distinctId, track } from '@/lib/telemetry';
 
 /**
  * The entitlement *identifier* configured in the RevenueCat dashboard, not its
@@ -82,6 +83,11 @@ export function PurchasesProvider({ children }: { children: ReactNode }) {
     void Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.ERROR);
     Purchases.configure({ apiKey: API_KEY });
 
+    // The attribute RevenueCat's PostHog integration looks for: it is what lands
+    // a renewal on the same person as the `paywall_shown` that sold it.
+    const id = distinctId();
+    if (id) void Purchases.setAttributes({ $posthogUserId: id });
+
     Purchases.addCustomerInfoUpdateListener(setCustomerInfo);
     // The listener only fires on *change*, so the state at launch has to be
     // asked for. Offline this rejects and the cached entitlement stands.
@@ -120,7 +126,9 @@ export function PurchasesProvider({ children }: { children: ReactNode }) {
       try {
         const info = await Purchases.restorePurchases();
         setCustomerInfo(info);
-        return isProActive(info) ? { status: 'restored' } : { status: 'nothing' };
+        const found = isProActive(info);
+        track('pro_restored', { found });
+        return found ? { status: 'restored' } : { status: 'nothing' };
       } catch (error) {
         return { status: 'error', message: messageOf(error) };
       }

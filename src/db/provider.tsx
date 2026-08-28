@@ -2,6 +2,8 @@ import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
 import { Suspense, useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
+import { track } from '@/lib/telemetry';
+
 import migrations from '../../drizzle/migrations';
 import { db } from './client';
 import { seedIfNeeded } from './seed';
@@ -41,6 +43,16 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
   }, [success]);
 
   const error = migrationError ?? (status.phase === 'error' ? status.error : undefined);
+
+  useEffect(() => {
+    if (!error) return;
+    // Otherwise the worst thing that can happen to a local-first app is
+    // invisible: the user sees this screen and we never hear about it.
+    track('app_error', {
+      scope: migrationError ? 'migrations' : 'seed',
+      message: error.message,
+    });
+  }, [error, migrationError]);
 
   if (error) {
     return (

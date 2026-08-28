@@ -1,7 +1,15 @@
 export type PaywallOutcome = 'purchased' | 'dismissed' | 'error';
 
+export type PaywallSource =
+  | 'first_workout'
+  | 'template_limit'
+  | 'custom_exercise_limit'
+  | 'analytics_period'
+  | 'settings'
+  | 'exercise_progress';
+
 /** `react-native-purchases-ui` is native-only; the web build never sells. */
-export async function presentPaywall(): Promise<PaywallOutcome> {
+export async function presentPaywall(_source: PaywallSource): Promise<PaywallOutcome> {
   return 'dismissed';
 }
 

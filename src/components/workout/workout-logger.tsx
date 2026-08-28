@@ -36,6 +36,7 @@ import { presentFirstWorkoutPaywall } from '@/lib/pro-gates';
 import { usePro } from '@/lib/purchases';
 import { DEFAULT_REST_SECONDS, useRestTimer } from '@/lib/rest-timer';
 import { supersetCandidates, supersetGroups } from '@/lib/supersets';
+import { track } from '@/lib/telemetry';
 import {
   addSet,
   cancelWorkout,
@@ -55,6 +56,7 @@ import {
   updateSetValues,
 } from '@/lib/workout-actions';
 import {
+  finishedWorkoutCount,
   groupBy,
   previousSetsQuery,
   workoutExercisesQuery,
@@ -201,6 +203,16 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
     if (earned.length > 0) haptics.reward();
     else haptics.complete();
     setPhase('summary');
+
+    const totals = summarise(workout, exercises, sets);
+    track('workout_finished', {
+      duration_min: Math.round(totals.durationMs / 60_000),
+      exercise_count: totals.exerciseCount,
+      set_count: totals.completedSets,
+      volume_kg: Math.round(totals.volumeKg),
+      prs_earned: earned.length,
+      workout_index: await finishedWorkoutCount(),
+    });
   };
 
   const save = async () => {
@@ -212,6 +224,9 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
   const cancel = async () => {
     await rest.cancel();
     await cancelWorkout(id);
+    // Tracked here rather than in `cancelWorkout`, which `deleteWorkout` also
+    // calls — deleting a finished session from history is not an abandonment.
+    track('workout_cancelled', { had_sets: sets.some((set) => set.completed) });
     onDone();
   };
 
