@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { Fragment } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -7,7 +6,6 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { PeriodRecordRow } from '@/lib/analytics-queries';
-import { mascotImage } from '@/lib/mascot-images';
 import { formatPrValue, isPrKind, PR_LABELS } from '@/lib/personal-records';
 import type { WeightUnit } from '@/lib/units';
 
@@ -30,7 +28,7 @@ export function RecordsCard({
   return (
     <View style={[styles.card, { backgroundColor: theme.surface }]}>
       <View style={styles.header}>
-        <ThemedText themeColor="textSecondary">Personal records</ThemedText>
+        <ThemedText themeColor="text">Personal records</ThemedText>
         {known.length > 0 && (
           <ThemedText type="small" themeColor="textSecondary">
             {known.length}
@@ -40,11 +38,10 @@ export function RecordsCard({
 
       {shown.length === 0 ? (
         <View style={styles.empty}>
-          <Image source={mascotImage('encouraging')} style={styles.mascot} contentFit="contain" />
-          <ThemedText type="small" themeColor="textSecondary" style={styles.emptyText}>
+          <ThemedText type="small" themeColor="textSecondary">
             No records this period
           </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary" style={styles.emptyText}>
+          <ThemedText type="small" themeColor="textSecondary">
             They come in waves, so keep going
           </ThemedText>
         </View>
@@ -112,15 +109,6 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   empty: {
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingBottom: Spacing.one,
-  },
-  mascot: {
-    width: 72,
-    height: 72,
-  },
-  emptyText: {
-    textAlign: 'center',
+    gap: Spacing.one,
   },
 });

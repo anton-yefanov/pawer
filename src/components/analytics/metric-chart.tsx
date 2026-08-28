@@ -30,7 +30,7 @@ export function MetricChart({
   return (
     <View style={[styles.card, { backgroundColor: theme.surface }]}>
       <View style={styles.header}>
-        <ThemedText themeColor="textSecondary">{title}</ThemedText>
+        <ThemedText themeColor="text">{title}</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           {series.label}
         </ThemedText>

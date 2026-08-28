@@ -303,8 +303,6 @@ export function buildQuickSummary(input: Input): QuickSummary {
     };
   }
 
-  // The same three conditions the tile deltas hold to, so the paragraph never
-  // claims a comparison the numbers above it decline to draw.
   if (!input.comparable) {
     return {
       kind: 'placeholder',
