@@ -2,7 +2,6 @@
 
 **Platform:** iOS (Expo / React Native)
 **Model:** Freemium, subscription via RevenueCat
-**Differentiator:** Illustrated cat mascot
 **Target:** Ship MVP in 8–10 weeks, solo
 
 ---
@@ -12,9 +11,6 @@
 Strong, Hevy, and a dozen others already do workout logging well. We will not win on
 features. Competitor pricing sets our ceiling: Hevy Pro is $2.99/mo, $23.99/yr, $74.99
 lifetime; Strong PRO is $4.99/mo, $29.99/yr, $99.99 lifetime.
-
-**The only durable differentiator is the mascot.** Every scoping decision below defers
-to that. Ship narrow, ship polished, ship the cat.
 
 Two rules that govern everything:
 
@@ -34,7 +30,6 @@ Two rules that govern everything:
 - Rest timer with background notification
 - Workout history list + per-exercise "last time" shown inline while logging
 - PR detection (heaviest set, best estimated 1RM)
-- Mascot reactions at emotional beats
 - Paywall + subscription
 
 ### Explicitly out of v1
@@ -141,7 +136,6 @@ layer only. Mixing storage units is a data-corruption bug you will not notice fo
 - 3 custom exercises
 - Rest timer, PR notifications
 - Full workout history
-- Base mascot
 
 ### Paid tier
 

@@ -62,8 +62,8 @@ type IconEntry = {
 /**
  * The one place a glyph is named. Keys are SF-style because iOS is the
  * reference platform, but each entry carries all three renderings — Android
- * draws Phosphor, whose rounded terminals sit with the mascot art and the
- * bundled Nunito face rather than against them.
+ * draws Phosphor, whose rounded terminals sit with the bundled Nunito face
+ * rather than against it.
  */
 const ICONS = {
   'arrow.down.right': {

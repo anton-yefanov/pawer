@@ -24,7 +24,7 @@ npm run typecheck    # tsc --noEmit
 npm run db:generate      # drizzle-kit generate — after any src/db/schema.ts edit
 npm run build:seed       # rebuild src/db/seed/exercises.json from the purchased metadata.json
 npm run build:emoji      # rebuild src/constants/emoji-data.ts from emoji-datasource
-npm run build:images     # vendor posters + mascot masters -> shipped webp (see §Assets)
+npm run build:images     # vendor posters -> shipped webp (see §Assets)
 npm run build:videos     # vendor mp4 -> assets/exercise-videos/, ~45 min (see §Assets)
 npm run videos:pull      # mirror the encoded clips down from Vercel Blob — needed before prebuild
 npm run videos:push      # the other direction, after a re-encode
@@ -64,7 +64,7 @@ These are cheap now and painful to retrofit — hold them for every new table:
 
 ### Assets
 
-Illustrations are never referenced by path from a screen. `src/lib/exercise-media.ts` and `src/lib/mascot-images.ts` are the only resolvers (Metro needs static `require` literals, so any real lookup map must be generated or written out). Mascot art is still placeholders, and is now only the analytics cards — card covers carry emoji instead.
+Illustrations are never referenced by path from a screen. `src/lib/exercise-media.ts` is the only resolver (Metro needs static `require` literals, so any real lookup map must be generated or written out).
 
 **Every exercise is a video, and the video ships in the app.** The purchased library at `assets/new_exercises_data/` ships 412 clips, 412 posters and `metadata.json`; the vendor originals are 889 MB and gitignored. `npm run build:videos` re-encodes them to `assets/exercise-videos/<tag>/<slug>.mp4` — HEVC 1084×600 CRF 26, no audio, ~106 MB for the set — and `npm run build:images` copies the posters and cuts a 150px square thumb from each, writing `src/lib/exercise-media-map.ts` as it goes.
 
@@ -77,8 +77,6 @@ The posters ship too, at 3.7 MB. A clip needs a moment to produce its first fram
 **Vercel Blob is the store, not git.** `assets/exercise-videos/` is gitignored; `npm run videos:push` mirrors it into the `pawer-blob` store and `npm run videos:pull` brings it back. A clean clone needs the pull before it can bundle at all now, not just before prebuild — a missing clip is a Metro resolution error on the generated map. `npm run build:images` warns for each one it can't find, which is the earlier and friendlier version of the same failure.
 
 `scripts/exercise-taxonomy.mjs` is the one place the vendor's vocabulary becomes ours: it maps the sixteen muscles onto the twelve browse groups and decides which pack a clip ships in. The seed builder, the video builder and the image builder all read it, so a group, a folder and a `primaryMuscles` value cannot disagree.
-
-Mascot webp is still generated from `assets/masters/mascot/` by `npm run build:images` — edit the master and re-run, never edit `assets/mascot/` directly.
 
 ### Live Activity
 

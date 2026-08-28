@@ -196,7 +196,7 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
     await finishWorkout(id);
     // Read the rows the finish just wrote rather than the live query, which
     // hasn't re-rendered yet — a PR outranks the plain finish buzz, and the
-    // difference has to land with the mascot, not a tick later.
+    // difference has to land with the haptic, not a tick later.
     const earned = await workoutPersonalRecordsQuery(id);
     if (earned.length > 0) haptics.reward();
     else haptics.complete();

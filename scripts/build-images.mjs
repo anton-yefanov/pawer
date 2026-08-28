@@ -1,16 +1,14 @@
 #!/usr/bin/env node
 /**
- * Vendor stills and mascot masters → the WebP the app bundles.
+ * Vendor stills → the WebP the app bundles.
  *
  *   node scripts/build-images.mjs
  *
  * Input  assets/new_exercises_data/posters/<slug>.webp   720x402, the video's first frame
- *        assets/masters/mascot/<state>.png               1024x1024, PNG, alpha
  *
  * Output assets/exercises/poster/<slug>.webp   720x402  the detail sheet's still
  *        assets/exercises/thumb/<slug>.webp    150x150  centre-cropped, the list row
  *        src/lib/exercise-media-map.ts         the require map screens read
- *        assets/mascot/<state>.webp            512x512
  *
  * The poster is what a row and a detail sheet draw before the clip has its
  * first frame, so it ships even though the clip ships beside it.
@@ -19,8 +17,8 @@
  * size of optimised PNG, natively decoded by expo-image, and unlike JPEG it
  * keeps transparency and does not smear crisp outlines.
  */
-import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { basename, dirname, resolve } from 'node:path';
+import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
@@ -29,8 +27,7 @@ import { METADATA_PATH, POSTERS_DIR, groupOf } from './exercise-taxonomy.mjs';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 const WEBP = { quality: 85, alphaQuality: 100, effort: 6 };
-const SIZES = { thumb: 150, mascot: 512 };
-const MASCOT_MASTER = 1024;
+const SIZES = { thumb: 150 };
 
 const warnings = [];
 let bytes = 0;
@@ -76,31 +73,6 @@ for (const entry of meta) {
 }
 
 writeExerciseMediaMap(meta);
-
-// --- Mascot ----------------------------------------------------------------
-const mascotMasters = resolve(ROOT, 'assets/masters/mascot');
-const mascotFiles = (() => {
-  try {
-    return readdirSync(mascotMasters).filter((f) => f.toLowerCase().endsWith('.png')).sort();
-  } catch {
-    return [];
-  }
-})();
-
-for (const file of mascotFiles) {
-  const src = resolve(mascotMasters, file);
-  const { width, height } = await sharp(src).metadata();
-  if (width !== height) {
-    warnings.push(`${file}: ${width}x${height} is not square`);
-  } else if (width !== MASCOT_MASTER) {
-    warnings.push(`${file}: ${width}px master, expected ${MASCOT_MASTER}px`);
-  }
-  const buf = await sharp(src)
-    .resize(SIZES.mascot, SIZES.mascot, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
-    .webp(WEBP)
-    .toBuffer();
-  write(resolve(ROOT, `assets/mascot/${basename(file, '.png')}.webp`), buf);
-}
 
 console.log(`Wrote ${count} WebP files, ${(bytes / 1024 / 1024).toFixed(1)} MB total`);
 if (warnings.length > 0) {
