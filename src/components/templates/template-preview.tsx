@@ -86,7 +86,7 @@ export function TemplatePreview({ id }: { id: string }) {
                 params: { id: exercise.exerciseId },
               })
             }>
-            <ExerciseThumb sourceId={exercise.sourceId} />
+            <ExerciseThumb art={exercise} />
             <View style={styles.rowText}>
               <ThemedText numberOfLines={1}>
                 {Math.max(1, exercise.setCount)} × {exercise.name}

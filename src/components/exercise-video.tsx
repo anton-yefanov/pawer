@@ -5,15 +5,15 @@ import { StyleSheet, View } from 'react-native';
 
 import { SHEET_INNER_RADIUS } from '@/constants/sheet';
 import { useTheme } from '@/hooks/use-theme';
-import { exercisePoster, exerciseVideo } from '@/lib/exercise-media';
+import { type ExerciseArt, exercisePoster, exerciseVideo } from '@/lib/exercise-media';
+import { CLIP_ASPECT } from '@/lib/exercise-photos';
 
-/** Every clip is encoded at 1084x600 — see scripts/build-videos.mjs. */
-const ASPECT = 1084 / 600;
-
-export function ExerciseVideo({ sourceId }: { sourceId: string | null }) {
+/** A custom exercise has no clip, only the photo the user picked, so the still
+ *  underneath is the whole frame and no `VideoView` is ever mounted. */
+export function ExerciseVideo({ art }: { art: ExerciseArt }) {
   const theme = useTheme();
-  const poster = exercisePoster(sourceId);
-  const video = exerciseVideo(sourceId);
+  const poster = exercisePoster(art);
+  const video = exerciseVideo(art.sourceId);
   const [firstFrame, setFirstFrame] = useState(false);
 
   const player = useVideoPlayer(video, (player) => {
@@ -46,7 +46,7 @@ export function ExerciseVideo({ sourceId }: { sourceId: string | null }) {
 
 const styles = StyleSheet.create({
   frame: {
-    aspectRatio: ASPECT,
+    aspectRatio: CLIP_ASPECT,
     borderRadius: SHEET_INNER_RADIUS,
     overflow: 'hidden',
   },

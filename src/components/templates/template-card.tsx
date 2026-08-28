@@ -6,6 +6,7 @@ import { DraggableCell } from '@/components/templates/draggable-cell';
 import { CARD_BORDER, cardSlot, COVER_RATIO, GridCard } from '@/components/templates/grid-card';
 import { type CardColor } from '@/constants/card-colors';
 import { type CardArtwork } from '@/lib/card-artwork';
+import { type ExerciseArt } from '@/lib/exercise-media';
 
 export type TemplateCardData = {
   id: string;
@@ -15,7 +16,7 @@ export type TemplateCardData = {
   color: CardColor | null;
   artwork: CardArtwork | null;
   exerciseNames: readonly string[];
-  exerciseSourceIds: readonly (string | null)[];
+  exerciseArt: readonly ExerciseArt[];
 };
 
 type Props = {
@@ -40,7 +41,7 @@ export function TemplateCard({ template, width, index, draggable = false }: Prop
         <ArtworkLayer
           artwork={template.artwork}
           coverHeight={cardWidth * COVER_RATIO}
-          exerciseSourceIds={template.exerciseSourceIds}
+          exerciseArt={template.exerciseArt}
         />
       }
     />

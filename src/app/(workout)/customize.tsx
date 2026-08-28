@@ -27,6 +27,7 @@ import {
   photoArtwork,
 } from '@/lib/card-artwork';
 import { deleteCoverPhoto, importCoverPhoto } from '@/lib/card-photos';
+import { type ExerciseArt } from '@/lib/exercise-media';
 import { setFolderColor } from '@/lib/folder-actions';
 import { setTemplateAppearance } from '@/lib/template-actions';
 import { folderQuery, templateExercisesQuery, templateQuery } from '@/lib/template-queries';
@@ -62,7 +63,8 @@ export default function CustomizeScreen() {
   const mode = pickedMode ?? modeOf(saved);
   const emojis = pickedEmojis ?? (saved?.kind === 'emoji' ? saved.emojis : EMPTY);
   const photo = pickedPhoto ?? (saved?.kind === 'photo' ? saved.file : null);
-  const sourceIds = exerciseRows?.map((exercise) => exercise.sourceId) ?? EMPTY_IDS;
+  const exerciseArt =
+    exerciseRows?.map(({ sourceId, imageFile }) => ({ sourceId, imageFile })) ?? EMPTY_ART;
 
   if (isFolder) {
     const select = (next: CardColor) => {
@@ -159,7 +161,7 @@ export default function CustomizeScreen() {
           <ArtworkLayer
             artwork={artwork}
             coverHeight={coverWidth * COVER_RATIO}
-            exerciseSourceIds={sourceIds}
+            exerciseArt={exerciseArt}
           />
         </View>
       </View>
@@ -183,7 +185,7 @@ export default function CustomizeScreen() {
         <ScrollView {...SHEET_SCROLL} contentContainerStyle={styles.content}>
           {header}
           {mode === 'exercises' ? (
-            sourceIds.length === 0 && (
+            exerciseArt.length === 0 && (
               <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
                 Exercises previews will be shown on template cover when you add them
               </ThemedText>
@@ -219,7 +221,7 @@ function modeOf(artwork: CardArtwork | null): ArtworkMode {
 
 /** Stable identity, so an untouched sheet doesn't rebuild its artwork each render. */
 const EMPTY: readonly string[] = [];
-const EMPTY_IDS: readonly (string | null)[] = [];
+const EMPTY_ART: readonly ExerciseArt[] = [];
 
 const styles = StyleSheet.create({
   content: {

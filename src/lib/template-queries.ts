@@ -40,6 +40,7 @@ export function templateCardExercisesQuery() {
       position: templateExercises.position,
       name: exercises.name,
       sourceId: exercises.sourceId,
+      imageFile: exercises.imageFile,
     })
     .from(templateExercises)
     .innerJoin(exercises, eq(templateExercises.exerciseId, exercises.id))
@@ -60,6 +61,7 @@ export function templateExercisesQuery(templateId: string) {
         WHERE ts.template_exercise_id = ${templateExercises.id} AND ts.deleted_at IS NULL)`,
       name: exercises.name,
       sourceId: exercises.sourceId,
+      imageFile: exercises.imageFile,
       trackingType: exercises.trackingType,
       primaryMuscles: exercises.primaryMuscles,
     })

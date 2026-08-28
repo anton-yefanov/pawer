@@ -81,6 +81,14 @@ export const exercises = sqliteTable(
 
     isCustom: integer('is_custom', { mode: 'boolean' }).notNull().default(false),
 
+    /**
+     * A photo the user picked for their own exercise, standing in for the clip a
+     * seeded one ships with. A bare filename under `Paths.document/exercise-photos`
+     * — iOS rewrites the container's path on every reinstall, so an absolute one
+     * goes stale.
+     */
+    imageFile: text('image_file'),
+
     ...timestamps,
   },
   (t) => [

@@ -48,16 +48,13 @@ export const TRACKING: Record<TrackingType, Config> = {
   distance_duration: { fields: ['distance', 'duration'], weightSign: '', countsVolume: false },
 };
 
-export const TRACKING_LABELS: Record<TrackingType, { title: string; examples: string }> = {
-  weight_reps: { title: 'Weight, Reps', examples: 'Bench Press, Dumbbell Row, Cable Crossovers' },
-  weighted_bodyweight: { title: 'Bodyweight + Weight, Reps', examples: 'Weighted Dips, Pull Up' },
-  assisted_bodyweight: {
-    title: 'Assisted Bodyweight, Reps',
-    examples: 'Assisted Dips, Assisted Chin Up',
-  },
-  bodyweight_reps: { title: 'Reps', examples: 'Push Ups, Bodyweight Squat' },
-  duration: { title: 'Time', examples: 'Front Plank, Wall Sits' },
-  distance_duration: { title: 'Distance, Time', examples: 'Running, Rowing, Cycling' },
+export const TRACKING_LABELS: Record<TrackingType, { title: string }> = {
+  weight_reps: { title: 'Weight, Reps' },
+  weighted_bodyweight: { title: 'Bodyweight + Weight, Reps' },
+  assisted_bodyweight: { title: 'Assisted Bodyweight, Reps' },
+  bodyweight_reps: { title: 'Reps' },
+  duration: { title: 'Time' },
+  distance_duration: { title: 'Distance, Time' },
 };
 
 /** Order and grouping of the exercise-type picker. */

@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import {
@@ -12,6 +12,7 @@ import {
   SectionTitle,
   Separator,
 } from '@/components/grouped-list';
+import { ExerciseThumbnailField } from '@/components/exercises/exercise-thumbnail-field';
 import { KeyboardDismissButton } from '@/components/keyboard-dismiss';
 import { KeyboardScrollView } from '@/components/keyboard-scroll-view';
 import { SheetHeader } from '@/components/sheet-header';
@@ -28,7 +29,9 @@ import { ThemedTextInput } from '@/components/themed-text-input';
 import { useTheme } from '@/hooks/use-theme';
 import { createCustomExercise, updateCustomExercise } from '@/lib/exercise-actions';
 import { EXERCISE_GROUPS, exerciseGroup, groupOfExercise } from '@/lib/exercise-groups';
+import { deleteExercisePhoto, importExercisePhoto } from '@/lib/exercise-photos';
 import { announceCustomExercise } from '@/lib/new-exercise-handoff';
+import { pickPhoto } from '@/lib/pick-photo';
 import {
   TRACKING_LABELS,
   TRACKING_SECTIONS,
@@ -62,14 +65,47 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
   // make — so both are settled at creation and read-only afterwards.
   const locked = exercise !== undefined;
   const [missingGroup, setMissingGroup] = useState(false);
+  // The thumbnail is not locked: unlike category and tracking type it says
+  // nothing about what a logged set meant.
+  const [photo, setPhoto] = useState<string | null>(exercise?.imageFile ?? null);
+  const [importing, setImporting] = useState(false);
+  // Every file this sheet imported, and whether one of them was committed. The
+  // sheet is swipe-dismissible, so unmount is the only place that catches every
+  // way out of it.
+  const imported = useRef<string[]>([]);
+  const saved = useRef<string | null>(null);
   const [nameRef, nameAutoFocus] = useSheetAutoFocus(!exercise);
+
+  useEffect(
+    () => () => {
+      for (const file of imported.current) {
+        if (file !== saved.current) deleteExercisePhoto(file);
+      }
+    },
+    []
+  );
+
+  const pick = async () => {
+    const uri = await pickPhoto();
+    if (uri === null) return;
+
+    setImporting(true);
+    try {
+      const file = await importExercisePhoto(uri);
+      imported.current.push(file);
+      setPhoto(file);
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const save = async () => {
     if (!group) {
       setMissingGroup(true);
       return;
     }
-    const form = { name, group, trackingType };
+    saved.current = photo;
+    const form = { name, group, trackingType, imageFile: photo };
     if (exercise) await updateCustomExercise(exercise.id, form);
     else announceCustomExercise(await createCustomExercise(form));
     router.back();
@@ -102,6 +138,15 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
         keyboardDismissMode="on-drag">
         {step === 'form' && (
           <>
+            <View style={styles.thumbnail}>
+              <ExerciseThumbnailField
+                file={photo}
+                busy={importing}
+                onPick={() => void pick()}
+                onRemove={() => setPhoto(null)}
+              />
+            </View>
+
             <Card>
               <View style={groupedStyles.row}>
                 <ThemedTextInput
@@ -135,7 +180,6 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
             <Card>
               <DisclosureRow
                 label={TRACKING_LABELS[trackingType].title}
-                detail={TRACKING_LABELS[trackingType].examples}
                 chevron={!locked}
                 onPress={() => {
                   if (!locked) setStep('type');
@@ -180,7 +224,6 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
                     {index > 0 && <Separator />}
                     <PickRow
                       label={TRACKING_LABELS[type].title}
-                      detail={`Examples: ${TRACKING_LABELS[type].examples}`}
                       selected={type === trackingType}
                       onPress={() => {
                         setTrackingType(type);
@@ -209,6 +252,9 @@ const styles = StyleSheet.create({
   content: {
     paddingTop: Spacing.three,
     paddingBottom: SHEET_BOTTOM_INSET + Spacing.four,
+  },
+  thumbnail: {
+    marginBottom: Spacing.three,
   },
   input: {
     flex: 1,

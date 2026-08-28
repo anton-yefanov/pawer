@@ -416,7 +416,7 @@ function ExerciseRow({
   const body = ({ pressed }: { pressed: boolean }) => (
     <View
       style={[styles.row, { backgroundColor: pressed ? theme.backgroundSelected : theme.surface }]}>
-      <ExerciseThumb sourceId={exercise.sourceId} />
+      <ExerciseThumb art={exercise} />
       <View style={styles.rowText}>
         <ThemedText numberOfLines={1}>{exercise.name}</ThemedText>
         {detail !== '' && (

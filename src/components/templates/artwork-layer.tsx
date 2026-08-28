@@ -6,7 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { type CardArtwork } from '@/lib/card-artwork';
 import { coverPhotoSource } from '@/lib/card-photos';
-import { exerciseThumbnail } from '@/lib/exercise-media';
+import { type ExerciseArt, exerciseThumbnail } from '@/lib/exercise-media';
 
 /**
  * The artwork a card cover draws over its gradient. The only place the one/two/
@@ -38,11 +38,11 @@ const COUNT_SCALE = 0.34;
 export function ArtworkLayer({
   artwork,
   coverHeight,
-  exerciseSourceIds,
+  exerciseArt,
 }: {
   artwork: CardArtwork | null;
   coverHeight: number;
-  exerciseSourceIds?: readonly (string | null)[];
+  exerciseArt?: readonly ExerciseArt[];
 }) {
   if (!artwork) return null;
 
@@ -59,7 +59,7 @@ export function ArtworkLayer({
   }
 
   if (artwork.kind === 'exercises') {
-    return <ExerciseArtwork sourceIds={exerciseSourceIds ?? []} coverHeight={coverHeight} />;
+    return <ExerciseArtwork art={exerciseArt ?? []} coverHeight={coverHeight} />;
   }
 
   const size = coverHeight * EMOJI_SCALE[artwork.emojis.length - 1];
@@ -75,16 +75,16 @@ export function ArtworkLayer({
 
 /** An empty template is a bare gradient — the cover fills itself in as exercises land. */
 function ExerciseArtwork({
-  sourceIds,
+  art,
   coverHeight,
 }: {
-  sourceIds: readonly (string | null)[];
+  art: readonly ExerciseArt[];
   coverHeight: number;
 }) {
-  if (sourceIds.length === 0) return null;
+  if (art.length === 0) return null;
 
-  const overflow = Math.max(sourceIds.length - MAX_THUMBS, 0);
-  const cells = Math.min(sourceIds.length, MAX_THUMBS + (overflow > 0 ? 1 : 0));
+  const overflow = Math.max(art.length - MAX_THUMBS, 0);
+  const cells = Math.min(art.length, MAX_THUMBS + (overflow > 0 ? 1 : 0));
   const size = coverHeight * EXERCISE_SCALE[cells - 1];
   const gap = coverHeight * EXERCISE_GAP_SCALE;
 
@@ -101,7 +101,7 @@ function ExerciseArtwork({
               return overflow > 0 && slot === cells - 1 ? (
                 <OverflowCell key={slot} count={overflow} size={size} />
               ) : (
-                <ThumbCell key={slot} sourceId={sourceIds[slot]} size={size} />
+                <ThumbCell key={slot} art={art[slot]} size={size} />
               );
             })}
           </View>
@@ -111,9 +111,9 @@ function ExerciseArtwork({
   );
 }
 
-/** A custom exercise has no bundled art, so its circle stays an empty ring. */
-function ThumbCell({ sourceId, size }: { sourceId: string | null; size: number }) {
-  const thumb = exerciseThumbnail(sourceId ?? null);
+/** A custom exercise with no photo of its own stays an empty ring. */
+function ThumbCell({ art, size }: { art: ExerciseArt; size: number }) {
+  const thumb = exerciseThumbnail(art);
 
   return (
     <View style={[circle(size), styles.cell]}>

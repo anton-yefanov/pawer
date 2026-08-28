@@ -87,7 +87,7 @@ export function ExerciseDetail({ id, editHref }: { id: string; editHref?: Href }
               </View>
             ) : null}
 
-            <ExerciseVideo sourceId={exercise.sourceId} />
+            <ExerciseVideo art={exercise} />
 
             <ThemedText style={styles.name}>{exercise.name}</ThemedText>
 

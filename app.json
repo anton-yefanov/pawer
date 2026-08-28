@@ -78,13 +78,19 @@
       [
         "expo-media-library",
         {
-          "photosPermission": "Allow pawer to show your photos so you can use one as a template cover.",
+          "photosPermission": "Allow pawer to show your photos so you can use one as a template cover or an exercise thumbnail.",
           "savePhotosPermission": false,
           "isAccessMediaLocationEnabled": false,
           "preventAutomaticLimitedAccessAlert": true,
           "granularPermissions": [
             "photo"
           ]
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow pawer to show your photos so you can use one as a template cover or an exercise thumbnail."
         }
       ],
       "./plugins/with-no-aps-environment",

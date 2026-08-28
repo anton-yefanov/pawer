@@ -1,0 +1,1 @@
+ALTER TABLE `exercises` ADD `image_file` text;
