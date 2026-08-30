@@ -333,7 +333,7 @@ export function buildQuickSummary(input: Input): QuickSummary {
     });
   }
 
-  segments.push({ text: ` — ${closing(input)}` });
+  segments.push({ text: `, ${closing(input)}` });
 
   return { kind: 'insights', segments };
 }

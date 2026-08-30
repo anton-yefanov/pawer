@@ -18,6 +18,7 @@ export function presentWorkoutSummary(
   id: string,
   pathname: '/summary' | '/history/workout-summary',
 ) {
-  router.dismissAll();
-  setTimeout(() => router.push({ pathname, params: { id } }), DISMISS_MS);
+  const dismissing = router.canDismiss();
+  if (dismissing) router.dismissAll();
+  setTimeout(() => router.push({ pathname, params: { id } }), dismissing ? DISMISS_MS : 0);
 }

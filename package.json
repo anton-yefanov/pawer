@@ -79,7 +79,8 @@
     "postinstall": "patch-package",
     "build:videos": "node scripts/build-videos.mjs",
     "videos:push": "node scripts/videos-push.mjs",
-    "videos:pull": "node scripts/videos-pull.mjs"
+    "videos:pull": "node scripts/videos-pull.mjs",
+    "seed:demo": "node scripts/seed-demo-data.mjs"
   },
   "private": true
 }

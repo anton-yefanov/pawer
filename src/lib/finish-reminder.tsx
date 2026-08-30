@@ -7,7 +7,7 @@ import { useAppStateActive, useAppStateBackground } from '@/hooks/use-app-state-
 import {
   addNotificationResponseListener,
   cancelScheduledNotification,
-  getLastNotificationResponse,
+  takeLastNotificationResponse,
   readFinishReminderWorkoutId,
   scheduleNotification,
   FINISH_REMINDER_DATA_TYPE,
@@ -111,7 +111,7 @@ export function FinishReminderProvider({ children }: { children: ReactNode }) {
       setTimeout(() => router.navigate({ pathname: '/active', params: { id: workoutId } }), 0);
     };
 
-    void getLastNotificationResponse().then((response) => {
+    void takeLastNotificationResponse().then((response) => {
       const id = readFinishReminderWorkoutId(response);
       if (id) void open(id);
     });

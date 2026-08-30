@@ -70,6 +70,7 @@ type TelemetryEvents = {
   paywall_result: { source: PaywallSource; outcome: PaywallOutcome };
   pro_restored: { found: boolean };
   support_message_sent: { sent: boolean; length: number };
+  review_opened: { source: 'settings' };
   app_error: { scope: string; message: string };
 };
 

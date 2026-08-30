@@ -6,26 +6,71 @@
     {
       "layers" : [
         {
-          "fill-specializations" : [
-            {
-              "value" : {
-                "automatic-gradient" : "extended-gray:1.00000,1.00000"
-              }
-            },
-            {
-              "appearance" : "dark",
-              "value" : {
-                "automatic-gradient" : "extended-gray:0.00000,1.00000"
+          "fill" : {
+            "solid" : "extended-srgb:0.00000,0.53333,1.00000,1.00000"
+          },
+          "glass" : true,
+          "image-name" : "Subtract.svg",
+          "name" : "Subtract",
+          "position" : {
+            "scale" : 0.5,
+            "translation-in-points" : [
+              49.3505450124552,
+              0
+            ]
+          }
+        }
+      ],
+      "name" : "Group",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+        {
+          "fill" : {
+            "linear-gradient" : [
+              "display-p3:0.51919,0.78258,1.02615,1.00000",
+              "display-p3:0.36669,0.68026,0.97021,1.00000"
+            ],
+            "orientation" : {
+              "start" : {
+                "x" : 0.5,
+                "y" : 0
+              },
+              "stop" : {
+                "x" : 0.5,
+                "y" : 0.49999999999999983
               }
             }
-          ],
-          "image-name" : "Vector (1).svg",
-          "name" : "Vector (1)",
+          },
+          "image-name" : "Ellipse 3 (2).svg",
+          "name" : "Ellipse 3 (2)",
           "position" : {
-            "scale" : 15,
+            "scale" : 0.5,
             "translation-in-points" : [
-              6.8863358668578485,
-              123.24942580376467
+              224.81551398436943,
+              0
+            ]
+          }
+        },
+        {
+          "fill" : {
+            "automatic-gradient" : "extended-srgb:0.00000,0.53333,1.00000,1.00000"
+          },
+          "image-name" : "Union (1).svg",
+          "name" : "Union (1)",
+          "position" : {
+            "scale" : 0.5,
+            "translation-in-points" : [
+              330.81551398436943,
+              0
             ]
           }
         }
@@ -42,26 +87,43 @@
     {
       "layers" : [
         {
-          "fill-specializations" : [
-            {
-              "value" : {
-                "automatic-gradient" : "extended-gray:0.00000,1.00000"
-              }
-            },
-            {
-              "appearance" : "dark",
-              "value" : {
-                "automatic-gradient" : "extended-gray:1.00000,1.00000"
+          "fill" : {
+            "linear-gradient" : [
+              "display-p3:0.54832,0.78557,1.02253,1.00000",
+              "display-p3:0.40330,0.68573,0.96783,1.00000"
+            ],
+            "orientation" : {
+              "start" : {
+                "x" : 0.5,
+                "y" : 0
+              },
+              "stop" : {
+                "x" : 0.5,
+                "y" : 0.5
               }
             }
-          ],
-          "image-name" : "Vector.svg",
-          "name" : "Vector",
+          },
+          "image-name" : "Ellipse 3 (2).svg",
+          "name" : "Ellipse 3 (2)",
           "position" : {
-            "scale" : 45,
+            "scale" : 0.5,
             "translation-in-points" : [
-              2.2954452889525783,
-              11.25
+              -339.0035139843694,
+              0
+            ]
+          }
+        },
+        {
+          "fill" : {
+            "automatic-gradient" : "extended-srgb:0.00000,0.53333,1.00000,1.00000"
+          },
+          "image-name" : "Union (1).svg",
+          "name" : "Union (1)",
+          "position" : {
+            "scale" : 0.5,
+            "translation-in-points" : [
+              -233.00351398436942,
+              0
             ]
           }
         }

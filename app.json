@@ -10,6 +10,7 @@
     "ios": {
       "icon": "./assets/pawer.icon",
       "bundleIdentifier": "com.antonyefanov.pawer",
+      "appleTeamId": "CDG4MY328T",
       "privacyManifests": {
         "NSPrivacyTracking": false,
         "NSPrivacyCollectedDataTypes": [
@@ -106,7 +107,7 @@
         {
           "backgroundColor": "#208AEF",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 220
         }
       ],
       [
@@ -170,7 +171,7 @@
       [
         "expo-widgets",
         {
-          "groupIdentifier": "group.com.antonyefanov.pawer",
+          "groupIdentifier": "group.com.antdream.pawer",
           "enablePushNotifications": false,
           "widgets": []
         }

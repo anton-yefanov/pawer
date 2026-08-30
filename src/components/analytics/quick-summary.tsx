@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 14,
     padding: Spacing.three,
-    gap: Spacing.three,
+    gap: Spacing.two,
   },
   lines: {
     gap: Spacing.one,

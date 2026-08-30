@@ -9,6 +9,10 @@ export function AnimatedSplashOverlay() {
   return null;
 }
 
+export function SplashReady() {
+  return null;
+}
+
 const keyframe = new Keyframe({
   0: {
     transform: [{ scale: 0 }],

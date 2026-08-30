@@ -177,9 +177,16 @@ export function addNotificationResponseListener(
   return Notifications.addNotificationResponseReceivedListener(callback);
 }
 
-/** The tap that cold-started the app, which the listener above is too late for. */
-export function getLastNotificationResponse() {
-  return Notifications.getLastNotificationResponseAsync();
+/**
+ * The tap that cold-started the app, which the listener above is too late for.
+ * iOS keeps handing back the same response on every subsequent launch, so it is
+ * consumed here: read once, then cleared, or a single tap re-opens the workout
+ * forever.
+ */
+export async function takeLastNotificationResponse() {
+  const response = await Notifications.getLastNotificationResponseAsync();
+  if (response) Notifications.clearLastNotificationResponse();
+  return response;
 }
 
 export function readFinishReminderWorkoutId(

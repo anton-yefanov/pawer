@@ -3,7 +3,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { AnimatedSplashOverlay, SplashReady } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
 import { Onboarding } from '@/components/onboarding/onboarding';
 import { TelemetrySync } from '@/components/telemetry-sync';
@@ -50,6 +50,7 @@ function TabLayout() {
           </PurchasesProvider>
         </DatabaseProvider>
       </KeyboardProvider>
+      <AnimatedSplashOverlay />
     </GestureHandlerRootView>
   );
 }
@@ -62,7 +63,7 @@ function ThemedApp() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <RestTimerProvider>
         <WorkoutActivityProvider>
-          <AnimatedSplashOverlay />
+          <SplashReady />
           <AppTabs />
           <Onboarding />
           <PromptHost />
