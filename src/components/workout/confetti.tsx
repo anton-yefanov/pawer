@@ -36,6 +36,9 @@ const SPEED = 4;
 const GRAVITY = 2;
 const DRAG = { horizontal: 8, vertical: 1.5 };
 
+/** Long enough for the sheet to have settled before anything is fired at it. */
+export const CONFETTI_DELAY_MS = 200;
+
 /**
  * Two cannons fired from the sheet's bottom corners, each aimed at the far top
  * one so the two streams cross diagonally over the stats, and over before the
@@ -43,9 +46,6 @@ const DRAG = { horizontal: 8, vertical: 1.5 };
  * construction, so it drops in as a sibling of the content it decorates. Reduce
  * Motion is honoured by the library itself.
  */
-/** Long enough for the sheet to have settled before anything is fired at it. */
-export const CONFETTI_DELAY_MS = 200;
-
 export function WorkoutConfetti() {
   return (
     <CannonConfetti
