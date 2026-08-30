@@ -25,6 +25,11 @@ import * as haptics from "@/lib/haptics";
 
 const COLUMNS = 2;
 const GAP = Spacing.two;
+/**
+ * Room for a card's shadow inside the collapsible's clip box. Cancelled by an
+ * equal negative margin, so the grid sits exactly where it did without it.
+ */
+const BLEED = 12;
 
 type Cell =
   | { kind: "folder"; key: string; folder: FolderCardData }
@@ -79,7 +84,7 @@ export function TemplateSection({
   return (
     <View style={styles.section}>
       <View style={styles.header}>
-        <ThemedText type="subtitle">{title}</ThemedText>
+        <ThemedText type="title2">{title}</ThemedText>
         {showAdd && <AddMenu />}
         {collapsible && (
           <CollapseToggle
@@ -157,7 +162,7 @@ function Collapsible({
   children: React.ReactNode;
 }) {
   const style = useAnimatedStyle(() => ({
-    height: withTiming(collapsed ? 0 : height, { duration: 240 }),
+    height: withTiming(collapsed ? 0 : height + BLEED * 2, { duration: 240 }),
     opacity: withTiming(collapsed ? 0 : 1, { duration: 240 }),
   }));
 
@@ -288,6 +293,8 @@ const styles = StyleSheet.create({
   },
   collapsible: {
     overflow: "hidden",
+    margin: -BLEED,
+    padding: BLEED,
   },
   toggle: {
     flex: 1,

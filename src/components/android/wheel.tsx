@@ -54,7 +54,7 @@ export function Wheel({
 
   return (
     <View style={styles.column}>
-      <ThemedText type="small" themeColor="textSecondary">
+      <ThemedText type="footnote" themeColor="textSecondary">
         {unit}
       </ThemedText>
       <View style={styles.wheel}>

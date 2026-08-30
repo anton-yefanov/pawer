@@ -1,14 +1,17 @@
+import { report } from '@/lib/observability';
+
 /**
- * What a template card draws over its mesh gradient, stored as JSON in
- * `templates.artwork`. This module is the only thing that reads or writes that
- * column — a screen never sees the raw string.
+ * What a template or folder card draws over its mesh gradient, stored as JSON in
+ * `templates.artwork` and `folders.artwork`. This module is the only thing that
+ * reads or writes those columns — a screen never sees the raw string.
  *
  * The value is a discriminated union rather than a bare id so pre-defined
  * stickers can join emoji later without another migration. `null` is the bare
  * gradient, which is also what Clear produces.
  *
  * `exercises` carries nothing: the cover reads the template's own exercises, so
- * it stays right as they are added and reordered.
+ * it stays right as they are added and reordered. A folder wears emoji or
+ * nothing — it has neither exercises nor a photo.
  *
  * A photo artwork holds a bare filename, never a uri: iOS rewrites the app
  * container's path on every reinstall, so a stored absolute path goes stale.
@@ -37,7 +40,8 @@ export function asCardArtwork(value: string | null | undefined): CardArtwork | n
     if (kind === 'photo') return typeof file === 'string' ? photoArtwork(file) : null;
     if (kind !== 'emoji' || !Array.isArray(emojis)) return null;
     return emojiArtwork(emojis.filter((entry) => typeof entry === 'string'));
-  } catch {
+  } catch (error) {
+    report('templates', error, { phase: 'artwork-parse' });
     return null;
   }
 }

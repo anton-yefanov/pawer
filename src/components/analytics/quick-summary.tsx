@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
@@ -10,12 +10,12 @@ export function QuickSummary({ summary }: { summary: Summary }) {
 
   return (
     <View style={[styles.card, { backgroundColor: theme.surface }]}>
-      <ThemedText themeColor="text">Quick summary</ThemedText>
+      <ThemedText type="headline">Quick summary</ThemedText>
 
       {summary.kind === 'placeholder' ? (
         <View style={styles.lines}>
           {summary.lines.map((line) => (
-            <ThemedText key={line} type="small" themeColor="textSecondary">
+            <ThemedText key={line} type="footnote" themeColor="textSecondary">
               {line}
             </ThemedText>
           ))}
@@ -24,9 +24,9 @@ export function QuickSummary({ summary }: { summary: Summary }) {
         <ThemedText>
           {summary.segments.map((segment, index) =>
             segment.bold ? (
-              <Text key={index} style={styles.value}>
+              <ThemedText key={index} weight="semibold">
                 {segment.text}
-              </Text>
+              </ThemedText>
             ) : (
               segment.text
             )
@@ -45,8 +45,5 @@ const styles = StyleSheet.create({
   },
   lines: {
     gap: Spacing.one,
-  },
-  value: {
-    fontWeight: 700,
   },
 });

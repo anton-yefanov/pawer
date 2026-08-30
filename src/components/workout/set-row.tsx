@@ -113,7 +113,7 @@ export function SetRow({ set, label, previous, unit, trackingType, actions, onCo
         onChange={(setType) => actions.setSetType(set.id, setType)}
       />
 
-      <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={styles.previous}>
+      <ThemedText type="footnote" themeColor="textTertiary" numberOfLines={1} style={styles.previous}>
         {previousLabel}
       </ThemedText>
 
@@ -154,7 +154,10 @@ export function SetRow({ set, label, previous, unit, trackingType, actions, onCo
                 set.weightKg == null &&
                 fields.includes('weight') &&
                 previous?.weightKg != null;
-              actions.updateSetValues(
+              // Returned, not dropped: `useDebouncedWrite` guards whatever the
+              // commit hands back, and this is the write that carries the
+              // weight and reps the user just typed.
+              return actions.updateSetValues(
                 set.id,
                 fillWeight ? { ...values, weightKg: previous.weightKg } : values,
               );
@@ -216,7 +219,7 @@ export function SetRow({ set, label, previous, unit, trackingType, actions, onCo
       value={set.notes ?? ''}
       onCommit={(next) => {
         if (removingNote.current) return;
-        actions.setSetNotes(set.id, next.trim() || null);
+        return actions.setSetNotes(set.id, next.trim() || null);
       }}
       placeholder="Note"
       minHeight={28}
@@ -457,11 +460,13 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
   },
+  // Fixed-width figures: the weight and reps columns line up down the card, and
+  // a digit typed into one must not shift the ones already there.
   input: {
     height: 32,
     borderRadius: 8,
-    fontSize: 16,
     padding: 0,
+    fontVariant: ['tabular-nums'],
   },
   check: {
     width: SET_COLUMNS.check - 8,

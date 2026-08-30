@@ -2,6 +2,7 @@ import { createContext, use, useEffect, useState, type ReactNode } from 'react';
 
 import { db } from '@/db/client';
 import { clearSetting, getSetting, setSetting } from '@/db/seed';
+import { report } from '@/lib/observability';
 
 const ONBOARDING_KEY = 'onboarding_complete';
 
@@ -25,9 +26,18 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    getSetting(db, ONBOARDING_KEY).then((value) => {
-      if (!cancelled) setDone(value !== null);
-    });
+    // This provider renders nothing until `done` resolves, so a rejection here
+    // used to leave the whole app blank with no error anywhere. Falling back to
+    // the fresh-install answer at least gets the user somewhere.
+    getSetting(db, ONBOARDING_KEY).then(
+      (value) => {
+        if (!cancelled) setDone(value !== null);
+      },
+      (error: unknown) => {
+        report('onboarding', error, { phase: 'read' });
+        if (!cancelled) setDone(false);
+      }
+    );
     return () => {
       cancelled = true;
     };

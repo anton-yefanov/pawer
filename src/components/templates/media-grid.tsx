@@ -17,6 +17,7 @@ import { SHEET_BOTTOM_INSET, SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import * as haptics from '@/lib/haptics';
+import { attempt } from '@/lib/observability';
 
 const COLUMNS = 3;
 const PAGE = 60;
@@ -53,6 +54,8 @@ export function MediaGrid({
 
   const granted = permission?.granted ?? false;
 
+  // A failed query used to leave an empty grid, which reads exactly like an
+  // empty photo library.
   const load = useCallback(async (offset: number) => {
     const page = await new MediaLibrary.Query()
       .eq(MediaLibrary.AssetField.MEDIA_TYPE, MediaLibrary.MediaType.IMAGE)
@@ -74,10 +77,10 @@ export function MediaGrid({
     if (!granted) return;
     // Limited access is changed from a system modal that never reports back —
     // the library's own change event is the only signal that it happened.
-    const subscription = MediaLibrary.addListener(() => void load(0));
+    const subscription = MediaLibrary.addListener(() => void attempt('media', load(0)));
     // Off the effect's own tick: the first page is a subscription that has
     // already missed its event, not state this render is supposed to settle.
-    const first = setTimeout(() => void load(0));
+    const first = setTimeout(() => void attempt('media', load(0)));
     return () => {
       clearTimeout(first);
       subscription.remove();
@@ -90,7 +93,7 @@ export function MediaGrid({
       <ScrollView {...SHEET_SCROLL} contentContainerStyle={styles.gate}>
         {header}
         <View style={styles.gateBody}>
-          <ThemedText type="small" themeColor="textSecondary" style={styles.gateText}>
+          <ThemedText type="footnote" themeColor="textSecondary" style={styles.gateText}>
             {askable
               ? 'Allow access to your photos to use one as this template’s cover.'
               : 'Photo access is off for pawer. Turn it on in Settings to use a photo as this template’s cover.'}
@@ -98,7 +101,7 @@ export function MediaGrid({
           <Pressable
             onPress={() => {
               haptics.press();
-              void (askable ? requestPermission() : Linking.openSettings());
+              void attempt('media', askable ? requestPermission() : Linking.openSettings());
             }}
             accessibilityRole="button"
             style={({ pressed }) => [
@@ -106,7 +109,7 @@ export function MediaGrid({
               { backgroundColor: theme.accent },
               pressed && styles.pressed,
             ]}>
-            <ThemedText type="smallBold" themeColor="accentContent">
+            <ThemedText type="headline" themeColor="accentContent">
               {askable ? 'Allow access' : 'Open Settings'}
             </ThemedText>
           </Pressable>
@@ -130,7 +133,7 @@ export function MediaGrid({
       contentContainerStyle={styles.grid}
       onEndReachedThreshold={1}
       onEndReached={() => {
-        if (!exhausted) void load(photos.length);
+        if (!exhausted) void attempt('media', load(photos.length));
       }}
       renderItem={({ item }) => (
         <Pressable
@@ -168,7 +171,7 @@ function ManageAccess() {
     <Pressable
       onPress={() => {
         haptics.press();
-        void MediaLibrary.presentPermissionsPicker();
+        void attempt('media', MediaLibrary.presentPermissionsPicker());
       }}
       accessibilityRole="button"
       style={({ pressed }) => [styles.manage, pressed && styles.pressed]}>

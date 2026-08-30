@@ -39,6 +39,7 @@ import {
 import { EXERCISE_GROUPS, exerciseGroup, type ExerciseGroup } from '@/lib/exercise-groups';
 import * as haptics from '@/lib/haptics';
 import { claimCustomExercise } from '@/lib/new-exercise-handoff';
+import { attempt } from '@/lib/observability';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -125,13 +126,16 @@ export function ExerciseLibrary({
       setFilters(NO_FILTERS);
       if (!onSelect) return;
 
-      void db
-        .select()
-        .from(exercises)
-        .where(eq(exercises.id, id))
-        .then(([created]) => {
-          if (created) onSelect(created);
-        });
+      void attempt(
+        'exercises',
+        db
+          .select()
+          .from(exercises)
+          .where(eq(exercises.id, id))
+          .then(([created]) => {
+            if (created) onSelect(created);
+          })
+      );
     }, [onSelect])
   );
 
@@ -338,8 +342,6 @@ function CustomSection({
 const CLEAR_HEIGHT = 40;
 
 function ClearFiltersButton({ onPress }: { onPress: () => void }) {
-  const theme = useTheme();
-
   return (
     <FloatingSurface style={styles.clear}>
       <PressableButton
@@ -349,7 +351,9 @@ function ClearFiltersButton({ onPress }: { onPress: () => void }) {
         }}
         accessibilityRole="button"
         style={({ pressed }) => [styles.clearBody, pressed && styles.clearPressed]}>
-        <ThemedText style={[styles.clearLabel, { color: theme.accent }]}>Clear filters</ThemedText>
+        <ThemedText type="subhead" weight="semibold" themeColor="accent">
+          Clear filters
+        </ThemedText>
       </PressableButton>
     </FloatingSurface>
   );
@@ -420,7 +424,7 @@ function ExerciseRow({
       <View style={styles.rowText}>
         <ThemedText numberOfLines={1}>{exercise.name}</ThemedText>
         {detail !== '' && (
-          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+          <ThemedText type="footnote" themeColor="textSecondary" numberOfLines={1}>
             {detail}
           </ThemedText>
         )}
@@ -504,10 +508,6 @@ const styles = StyleSheet.create({
     minHeight: CLEAR_HEIGHT,
     justifyContent: 'center',
     paddingHorizontal: Spacing.four,
-  },
-  clearLabel: {
-    fontSize: 15,
-    fontWeight: '600',
   },
   clearPressed: {
     opacity: 0.6,

@@ -134,6 +134,13 @@
       "when": 1787913307637,
       "tag": "0018_bitter_colleen_wing",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1788026586458,
+      "tag": "0019_modern_namorita",
+      "breakpoints": true
     }
   ]
 }

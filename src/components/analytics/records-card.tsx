@@ -28,9 +28,9 @@ export function RecordsCard({
   return (
     <View style={[styles.card, { backgroundColor: theme.surface }]}>
       <View style={styles.header}>
-        <ThemedText themeColor="text">Personal records</ThemedText>
+        <ThemedText type="headline">Personal records</ThemedText>
         {known.length > 0 && (
-          <ThemedText type="small" themeColor="textSecondary">
+          <ThemedText type="footnote" themeColor="textSecondary">
             {known.length}
           </ThemedText>
         )}
@@ -38,10 +38,10 @@ export function RecordsCard({
 
       {shown.length === 0 ? (
         <View style={styles.empty}>
-          <ThemedText type="small" themeColor="textSecondary">
+          <ThemedText type="footnote" themeColor="textSecondary">
             No records this period
           </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
+          <ThemedText type="footnote" themeColor="textTertiary">
             They come in waves, so keep going
           </ThemedText>
         </View>
@@ -57,7 +57,7 @@ export function RecordsCard({
                   {record.exerciseName}
                 </ThemedText>
                 {isPrKind(record.kind) && <PrChip label={PR_LABELS[record.kind]} />}
-                <ThemedText type="smallBold" style={styles.value}>
+                <ThemedText type="headline" numeric style={styles.value}>
                   {isPrKind(record.kind) ? formatPrValue(record.kind, record.value, unit) : ''}
                 </ThemedText>
               </View>
@@ -68,7 +68,7 @@ export function RecordsCard({
             <>
               <View style={[styles.divider, { backgroundColor: theme.backgroundElement }]} />
               <View style={styles.row}>
-                <ThemedText type="small" themeColor="textSecondary">
+                <ThemedText type="footnote" themeColor="textSecondary">
                   + {hidden} more
                 </ThemedText>
               </View>
@@ -106,7 +106,6 @@ const styles = StyleSheet.create({
   },
   value: {
     marginLeft: 'auto',
-    fontVariant: ['tabular-nums'],
   },
   empty: {
     gap: Spacing.one,

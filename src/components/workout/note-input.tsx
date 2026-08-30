@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, TextInput } from 'react-native';
+import { TextInput } from 'react-native';
 
 import { ThemedTextInput } from '@/components/themed-text-input';
 
@@ -44,14 +44,9 @@ export function NoteInput({
         focused.current = false;
         onCommit(text);
       }}
-      style={[styles.input, { minHeight }, style]}
+      style={[{ minHeight }, style]}
       {...rest}
     />
   );
 }
 
-const styles = StyleSheet.create({
-  input: {
-    fontSize: 14,
-  },
-});

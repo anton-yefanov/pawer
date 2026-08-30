@@ -3,12 +3,13 @@ import { StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { StartTimePicker } from '@/components/workout/start-time-picker';
-import { Spacing } from '@/constants/theme';
+import { Spacing, Type, Weights } from '@/constants/theme';
 import { useDebouncedWrite } from '@/hooks/use-debounced-write';
 import { ThemedTextInput } from '@/components/themed-text-input';
 import { useTheme } from '@/hooks/use-theme';
 import type { Workout } from '@/db/schema';
 import { updateWorkout } from '@/lib/workout-actions';
+import { attempt } from '@/lib/observability';
 
 export function WorkoutDetailsCard({ workout }: { workout: Workout }) {
   const theme = useTheme();
@@ -30,7 +31,12 @@ export function WorkoutDetailsCard({ workout }: { workout: Workout }) {
         <StartTimePicker
           value={new Date(workout.startedAt)}
           max={new Date(workout.finishedAt ?? openedAt)}
-          onChange={(next) => updateWorkout(workout.id, { startedAt: next.getTime() })}
+          onChange={(next) =>
+            void attempt('workout', updateWorkout(workout.id, { startedAt: next.getTime() }), {
+              title: 'Couldn’t save',
+              message: 'Your last change wasn’t saved. Please try again.',
+            })
+          }
         />
       </View>
 
@@ -106,13 +112,16 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   nameInput: {
-    fontSize: 24,
-    fontWeight: '600',
+    ...Type.title1,
+    // The size already carries the hierarchy here, so the role's bold would only
+    // double up — a placeholder is the field's resting state, and a heavy one
+    // shouts through it. Medium keeps it a title without the shout.
+    fontWeight: Weights.medium,
+    // No lineHeight: iOS centres the glyph box inside it and clips descenders.
+    lineHeight: undefined,
     minHeight: 52,
   },
   notesInput: {
-    fontSize: 16,
-    lineHeight: 20,
     minHeight: 48,
     paddingVertical: 14,
   },

@@ -50,6 +50,18 @@ export default function WorkoutLayout() {
           ...surfacePageOptions(theme),
         }}
       />
+      {/* The recap of a session that has just been finished. It is presented
+          over the tab root rather than over the logger — the logger's sheet is
+          dismissed first (see `presentWorkoutSummary`) — and its detents match a
+          template's sheet: it opens at 60% and expands. */}
+      <Stack.Screen
+        name="summary"
+        options={{
+          ...DETAIL_SHEET,
+          sheetCornerRadius: PINNED_CORNER_RADIUS,
+          headerShown: false,
+        }}
+      />
       <Stack.Screen name="new-exercise" options={FULL_SHEET} />
       <Stack.Screen name="exercise/edit" options={FULL_SHEET} />
       {/* The exercise name and its buttons live in the content, under the
@@ -96,14 +108,16 @@ export default function WorkoutLayout() {
         name="folder/[id]"
         options={DETAIL_SHEET}
       />
-      {/* Same picker presentation as the Settings sheets: the swatch grid draws
-          its own title, so the nav bar would only add empty height. */}
+      {/* Full height whatever it is showing: the sheet draws its own Close and
+          Save where a nav bar's buttons would be, and the emoji picker step
+          needs the whole screen. */}
       <Stack.Screen
         name="customize"
         options={{
           ...SHEET,
-          sheetAllowedDetents: "fitToContents",
+          sheetAllowedDetents: [1],
           headerShown: false,
+          ...surfacePageOptions(theme),
         }}
       />
     </Stack>

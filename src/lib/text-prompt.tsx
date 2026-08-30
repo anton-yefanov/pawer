@@ -80,7 +80,7 @@ export function PromptHost() {
           it in what's left. */}
       <KeyboardAvoidingView behavior="padding" style={styles.centre} pointerEvents="box-none">
         <View style={[styles.dialog, { backgroundColor: theme.surface }]}>
-          <ThemedText type="smallBold">{pending.title}</ThemedText>
+          <ThemedText type="headline">{pending.title}</ThemedText>
 
           <ThemedTextInput
             ref={field}
@@ -98,12 +98,12 @@ export function PromptHost() {
 
           <View style={styles.actions}>
             <Pressable onPress={() => settle('')} style={styles.action}>
-              <ThemedText type="smallBold" themeColor="textSecondary">
+              <ThemedText type="body" themeColor="textSecondary">
                 Cancel
               </ThemedText>
             </Pressable>
             <Pressable onPress={() => settle(value)} style={styles.action}>
-              <ThemedText type="smallBold" themeColor="accent">
+              <ThemedText type="headline" themeColor="accent">
                 {pending.confirmLabel}
               </ThemedText>
             </Pressable>
@@ -135,7 +135,6 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 8,
     paddingHorizontal: Spacing.three,
-    fontSize: 16,
   },
   actions: {
     flexDirection: 'row',

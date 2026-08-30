@@ -8,6 +8,7 @@ import { promptNewFolder } from '@/components/templates/card-actions';
 import { useTheme } from '@/hooks/use-theme';
 import { allowNewTemplate } from '@/lib/pro-gates';
 import { usePro } from '@/lib/purchases';
+import { guard } from '@/lib/observability';
 
 /** Same Host-sizing rules as CardMenu — see the comment there. */
 export function AddMenu() {
@@ -15,7 +16,7 @@ export function AddMenu() {
   const isPro = usePro();
 
   const newTemplate = async () => {
-    if (await allowNewTemplate(isPro)) router.push('/template/new');
+    if (await guard('pro-gates', allowNewTemplate(isPro))) router.push('/template/new');
   };
 
   return (

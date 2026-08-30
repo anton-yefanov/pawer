@@ -1,4 +1,5 @@
 import { type CardAction, type ConfirmDestructive } from '@/components/templates/card-actions';
+import { attempt, guard } from '@/lib/observability';
 import { createTemplateFromWorkout } from '@/lib/template-actions';
 import { deleteWorkout, repeatWorkout, type StartWorkoutResult } from '@/lib/workout-actions';
 
@@ -21,12 +22,20 @@ export function workoutActions(
     {
       label: 'Save as Template',
       icon: 'square.and.arrow.down',
-      onPress: () => void createTemplateFromWorkout(workout.id),
+      onPress: () =>
+        void attempt('templates', createTemplateFromWorkout(workout.id), {
+          title: 'Couldn’t save template',
+          message: 'Please try again.',
+        }),
     },
     {
       label: 'Perform Again',
       icon: 'arrow.clockwise',
-      onPress: () => void repeatWorkout(workout.id).then(onRepeat),
+      onPress: () =>
+        void guard('workout', repeatWorkout(workout.id), {
+          title: 'Couldn’t start workout',
+          message: 'Please try again.',
+        }).then((result) => result && onRepeat(result)),
     },
     {
       label: 'Delete',
@@ -37,7 +46,11 @@ export function workoutActions(
         confirm({
           title: `Delete “${name}”?`,
           body: 'This cannot be undone.',
-          onConfirm: () => void deleteWorkout(workout.id).then(() => onDeleted?.()),
+          onConfirm: () =>
+            void attempt('workout', deleteWorkout(workout.id), {
+              title: 'Couldn’t delete workout',
+              message: 'Please try again.',
+            }).then((deleted) => deleted && onDeleted?.()),
         }),
     },
   ];

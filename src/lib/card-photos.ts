@@ -1,12 +1,12 @@
 import { type ImageSource } from 'expo-image';
 
+import { COVER_ASPECT } from '@/components/templates/grid-card';
 import { photoStore } from '@/lib/photo-store';
 
 /** The cover photos a user picks for their own templates. */
 const covers = photoStore({
   directory: 'covers',
-  /** Cover aspect, matching `COVER_RATIO` in `grid-card.tsx`. */
-  aspect: 4 / 3,
+  aspect: COVER_ASPECT,
   width: 1200,
 });
 

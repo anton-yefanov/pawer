@@ -34,6 +34,13 @@ import { startEmptyWorkout } from '@/lib/workout-actions';
 import { activeWorkoutQuery, groupBy } from '@/lib/workout-queries';
 import { formatStartTime } from '@/lib/workout-stats';
 
+import { attempt, guard } from '@/lib/observability';
+
+const MOVE_FAILED = {
+  title: 'Couldn’t save',
+  message: 'That change wasn’t saved. Please try again.',
+};
+
 export default function StartWorkoutScreen() {
   const theme = useTheme();
   const router = useRouter();
@@ -83,6 +90,7 @@ export default function StartWorkoutScreen() {
       id: folder.id,
       name: folder.name,
       color: folder.color,
+      artwork: asCardArtwork(folder.artwork),
       templateNames: (byFolder.get(folder.id) ?? []).map((template) => template.name),
     })),
     order.folders,
@@ -96,7 +104,7 @@ export default function StartWorkoutScreen() {
 
   const fileTemplate = (templateId: string, folderId: string, settle: Settle) => {
     settle();
-    void moveTemplateToFolder(templateId, folderId);
+    void attempt('templates', moveTemplateToFolder(templateId, folderId), MOVE_FAILED);
   };
 
   /*
@@ -116,7 +124,11 @@ export default function StartWorkoutScreen() {
       );
       setOrder((current) => ({ ...current, folders: ids }));
       settle();
-      void reorderFolders(ids);
+      // The grid already shows the new arrangement, so a failed write would
+      // otherwise leave it disagreeing with the database until the next launch.
+      void attempt('folders', reorderFolders(ids), MOVE_FAILED).then((written) => {
+        if (!written) setOrder((current) => ({ ...current, folders: [] }));
+      });
     } else {
       const offset = folderCards.length;
       const ids = move(
@@ -126,14 +138,20 @@ export default function StartWorkoutScreen() {
       );
       setOrder((current) => ({ ...current, templates: ids }));
       settle();
-      void reorderTemplates(ids);
+      void attempt('templates', reorderTemplates(ids), MOVE_FAILED).then((written) => {
+        if (!written) setOrder((current) => ({ ...current, templates: [] }));
+      });
     }
   };
 
   const open = (id: string) => router.push({ pathname: '/active', params: { id } });
 
   const startEmpty = async () => {
-    const result = await startEmptyWorkout();
+    const result = await guard('workout', startEmptyWorkout(), {
+      title: 'Couldn’t start workout',
+      message: 'Please try again.',
+    });
+    if (!result) return;
     if (result.status === 'blocked') {
       setBlockedBy(result.workoutId);
       return;
@@ -149,15 +167,13 @@ export default function StartWorkoutScreen() {
           style={{ backgroundColor: theme.background }}
           contentContainerStyle={styles.container}
           contentInsetAdjustmentBehavior="automatic"
-          // A lifted card moves with the finger; letting the content scroll under
-          // it at the same time would put it somewhere the drop test can't see.
           scrollEnabled={!dragging}>
           {active ? (
             <View style={styles.section}>
               <View style={[styles.card, { backgroundColor: theme.surface }]}>
                 <View style={styles.cardText}>
                   <ThemedText numberOfLines={1}>{active.name?.trim() || 'Workout'}</ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
+                  <ThemedText type="footnote" themeColor="textSecondary">
                     Started {formatStartTime(active.startedAt)}
                   </ThemedText>
                 </View>
@@ -166,7 +182,7 @@ export default function StartWorkoutScreen() {
               <BigButton title="Resume Workout" onPress={() => open(active.id)} />
             </View>
           ) : (
-            <BigButton title="Start an Empty Workout" onPress={startEmpty} />
+            <BigButton title="Start an Empty Workout" onPress={() => void startEmpty()} />
           )}
 
           <TemplateSection

@@ -30,8 +30,8 @@ export function MetricChart({
   return (
     <View style={[styles.card, { backgroundColor: theme.surface }]}>
       <View style={styles.header}>
-        <ThemedText themeColor="text">{title}</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
+        <ThemedText type="headline">{title}</ThemedText>
+        <ThemedText type="footnote" themeColor="textSecondary">
           {series.label}
         </ThemedText>
       </View>
@@ -39,10 +39,10 @@ export function MetricChart({
       {!empty ? (
         <>
           <View style={styles.readout}>
-            <ThemedText type="subtitle" style={styles.value}>
+            <ThemedText type="title1" numeric>
               {format(point ? point.value : total)}
             </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
+            <ThemedText type="footnote" themeColor="textSecondary">
               {point ? formatBucketRange(point, series.bucket) : periodLabel(period)}
             </ThemedText>
           </View>
@@ -56,7 +56,7 @@ export function MetricChart({
           />
         </>
       ) : (
-        <ThemedText type="small" themeColor="textSecondary" style={styles.empty}>
+        <ThemedText type="footnote" themeColor="textSecondary" style={styles.empty}>
           No finished workouts in this period.
         </ThemedText>
       )}
@@ -78,9 +78,6 @@ const styles = StyleSheet.create({
   },
   readout: {
     gap: Spacing.half,
-  },
-  value: {
-    fontVariant: ['tabular-nums'],
   },
   empty: {
     paddingBottom: Spacing.one,

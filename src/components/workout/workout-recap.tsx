@@ -31,7 +31,9 @@ export function SummaryStats({ summary, unit }: { summary: WorkoutSummary; unit:
       {stats.map(([label, value]) => (
         <View key={label} style={styles.stat}>
           <ThemedText themeColor="textSecondary">{label}</ThemedText>
-          <ThemedText type="smallBold">{value}</ThemedText>
+          <ThemedText type="headline" numeric>
+            {value}
+          </ThemedText>
         </View>
       ))}
     </View>
@@ -80,10 +82,10 @@ export function ExerciseBreakdown({
         return (
           <View key={exercise.id} style={styles.exercise}>
             <View style={styles.exerciseHeader}>
-              <ThemedText type="smallBold" numberOfLines={1} style={styles.exerciseName}>
+              <ThemedText type="subhead" weight="semibold" numberOfLines={1} style={styles.exerciseName}>
                 {exercise.name}
               </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
+              <ThemedText type="footnote" themeColor="textSecondary">
                 {logged.length} {logged.length === 1 ? 'set' : 'sets'}
               </ThemedText>
             </View>
@@ -101,10 +103,10 @@ export function ExerciseBreakdown({
             {showSets &&
               logged.map((set, index) => (
                 <View key={set.id} style={styles.setRow}>
-                  <ThemedText type="small" themeColor="textSecondary" style={styles.setIndex}>
+                  <ThemedText type="footnote" numeric themeColor="textTertiary" style={styles.setIndex}>
                     {index + 1}
                   </ThemedText>
-                  <ThemedText type="small">
+                  <ThemedText type="footnote">
                     {formatPreviousSet(set, trackingType, unit)}
                   </ThemedText>
                   {records
@@ -162,6 +164,5 @@ const styles = StyleSheet.create({
   },
   setIndex: {
     width: 18,
-    fontVariant: ['tabular-nums'],
   },
 });

@@ -65,7 +65,7 @@ export function Dialog({
                   pressed && { backgroundColor: theme.backgroundSelected },
                 ]}>
                 <ThemedText
-                  type="smallBold"
+                  type="footnote" weight="semibold"
                   themeColor={
                     action.role === 'destructive'
                       ? 'danger'

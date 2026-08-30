@@ -20,6 +20,7 @@ import { PRO_NAME, usePurchases } from '@/lib/purchases';
 import { readTelemetryOptOut, writeTelemetryOptOut } from '@/lib/telemetry-opt-out';
 import { THEME_PREFERENCES, useThemePreference } from '@/lib/theme-preference';
 import { useWeightUnit } from '@/lib/weight-unit';
+import { attempt } from '@/lib/observability';
 
 const RESTORE_MESSAGES = {
   restored: `Your purchase is back. ${PRO_NAME} is unlocked.`,
@@ -37,9 +38,12 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     let cancelled = false;
-    readTelemetryOptOut().then((optedOut) => {
-      if (!cancelled) setShareUsage(!optedOut);
-    });
+    void attempt(
+      'settings',
+      readTelemetryOptOut().then((optedOut) => {
+        if (!cancelled) setShareUsage(!optedOut);
+      })
+    );
     return () => {
       cancelled = true;
     };
@@ -114,6 +118,11 @@ export default function SettingsScreen() {
         />
       </Card>
 
+      <SectionTitle>Support</SectionTitle>
+      <Card>
+        <DisclosureRow label="Support" onPress={() => router.push('/settings/support')} />
+      </Card>
+
       <SectionTitle>Privacy</SectionTitle>
       <Card>
         <ToggleRow
@@ -121,13 +130,19 @@ export default function SettingsScreen() {
           value={shareUsage}
           onChange={(next) => {
             setShareUsage(next);
-            void writeTelemetryOptOut(!next);
+            void attempt('settings', writeTelemetryOptOut(!next), {
+              title: 'Couldn’t save setting',
+              message: 'Please try again.',
+            }).then((written) => {
+              if (!written) setShareUsage(!next);
+            });
           }}
         />
       </Card>
       <SectionFooter>
         Your workouts, notes and photos never leave this phone. This shares only which screens and
-        features get used, with nothing that identifies you, so the app can be improved.
+        features get used, with nothing that identifies you, so the app can be improved. Anonymous
+        crash reports are always sent so faults can be fixed.
       </SectionFooter>
     </ScrollView>
   );

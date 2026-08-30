@@ -40,24 +40,24 @@ export function WorkoutLogRow({
 
       <View style={styles.body}>
         <View style={styles.titleRow}>
-          <ThemedText style={styles.name} numberOfLines={1}>
+          <ThemedText type="headline" style={styles.name} numberOfLines={1}>
             {workout.name?.trim() || 'Workout'}
           </ThemedText>
           {workout.prCount > 0 && <PrChip label={String(workout.prCount)} />}
         </View>
         {shown.map((exercise, index) => (
-          <ThemedText key={`${exercise.position}-${index}`} type="small" numberOfLines={1}>
+          <ThemedText key={`${exercise.position}-${index}`} type="footnote" numberOfLines={1}>
             {exercise.setCount}x {exercise.name}
           </ThemedText>
         ))}
         {hidden > 0 && (
-          <ThemedText type="small" themeColor="textSecondary">
+          <ThemedText type="footnote" themeColor="textSecondary">
             +{hidden} more
           </ThemedText>
         )}
       </View>
 
-      <ThemedText type="small" themeColor="textSecondary" style={styles.duration}>
+      <ThemedText type="footnote" numeric themeColor="textTertiary" style={styles.duration}>
         {formatHoursMinutes((workout.finishedAt ?? workout.startedAt) - workout.startedAt)}
       </ThemedText>
     </Pressable>
@@ -69,11 +69,25 @@ function DateBadge({ epochMs }: { epochMs: number }) {
   const date = new Date(epochMs);
 
   return (
-    <View style={[styles.badge, { backgroundColor: theme.backgroundElement }]}>
-      <ThemedText type="small" themeColor="textSecondary">
-        {date.toLocaleDateString(undefined, { weekday: 'short' })}
-      </ThemedText>
-      <ThemedText style={styles.day}>{date.getDate()}</ThemedText>
+    <View style={styles.badge}>
+      <View
+        style={[
+          styles.weekday,
+          {
+            // Both stops are opaque so nothing interpolates through transparent
+            // black, which is what fringes a fade to `transparent`.
+            experimental_backgroundImage: `radial-gradient(115% 150% at 50% 15%, ${theme.backgroundElement} 0%, ${theme.backgroundSelected} 100%)`,
+          },
+        ]}>
+        <ThemedText type="caption1" weight="medium" themeColor="textTertiary">
+          {date.toLocaleDateString(undefined, { weekday: 'short' })}
+        </ThemedText>
+      </View>
+      <View style={[styles.day, { backgroundColor: theme.backgroundElement }]}>
+        <ThemedText type="title2" numeric>
+          {date.getDate()}
+        </ThemedText>
+      </View>
     </View>
   );
 }
@@ -86,16 +100,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.three,
   },
+  // A calendar tile: the weekday sits in a darker header cut off by a hard edge,
+  // lit from its own centre so the band reads as a curved surface rather than a
+  // flat swatch. The date below is what stays plain.
   badge: {
     width: 54,
     borderRadius: 10,
+    overflow: 'hidden',
+  },
+  weekday: {
     alignItems: 'center',
-    paddingVertical: Spacing.one,
+    paddingVertical: Spacing.half,
   },
   day: {
-    fontSize: 22,
-    lineHeight: 28,
-    fontWeight: 600,
+    alignItems: 'center',
+    paddingTop: Spacing.half,
+    paddingBottom: Spacing.one,
   },
   body: {
     flex: 1,
@@ -107,7 +127,6 @@ const styles = StyleSheet.create({
   },
   name: {
     flexShrink: 1,
-    fontWeight: 700,
   },
   duration: {
     alignSelf: 'flex-start',

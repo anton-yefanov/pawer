@@ -1,9 +1,9 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import { CIRCLE_BUTTON_SIZE } from '@/components/circle-button';
+import { CIRCLE_BUTTON_SIZE, CircleButton } from '@/components/circle-button';
 import { SheetGrabber } from '@/components/sheet-grabber';
 import { ArtworkLayer } from '@/components/templates/artwork-layer';
 import { type ArtworkMode, ArtworkTabs } from '@/components/templates/artwork-tabs';
@@ -11,7 +11,8 @@ import { CardCover } from '@/components/templates/card-cover';
 import { ColorPicker } from '@/components/templates/color-picker';
 import { EmojiPicker } from '@/components/templates/emoji-picker';
 import { EmojiSlots } from '@/components/templates/emoji-slots';
-import { COVER_RATIO } from '@/components/templates/grid-card';
+import { FolderArt } from '@/components/templates/folder-art';
+import { COVER_ASPECT, coverRadius } from '@/components/templates/grid-card';
 import { MediaGrid } from '@/components/templates/media-grid';
 import { ThemedText } from '@/components/themed-text';
 import { CloseButton, HeaderPillButton } from '@/components/workout/workout-sheet-header';
@@ -28,9 +29,18 @@ import {
 } from '@/lib/card-artwork';
 import { deleteCoverPhoto, importCoverPhoto } from '@/lib/card-photos';
 import { type ExerciseArt } from '@/lib/exercise-media';
-import { setFolderColor } from '@/lib/folder-actions';
+import { FOLDER_ICON_ASPECT } from '@/lib/folder-icons';
+import { setFolderAppearance } from '@/lib/folder-actions';
 import { setTemplateAppearance } from '@/lib/template-actions';
 import { folderQuery, templateExercisesQuery, templateQuery } from '@/lib/template-queries';
+
+import { notice } from '@/lib/notice';
+import { attempt, report } from '@/lib/observability';
+
+const SAVE_FAILED = {
+  title: 'Couldn’t save',
+  message: 'That change wasn’t saved. Please try again.',
+};
 
 export default function CustomizeScreen() {
   const { id, kind } = useLocalSearchParams<{ id: string; kind: 'template' | 'folder' }>();
@@ -58,28 +68,21 @@ export default function CustomizeScreen() {
   // rest; Close drops them all — an import is only a cover once it is saved.
   const imported = useRef<string[]>([]);
 
-  const saved = asCardArtwork(templateRows?.[0]?.artwork);
+  const saved = asCardArtwork(row?.artwork);
   const color = pickedColor ?? asCardColor(row?.color);
-  const mode = pickedMode ?? modeOf(saved);
+  // A folder wears emoji or nothing, so it never leaves the one mode and the
+  // photo machinery below stays inert for it.
+  const mode = isFolder ? 'emoji' : (pickedMode ?? modeOf(saved));
   const emojis = pickedEmojis ?? (saved?.kind === 'emoji' ? saved.emojis : EMPTY);
   const photo = pickedPhoto ?? (saved?.kind === 'photo' ? saved.file : null);
   const exerciseArt =
     exerciseRows?.map(({ sourceId, imageFile }) => ({ sourceId, imageFile })) ?? EMPTY_ART;
 
-  if (isFolder) {
-    const select = (next: CardColor) => {
-      void setFolderColor(id, next);
-      router.back();
-    };
-    return (
-      <View style={styles.folder}>
-        <SheetGrabber />
-        <ColorPicker selected={color} onSelect={select} />
-      </View>
-    );
-  }
-
   const coverWidth = width - Spacing.three * 2;
+  // The preview folder is drawn narrower than a cover, and takes back the
+  // height it loses as padding, so both kinds of preview are the same block.
+  const folderWidth = coverWidth * FOLDER_PREVIEW_SCALE;
+  const folderPad = (coverWidth - folderWidth) / FOLDER_ICON_ASPECT / 2;
   // The selected tab is the cover's source; the other tabs' drafts sit untouched
   // behind it, so a look at Media and back doesn't cost the user their emoji.
   const artwork: CardArtwork | null =
@@ -102,6 +105,14 @@ export default function CustomizeScreen() {
       const file = await importCoverPhoto(assetId);
       imported.current.push(file);
       setPickedPhoto(file);
+    } catch (error) {
+      // A `ph://` asset that hasn't come down from iCloud, a corrupt HEIC, a
+      // full disk. The spinner used to stop and nothing else happened.
+      report('photos', error, { phase: 'import-cover' });
+      notice({
+        title: 'Couldn’t use that photo',
+        message: 'Please pick a different one.',
+      });
     } finally {
       setImporting(null);
     }
@@ -112,9 +123,15 @@ export default function CustomizeScreen() {
     imported.current = [];
   };
 
-  const save = () => {
+  // The write lands before the unused imports go: discarding first meant a
+  // failed write left the sheet closing as though it had saved, with the photo
+  // it kept referenced by nothing.
+  const save = async () => {
+    const write = isFolder
+      ? attempt('folders', setFolderAppearance(id, color, artwork), SAVE_FAILED)
+      : attempt('templates', setTemplateAppearance(id, color, artwork), SAVE_FAILED);
+    if (!(await write)) return;
     discard(artwork?.kind === 'photo' ? photo : null);
-    void setTemplateAppearance(id, color, artwork);
     router.back();
   };
 
@@ -127,57 +144,69 @@ export default function CustomizeScreen() {
   // comment on `EmojiPicker`. The draft lives up here, so it survives the swap.
   if (pickingSlot !== null) {
     return (
-      <>
-        <Stack.Screen options={{ sheetAllowedDetents: [1] }} />
-        <EmojiPicker
-          onPick={(emoji) => {
-            place(pickingSlot, emoji);
-            setPickingSlot(null);
-          }}
-          onCancel={() => setPickingSlot(null)}
-        />
-      </>
+      <EmojiPicker
+        onPick={(emoji) => {
+          place(pickingSlot, emoji);
+          setPickingSlot(null);
+        }}
+        onCancel={() => setPickingSlot(null)}
+      />
     );
   }
 
-  const clear = (
-    <Pressable
-      onPress={() => {
-        if (mode === 'media') setPickedPhoto(null);
-        else setPickedEmojis(EMPTY);
-      }}
-      disabled={!artwork}
-      accessibilityRole="button"
-      style={({ pressed }) => [styles.clear, pressed && styles.pressed]}>
-      <ThemedText themeColor={artwork ? 'accent' : 'textSecondary'}>Clear</ThemedText>
-    </Pressable>
+  // Where a custom exercise's thumbnail carries its own trash button: on the
+  // artwork it clears, not under the tabs.
+  const clear = mode !== 'exercises' && artwork && (
+    <View
+      style={[
+        styles.clear,
+        isFolder && {
+          right: (coverWidth - folderWidth) / 2 + Spacing.two,
+          bottom: folderPad + Spacing.two,
+        },
+      ]}>
+      <CircleButton
+        symbol="trash"
+        symbolSize={18}
+        size={CLEAR_BUTTON_SIZE}
+        label="Clear artwork"
+        feedback="press"
+        onPress={() => {
+          if (mode === 'media') setPickedPhoto(null);
+          else setPickedEmojis(EMPTY);
+        }}
+      />
+    </View>
   );
 
   const header = (
     <>
       <View style={styles.preview}>
-        <View style={styles.cover}>
-          <CardCover color={color} />
-          <ArtworkLayer
-            artwork={artwork}
-            coverHeight={coverWidth * COVER_RATIO}
-            exerciseArt={exerciseArt}
-          />
-        </View>
+        {isFolder ? (
+          <View style={[styles.folder, { paddingVertical: folderPad }]}>
+            <FolderArt color={color} artwork={artwork} width={folderWidth} />
+          </View>
+        ) : (
+          <View style={[styles.cover, { borderRadius: coverRadius(coverWidth) }]}>
+            <CardCover color={color} />
+            <ArtworkLayer
+              artwork={artwork}
+              coverHeight={coverWidth / COVER_ASPECT}
+              exerciseArt={exerciseArt}
+            />
+          </View>
+        )}
+        {clear}
       </View>
       <View style={styles.colors}>
         <ColorPicker selected={color} onSelect={setPickedColor} />
       </View>
-      <ArtworkTabs mode={mode} onChange={setPickedMode} />
-      {/* Under the pills in media mode, where the slot row's own Clear would
-          otherwise sit below a full screen of photos. */}
-      {mode === 'media' && clear}
+      {!isFolder && <ArtworkTabs mode={mode} onChange={setPickedMode} />}
     </>
   );
 
   return (
     <>
-      <Stack.Screen options={{ sheetAllowedDetents: [1] }} />
       <SheetGrabber />
       {mode === 'media' ? (
         <MediaGrid header={header} busyId={importing} onPick={(assetId) => void pickPhoto(assetId)} />
@@ -186,7 +215,7 @@ export default function CustomizeScreen() {
           {header}
           {mode === 'exercises' ? (
             exerciseArt.length === 0 && (
-              <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
+              <ThemedText type="footnote" themeColor="textTertiary" style={styles.hint}>
                 Exercises previews will be shown on template cover when you add them
               </ThemedText>
             )
@@ -197,7 +226,6 @@ export default function CustomizeScreen() {
                 onPick={setPickingSlot}
                 onRemove={(slot) => setPickedEmojis(emojis.filter((_, index) => index !== slot))}
               />
-              {clear}
             </>
           )}
         </ScrollView>
@@ -208,7 +236,7 @@ export default function CustomizeScreen() {
         <CloseButton onPress={close} />
       </View>
       <View style={styles.save}>
-        <HeaderPillButton title="Save" onPress={save} />
+        <HeaderPillButton title="Save" onPress={() => void save()} />
       </View>
     </>
   );
@@ -219,6 +247,11 @@ function modeOf(artwork: CardArtwork | null): ArtworkMode {
   return artwork?.kind === 'photo' ? 'media' : 'emoji';
 }
 
+/** How much narrower than a template cover the preview folder is drawn. */
+const FOLDER_PREVIEW_SCALE = 0.78;
+
+const CLEAR_BUTTON_SIZE = 40;
+
 /** Stable identity, so an untouched sheet doesn't rebuild its artwork each render. */
 const EMPTY: readonly string[] = [];
 const EMPTY_ART: readonly ExerciseArt[] = [];
@@ -226,11 +259,6 @@ const EMPTY_ART: readonly ExerciseArt[] = [];
 const styles = StyleSheet.create({
   content: {
     paddingBottom: SHEET_BOTTOM_INSET + Spacing.two,
-  },
-  // A `fitToContents` sheet floats clear of the home indicator, so the colour
-  // row is centred on its own padding rather than a safe-area inset.
-  folder: {
-    paddingVertical: Spacing.four,
   },
   // Clears the Save pill, so the preview sits evenly between the button and
   // the colour row.
@@ -241,24 +269,24 @@ const styles = StyleSheet.create({
   // the name and exercise list left off. As wide as the cards below it.
   cover: {
     marginHorizontal: Spacing.three,
-    aspectRatio: 4 / 3,
-    borderRadius: Spacing.three,
+    aspectRatio: COVER_ASPECT,
     overflow: 'hidden',
+  },
+  folder: {
+    alignItems: 'center',
   },
   colors: {
     paddingVertical: Spacing.three,
   },
   clear: {
-    alignSelf: 'center',
-    paddingVertical: Spacing.three,
+    position: 'absolute',
+    right: Spacing.three + Spacing.two,
+    bottom: Spacing.two,
   },
   hint: {
     textAlign: 'center',
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.two,
-  },
-  pressed: {
-    opacity: 0.7,
   },
   close: {
     position: 'absolute',

@@ -44,7 +44,7 @@ export function SheetHeader({ title, left, right, options }: SheetHeaderProps) {
           </View>
           <View pointerEvents="none" style={[styles.title, { left: inset, right: inset }]}>
             {typeof title === 'string' ? (
-              <ThemedText type="smallBold" numberOfLines={1}>
+              <ThemedText type="footnote" weight="semibold" numberOfLines={1}>
                 {title}
               </ThemedText>
             ) : (

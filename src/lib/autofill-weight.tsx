@@ -2,6 +2,7 @@ import { createContext, use, useEffect, useState, type ReactNode } from 'react';
 
 import { db } from '@/db/client';
 import { getSetting, setSetting } from '@/db/seed';
+import { attempt } from '@/lib/observability';
 
 export const AUTOFILL_WEIGHT_KEY = 'autofill_weight';
 
@@ -17,9 +18,12 @@ export function AutofillWeightProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    getSetting(db, AUTOFILL_WEIGHT_KEY).then((value) => {
-      if (!cancelled && value === 'false') setStored(false);
-    });
+    void attempt(
+      'settings',
+      getSetting(db, AUTOFILL_WEIGHT_KEY).then((value) => {
+        if (!cancelled && value === 'false') setStored(false);
+      })
+    );
     return () => {
       cancelled = true;
     };

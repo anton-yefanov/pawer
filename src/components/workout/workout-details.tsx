@@ -77,7 +77,7 @@ export function WorkoutDetails({
         style={{ backgroundColor: theme.background }}
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic">
-        <ThemedText type="small" themeColor="textSecondary">
+        <ThemedText type="footnote" themeColor="textSecondary">
           {formatStartTime(workout.startedAt)}
         </ThemedText>
 

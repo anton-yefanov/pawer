@@ -3,6 +3,7 @@ import { Directory, File, Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 
 import { newId } from '@/db/id';
+import { report, span } from '@/lib/observability';
 
 /**
  * A folder of photos the user picked, in the same spirit as `exercise-media.ts`
@@ -56,28 +57,32 @@ export function photoStore({
      * asset carries EXIF orientation, so its stored dimensions are not
      * necessarily the ones the crop rectangle has to be expressed in.
      */
-    async import(sourceUri) {
-      const loaded = await ImageManipulator.manipulate(sourceUri).renderAsync();
+    import(sourceUri) {
+      // Two renders, an encode and a move: slow enough on a large HEIC to read
+      // as the sheet having hung, so it is worth a span.
+      return span('photos', 'photo.import', async () => {
+        const loaded = await ImageManipulator.manipulate(sourceUri).renderAsync();
 
-      const width = Math.min(loaded.width, loaded.height * aspect);
-      const height = width / aspect;
-      const rendered = await ImageManipulator.manipulate(loaded)
-        .crop({
-          originX: (loaded.width - width) / 2,
-          originY: (loaded.height - height) / 2,
-          width,
-          height,
-        })
-        .resize({ width: Math.min(maxWidth, width) })
-        .renderAsync();
+        const width = Math.min(loaded.width, loaded.height * aspect);
+        const height = width / aspect;
+        const rendered = await ImageManipulator.manipulate(loaded)
+          .crop({
+            originX: (loaded.width - width) / 2,
+            originY: (loaded.height - height) / 2,
+            width,
+            height,
+          })
+          .resize({ width: Math.min(maxWidth, width) })
+          .renderAsync();
 
-      const saved = await rendered.saveAsync({ format: SaveFormat.WEBP, compress: quality });
+        const saved = await rendered.saveAsync({ format: SaveFormat.WEBP, compress: quality });
 
-      // A fresh name every time, never the row's id: `expo-image` caches by uri,
-      // so reusing a path would keep drawing the photo it replaced.
-      const file = `${newId()}.webp`;
-      await new File(saved.uri).move(new File(directory(), file));
-      return file;
+        // A fresh name every time, never the row's id: `expo-image` caches by
+        // uri, so reusing a path would keep drawing the photo it replaced.
+        const file = `${newId()}.webp`;
+        await new File(saved.uri).move(new File(directory(), file));
+        return file;
+      });
     },
 
     /** A duplicated row gets its own copy — two rows never share one file. */
@@ -96,9 +101,11 @@ export function photoStore({
       try {
         const target = new File(Paths.document, name, file);
         if (target.exists) target.delete();
-      } catch {
+      } catch (error) {
         // A photo that outlives its row costs a few hundred kilobytes; a throw
         // here would take down the sheet that was only tidying up after itself.
+        // It is still worth knowing when the store stops being tidyable at all.
+        report('photos', error, { phase: 'delete' });
       }
     },
   };

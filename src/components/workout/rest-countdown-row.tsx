@@ -15,6 +15,7 @@ import { useTheme } from '@/hooks/use-theme';
 import * as haptics from '@/lib/haptics';
 import { useRestTimer } from '@/lib/rest-timer';
 import { formatDuration } from '@/lib/units';
+import { attempt } from '@/lib/observability';
 
 export function RestCountdownRow({ ref }: { ref?: Ref<View> }) {
   const theme = useTheme();
@@ -43,7 +44,7 @@ export function RestCountdownRow({ ref }: { ref?: Ref<View> }) {
   const adjust = (delta: number) => {
     if (rest.setId == null) return;
     haptics.tap();
-    void rest.adjust(delta);
+    void attempt('rest-timer', rest.adjust(delta));
   };
 
   return (
@@ -54,17 +55,17 @@ export function RestCountdownRow({ ref }: { ref?: Ref<View> }) {
       />
 
       <Pressable onPress={() => adjust(-15)} hitSlop={Spacing.two} style={styles.adjust}>
-        <ThemedText type="small" themeColor="accent">
+        <ThemedText type="subhead" weight="semibold" themeColor="accent">
           −15
         </ThemedText>
       </Pressable>
 
-      <ThemedText type="smallBold" themeColor="accent" style={styles.value}>
+      <ThemedText type="headline" numeric themeColor="accent" style={styles.value}>
         {formatDuration(rest.remaining)}
       </ThemedText>
 
       <Pressable onPress={() => adjust(15)} hitSlop={Spacing.two} style={styles.adjust}>
-        <ThemedText type="small" themeColor="accent">
+        <ThemedText type="subhead" weight="semibold" themeColor="accent">
           +15
         </ThemedText>
       </Pressable>
@@ -72,11 +73,11 @@ export function RestCountdownRow({ ref }: { ref?: Ref<View> }) {
       <Pressable
         onPress={() => {
           haptics.tap();
-          void rest.cancel();
+          void attempt('rest-timer', rest.cancel());
         }}
         hitSlop={Spacing.two}
         style={styles.adjust}>
-        <ThemedText type="small" themeColor="textSecondary">
+        <ThemedText type="subhead" weight="semibold" themeColor="textSecondary">
           Skip
         </ThemedText>
       </Pressable>

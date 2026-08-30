@@ -59,7 +59,9 @@ export function BigButton({
         pressed && !(filled && SURFACE_HANDLES_PRESS) && styles.pressed,
       ]}>
       {icon ?? (symbol && <Icon name={symbol} size={20} tintColor={label} />)}
-      <ThemedText style={[styles.label, { color: label }]}>{title}</ThemedText>
+      <ThemedText type="headline" style={{ color: label }}>
+        {title}
+      </ThemedText>
     </Pressable>
   );
 
@@ -101,9 +103,5 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     minHeight: BIG_BUTTON_HEIGHT,
     paddingHorizontal: Spacing.three,
-  },
-  label: {
-    fontSize: 17,
-    fontWeight: '600',
   },
 });

@@ -44,7 +44,7 @@ export function StartTimePicker({
           setPickingDay(true);
         }}
         style={[styles.chip, { backgroundColor: theme.backgroundElement }]}>
-        <ThemedText type="small">{formatStartTime(value.getTime())}</ThemedText>
+        <ThemedText type="footnote">{formatStartTime(value.getTime())}</ThemedText>
       </Pressable>
 
       {pickingDay && (

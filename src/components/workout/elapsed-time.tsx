@@ -15,5 +15,9 @@ export function ElapsedTime({ startedAt }: { startedAt: number }) {
 
   useAppStateActive(() => setNow(Date.now()));
 
-  return <ThemedText type="smallBold">{formatElapsed(now - startedAt)}</ThemedText>;
+  return (
+    <ThemedText type="headline" numeric>
+      {formatElapsed(now - startedAt)}
+    </ThemedText>
+  );
 }

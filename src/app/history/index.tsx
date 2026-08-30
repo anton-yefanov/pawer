@@ -73,10 +73,10 @@ function MonthSection({
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <ThemedText type="smallBold" themeColor="textSecondary">
+        <ThemedText type="footnote" weight="semibold" themeColor="textSecondary">
           {formatMonth(workouts[0].startedAt)}
         </ThemedText>
-        <ThemedText type="smallBold" themeColor="textSecondary">
+        <ThemedText type="footnote" weight="semibold" themeColor="textSecondary">
           {workouts.length} {workouts.length === 1 ? 'Workout' : 'Workouts'}
         </ThemedText>
       </View>

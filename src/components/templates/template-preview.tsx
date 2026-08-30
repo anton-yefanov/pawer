@@ -24,6 +24,7 @@ import * as haptics from '@/lib/haptics';
 import { startWorkoutFromTemplate } from '@/lib/template-actions';
 import { templateExercisesQuery, templateQuery } from '@/lib/template-queries';
 import { useLiveRows } from '@/lib/use-live-rows';
+import { guard } from '@/lib/observability';
 
 export function TemplatePreview({ id }: { id: string }) {
   const theme = useTheme();
@@ -41,7 +42,11 @@ export function TemplatePreview({ id }: { id: string }) {
     router.push({ pathname: '/active', params: { id: workoutId } });
 
   const start = async () => {
-    const result = await startWorkoutFromTemplate(id);
+    const result = await guard('workout', startWorkoutFromTemplate(id), {
+      title: 'Couldn’t start workout',
+      message: 'Please try again.',
+    });
+    if (!result) return;
     if (result.status === 'blocked') {
       setBlockedBy(result.workoutId);
       return;
@@ -92,7 +97,7 @@ export function TemplatePreview({ id }: { id: string }) {
                 {Math.max(1, exercise.setCount)} × {exercise.name}
               </ThemedText>
               {exercise.primaryMuscles[0] && (
-                <ThemedText type="small" themeColor="textSecondary" style={styles.muscle}>
+                <ThemedText type="footnote" themeColor="textSecondary" style={styles.muscle}>
                   {exercise.primaryMuscles[0]}
                 </ThemedText>
               )}
@@ -102,7 +107,7 @@ export function TemplatePreview({ id }: { id: string }) {
       </ScrollView>
 
       <SheetFooter>
-        <BigButton title="Start Workout" onPress={start} />
+        <BigButton title="Start Workout" onPress={() => void start()} />
       </SheetFooter>
 
       {/* Deleting the template this sheet is showing takes the sheet with it. */}

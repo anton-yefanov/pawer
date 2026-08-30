@@ -73,7 +73,7 @@ export function ExerciseThumbnailField({
               { backgroundColor: theme.accent },
               pressed && styles.pressed,
             ]}>
-            <ThemedText themeColor="accentContent" style={styles.uploadLabel}>
+            <ThemedText type="subhead" weight="semibold" themeColor="accentContent">
               Upload thumbnail
             </ThemedText>
           </Pressable>
@@ -96,9 +96,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-  },
-  uploadLabel: {
-    fontWeight: 700,
   },
   upload: {
     paddingVertical: Spacing.two,

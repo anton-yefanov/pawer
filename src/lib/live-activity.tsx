@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 
 import { Colors } from '@/constants/theme';
 import { workoutActivity, type WorkoutActivityProps } from '@/lib/live-activity-layout';
+import { breadcrumb, guard, guardSync, report } from '@/lib/observability';
 import { useRestTimer } from '@/lib/rest-timer';
 import { isWorkSet } from '@/lib/set-types';
 import { formatTonnage } from '@/lib/units';
@@ -57,7 +58,7 @@ function useWorkoutActivity() {
   const stopping = useRef(false);
 
   useEffect(() => {
-    if (Platform.OS !== 'ios') return;
+    if (Platform.OS !== 'ios' || workoutActivity == null) return;
     // `useLiveQuery` starts `data` at `[]`, not undefined, so an empty array is
     // indistinguishable from "no active workout" until the query has actually
     // run — and acting on it tears down a live activity on every cold start.
@@ -96,8 +97,8 @@ function useWorkoutActivity() {
         : setAt,
       startedAt: active.startedAt,
       endedAt: null,
-      restStartedAt: rest.endsAt == null ? null : rest.endsAt - rest.total * 1000,
-      restEndsAt: rest.endsAt,
+      restStartedAt: instant(rest.endsAt == null ? null : rest.endsAt - rest.total * 1000),
+      restEndsAt: instant(rest.endsAt),
       setsLabel: `${workSets.filter((set) => set.completed).length}/${workSets.length} sets`,
       volumeLabel: formatTonnage(totalVolumeKg(sets, tracking), unit),
       exercisesLabel: exercises.length === 1 ? '1 exercise' : `${exercises.length} exercises`,
@@ -108,19 +109,39 @@ function useWorkoutActivity() {
       // Adopt an activity left running by a previous launch instead of stacking
       // a second one on top of it.
       const [existing] = workoutActivity.getInstances();
-      if (existing) void existing.update(props);
-      else workoutActivity.start(props, `pawer://active?id=${active.id}`);
+      // `start` is not a promise — it throws straight through JSI, and
+      // ActivityKit raises whenever the user has Live Activities switched off
+      // or the app is over the concurrent limit. Uncaught, that unmounts the
+      // whole app mid-workout for a decoration.
+      if (existing) {
+        // `push` records the payload only once ActivityKit has taken it.
+        push(existing, props, previous);
+      } else {
+        guardSync('live-activity', () =>
+          workoutActivity?.start(props, `pawer://active?id=${active.id}`)
+        );
+        // `start` has no promise to wait on, so this is the only place to set it.
+        previous.current = props;
+      }
+      breadcrumb('live-activity', existing ? 'activity adopted' : 'activity started');
       startedId.current = active.id;
-      previous.current = props;
       return;
     }
 
     if (previous.current != null && same(previous.current, props)) return;
-    previous.current = props;
 
     const [instance] = workoutActivity.getInstances();
-    if (instance) void instance.update(props);
+    if (instance) push(instance, props, previous);
   }, [updatedAt, active, exerciseRows, setRows, rest.endsAt, rest.total, unit]);
+}
+
+/**
+ * The widget layout turns these straight into `new Date(...)` and a SwiftUI
+ * range. It runs in the extension's own runtime, where Sentry does not exist and
+ * a throw is invisible everywhere, so a NaN has to be stopped on this side.
+ */
+function instant(value: number | null): number | null {
+  return value != null && Number.isFinite(value) ? value : null;
 }
 
 /** No set is waiting to be filled: either nothing was added, or it's all logged. */
@@ -145,10 +166,11 @@ const LINGER_MS = 60_000;
  * that was killed — and there's nothing to hold on screen for.
  */
 async function stop(workoutId: string | null, last: WorkoutActivityProps | null) {
-  const [instance] = workoutActivity.getInstances();
+  const [instance] = workoutActivity?.getInstances() ?? [];
   if (!instance) return;
 
-  const workout = workoutId == null ? null : (await workoutQuery(workoutId))[0];
+  const workout =
+    workoutId == null ? null : (await guard('live-activity', workoutQuery(workoutId)))?.[0];
   const finishedAt = workout?.finishedAt ?? null;
 
   const final: WorkoutActivityProps | undefined =
@@ -176,4 +198,25 @@ async function stop(workoutId: string | null, last: WorkoutActivityProps | null)
 
 function same(a: WorkoutActivityProps, b: WorkoutActivityProps): boolean {
   return (Object.keys(a) as (keyof WorkoutActivityProps)[]).every((key) => a[key] === b[key]);
+}
+
+/**
+ * `previous` only advances once ActivityKit has taken the payload. Recording it
+ * up front means a single rejected update — a throttle, or an activity the user
+ * swiped away — matches on every later pass and freezes the Lock Screen on
+ * stale numbers for the rest of the workout.
+ */
+function push(
+  instance: { update: (props: WorkoutActivityProps) => Promise<void> },
+  props: WorkoutActivityProps,
+  previous: { current: WorkoutActivityProps | null }
+): void {
+  instance.update(props).then(
+    () => {
+      previous.current = props;
+    },
+    (error: unknown) => {
+      report('live-activity', error, { phase: 'update' });
+    }
+  );
 }

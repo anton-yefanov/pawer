@@ -107,7 +107,7 @@ export function ExerciseProgress({
                   ]}
                 >
                   <ThemedText
-                    type="small"
+                    type="footnote"
                     themeColor={active ? "text" : "textSecondary"}
                   >
                     {entry.short}
@@ -123,11 +123,11 @@ export function ExerciseProgress({
         {/* No placeholder value with nothing logged: a lone dash where the big
             number goes reads as a broken readout rather than an empty one. */}
         {!empty && (
-          <ThemedText type="subtitle" style={styles.value}>
+          <ThemedText type="title1" numeric>
             {metric.format(isPro ? point.value : best, unit)}
           </ThemedText>
         )}
-        <ThemedText type="small" themeColor="textSecondary">
+        <ThemedText type="footnote" themeColor="textSecondary">
           {empty
             ? `${metric.title} · no sessions yet`
             : isPro
@@ -168,7 +168,7 @@ export function ExerciseProgress({
                 ]}
               >
                 <Icon name="lock.fill" size={14} tintColor={theme.accent} />
-                <ThemedText type="smallBold" themeColor="accent">
+                <ThemedText type="subhead" weight="semibold" themeColor="accent">
                   Unlock progress charts
                 </ThemedText>
               </View>
@@ -192,9 +192,6 @@ const styles = StyleSheet.create({
   },
   readout: {
     gap: Spacing.half,
-  },
-  value: {
-    fontVariant: ["tabular-nums"],
   },
   lock: {
     position: "absolute",

@@ -20,6 +20,7 @@ import m0015 from './0015_tough_eternity.sql';
 import m0016 from './0016_icy_doorman.sql';
 import m0017 from './0017_wipe_seeded_exercises.sql';
 import m0018 from './0018_bitter_colleen_wing.sql';
+import m0019 from './0019_modern_namorita.sql';
 
   export default {
     journal,
@@ -42,7 +43,8 @@ m0014,
 m0015,
 m0016,
 m0017,
-m0018
+m0018,
+m0019
     }
   }
   

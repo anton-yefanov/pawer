@@ -1,6 +1,6 @@
 import { and, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
 
-import { db } from '@/db/client';
+import { db, type Executor } from '@/db/client';
 import { newId } from '@/db/id';
 import { exercises, personalRecords, sets, workoutExercises } from '@/db/schema';
 import { trackingTypeOf, type TrackedSet, type TrackingType } from '@/lib/tracking-types';
@@ -87,15 +87,15 @@ type Candidate = { exerciseId: string; kind: PrKind; value: number; setId: strin
  * unfinished sets and then finishes again, and a second pass must replace its
  * own rows rather than double them.
  */
-export async function recordPersonalRecords(workoutId: string): Promise<void> {
+export async function recordPersonalRecords(workoutId: string, exec: Executor = db): Promise<void> {
   const now = Date.now();
 
-  await db
+  await exec
     .update(personalRecords)
     .set({ deletedAt: now, updatedAt: now })
     .where(and(eq(personalRecords.workoutId, workoutId), isNull(personalRecords.deletedAt)));
 
-  const rows = await db
+  const rows = await exec
     .select({
       setId: sets.id,
       exerciseId: workoutExercises.exerciseId,
@@ -131,7 +131,7 @@ export async function recordPersonalRecords(workoutId: string): Promise<void> {
   }
   if (best.size === 0) return;
 
-  const standing = await db
+  const standing = await exec
     .select({
       exerciseId: personalRecords.exerciseId,
       kind: personalRecords.kind,
@@ -155,7 +155,7 @@ export async function recordPersonalRecords(workoutId: string): Promise<void> {
   });
   if (earned.length === 0) return;
 
-  await db.insert(personalRecords).values(
+  await exec.insert(personalRecords).values(
     earned.map(([, candidate]) => ({
       id: newId(),
       exerciseId: candidate.exerciseId,

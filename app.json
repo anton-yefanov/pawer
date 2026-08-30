@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "pawer",
+    "name": "Pawer",
     "slug": "pawer",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -27,6 +27,30 @@
             "NSPrivacyCollectedDataTypeTracking": false,
             "NSPrivacyCollectedDataTypePurposes": [
               "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeName",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeCustomerSupport"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeEmailAddress",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeCustomerSupport"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeOtherUserContent",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeCustomerSupport"
             ]
           }
         ],
@@ -166,6 +190,9 @@
       "revenueCat": {
         "ios": "test_YagBgAzFucASRGNovnWGGEfCpdW",
         "android": "test_YagBgAzFucASRGNovnWGGEfCpdW"
+      },
+      "sentry": {
+        "dsn": "https://baaae22a7e2848c8239e8c0705151a05@o4511989296398336.ingest.us.sentry.io/4511989300461568"
       },
       "posthog": {
         "apiKey": "phc_rhLTiCCKSqx6CL4YSCYvESJZN8xLKZbGTvGzoyf6aXtD",

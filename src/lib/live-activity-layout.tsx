@@ -10,6 +10,8 @@ import {
 } from '@expo/ui/swift-ui/modifiers';
 import { createLiveActivity } from 'expo-widgets';
 
+import { guardSync } from '@/lib/observability';
+
 /**
  * Everything the layout renders, flat and already formatted.
  *
@@ -43,7 +45,8 @@ export type WorkoutActivityProps = {
   tint: string;
 };
 
-export const workoutActivity = createLiveActivity<WorkoutActivityProps>(
+const buildWorkoutActivity = () =>
+  createLiveActivity<WorkoutActivityProps>(
   'WorkoutActivity',
   (props) => {
     'widget';
@@ -204,3 +207,10 @@ export const workoutActivity = createLiveActivity<WorkoutActivityProps>(
     };
   }
 );
+
+/**
+ * Registering the activity reaches the native `ExpoWidgetsModule` at import
+ * time, so a build whose widget extension is missing or renamed throws before
+ * any React code runs. A null factory makes the Live Activity a no-op instead.
+ */
+export const workoutActivity = guardSync('live-activity', buildWorkoutActivity) ?? null;

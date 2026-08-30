@@ -103,7 +103,7 @@ export function DurationCell({
 
           <View style={styles.centre} pointerEvents="box-none">
             <View style={[styles.dialog, { backgroundColor: theme.surface }]}>
-              <ThemedText type="smallBold" themeColor="textSecondary">
+              <ThemedText type="footnote" weight="semibold" themeColor="textSecondary">
                 Duration
               </ThemedText>
 
@@ -129,7 +129,7 @@ export function DurationCell({
               </View>
 
               <Pressable onPress={close} style={styles.done}>
-                <ThemedText type="smallBold" themeColor="accent">
+                <ThemedText type="footnote" weight="semibold" themeColor="accent">
                   Done
                 </ThemedText>
               </Pressable>

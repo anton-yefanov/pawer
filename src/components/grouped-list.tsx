@@ -16,7 +16,7 @@ export function Card({ children }: { children: ReactNode }) {
 
 export function SectionTitle({ children }: { children: ReactNode }) {
   return (
-    <ThemedText type="smallBold" themeColor="textSecondary" style={groupedStyles.sectionTitle}>
+    <ThemedText type="footnote" weight="semibold" themeColor="textSecondary" style={groupedStyles.sectionTitle}>
       {children}
     </ThemedText>
   );
@@ -24,13 +24,13 @@ export function SectionTitle({ children }: { children: ReactNode }) {
 
 export function SectionFooter({
   children,
-  themeColor = 'textSecondary',
+  themeColor = 'textTertiary',
 }: {
   children: ReactNode;
   themeColor?: ComponentProps<typeof ThemedText>['themeColor'];
 }) {
   return (
-    <ThemedText type="small" themeColor={themeColor} style={groupedStyles.sectionFooter}>
+    <ThemedText type="footnote" themeColor={themeColor} style={groupedStyles.sectionFooter}>
       {children}
     </ThemedText>
   );
@@ -69,7 +69,7 @@ export function DisclosureRow({
       <View style={groupedStyles.rowText}>
         <ThemedText>{label}</ThemedText>
         {detail && (
-          <ThemedText type="small" themeColor="textSecondary">
+          <ThemedText type="footnote" themeColor="textSecondary">
             {detail}
           </ThemedText>
         )}
@@ -110,7 +110,7 @@ export function PickRow({
       <View style={groupedStyles.rowText}>
         <ThemedText>{label}</ThemedText>
         {detail && (
-          <ThemedText type="small" themeColor="textSecondary">
+          <ThemedText type="footnote" themeColor="textSecondary">
             {detail}
           </ThemedText>
         )}

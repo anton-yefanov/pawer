@@ -6,7 +6,7 @@ import {
   surfacePageOptions,
   TAB_ROOT_HEADER,
 } from "@/constants/navigation";
-import { DETAIL_SHEET, FULL_SHEET } from "@/constants/sheet";
+import { DETAIL_SHEET, FULL_SHEET, PINNED_CORNER_RADIUS } from "@/constants/sheet";
 import { useTheme } from "@/hooks/use-theme";
 
 /**
@@ -34,6 +34,15 @@ export default function HistoryLayout() {
       <Stack.Screen
         name="workout-active"
         options={{ ...FULL_SHEET, title: "" }}
+      />
+      {/* See the note beside the same screen in (workout)/_layout.tsx. */}
+      <Stack.Screen
+        name="workout-summary"
+        options={{
+          ...DETAIL_SHEET,
+          sheetCornerRadius: PINNED_CORNER_RADIUS,
+          headerShown: false,
+        }}
       />
       <Stack.Screen
         name="workout-add-exercise"

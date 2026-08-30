@@ -4,6 +4,7 @@ import { db } from '@/db/client';
 import { exercises, templates } from '@/db/schema';
 import { getSetting, setSetting } from '@/db/seed';
 import { isPeriodLocked, type PeriodId } from '@/lib/analytics-period';
+import { attempt, guard } from '@/lib/observability';
 import { presentPaywall } from '@/lib/paywall';
 
 /**
@@ -57,8 +58,8 @@ export async function allowPeriod(id: PeriodId, isPro: boolean): Promise<boolean
  */
 export async function presentFirstWorkoutPaywall(isPro: boolean): Promise<void> {
   if (isPro) return;
-  if (await getSetting(db, FIRST_WORKOUT_PAYWALL_KEY)) return;
+  if (await guard('pro-gates', getSetting(db, FIRST_WORKOUT_PAYWALL_KEY))) return;
 
-  await setSetting(db, FIRST_WORKOUT_PAYWALL_KEY, String(Date.now()));
-  await presentPaywall('first_workout');
+  await attempt('pro-gates', setSetting(db, FIRST_WORKOUT_PAYWALL_KEY, String(Date.now())));
+  await attempt('pro-gates', presentPaywall('first_workout'));
 }

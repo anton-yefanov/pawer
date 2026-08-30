@@ -154,7 +154,7 @@ export function ExerciseCard({
                 onOpenExercise(exercise.exerciseId);
               }}>
               {supersetIndex !== undefined && <SupersetBadge index={supersetIndex} />}
-              <ThemedText type="smallBold" numberOfLines={1} style={styles.name}>
+              <ThemedText type="headline" numberOfLines={1} style={styles.name}>
                 {exercise.name}
               </ThemedText>
             </Pressable>
@@ -210,7 +210,7 @@ export function ExerciseCard({
                 value={exercise.notes ?? ''}
                 onCommit={(next) => {
                   if (removingNote.current) return;
-                  actions.setExerciseNotes(exercise.id, next.trim() || null);
+                  return actions.setExerciseNotes(exercise.id, next.trim() || null);
                 }}
                 placeholder="Notes"
                 autoFocus={(exercise.notes ?? '') === ''}
@@ -219,17 +219,17 @@ export function ExerciseCard({
             )}
 
             <View style={styles.columns}>
-              <ThemedText type="small" themeColor="textSecondary" style={styles.columnSet}>
+              <ThemedText type="footnote" themeColor="textTertiary" style={styles.columnSet}>
                 Set
               </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary" style={styles.columnPrevious}>
+              <ThemedText type="footnote" themeColor="textTertiary" style={styles.columnPrevious}>
                 Previous
               </ThemedText>
               {fields.map((field) => (
                 <ThemedText
                   key={field}
-                  type="small"
-                  themeColor="textSecondary"
+                  type="footnote"
+                  themeColor="textTertiary"
                   style={{
                     width: fieldWidth(fields.length),
                     textAlign: 'center',
@@ -261,7 +261,7 @@ export function ExerciseCard({
                 actions.addSet(exercise.id);
               }}
               style={({ pressed }) => [styles.addSet, pressed && styles.pressed]}>
-              <ThemedText type="small" themeColor="textSecondary">
+              <ThemedText type="footnote" themeColor="textSecondary">
                 + Add set
                 {restSeconds > 0 ? ` (${formatDuration(restSeconds)})` : ''}
               </ThemedText>

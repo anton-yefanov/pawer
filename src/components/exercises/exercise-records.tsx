@@ -33,7 +33,7 @@ export function ExerciseRecords({
   if (known.length === 0) {
     return (
       <ExerciseSection title="Records">
-        <ThemedText type="small" themeColor="textSecondary">
+        <ThemedText type="footnote" themeColor="textSecondary">
           No records yet.
         </ThemedText>
       </ExerciseSection>
@@ -48,10 +48,10 @@ export function ExerciseRecords({
             {index > 0 && <SectionRule />}
             <View style={styles.row}>
               <PrChip label={PR_LABELS[record.kind]} />
-              <ThemedText type="smallBold" style={styles.value}>
+              <ThemedText type="headline" numeric style={styles.value}>
                 {formatPrValue(record.kind, record.value, unit)}
               </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
+              <ThemedText type="footnote" themeColor="textSecondary">
                 {formatDay(record.achievedAt)}
               </ThemedText>
             </View>
@@ -71,6 +71,5 @@ const styles = StyleSheet.create({
   },
   value: {
     marginLeft: 'auto',
-    fontVariant: ['tabular-nums'],
   },
 });

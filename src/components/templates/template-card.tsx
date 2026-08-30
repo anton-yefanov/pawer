@@ -3,7 +3,7 @@ import { View } from 'react-native';
 
 import { ArtworkLayer } from '@/components/templates/artwork-layer';
 import { DraggableCell } from '@/components/templates/draggable-cell';
-import { CARD_BORDER, cardSlot, COVER_RATIO, GridCard } from '@/components/templates/grid-card';
+import { CARD_BORDER, cardSlot, coverSize, GridCard } from '@/components/templates/grid-card';
 import { type CardColor } from '@/constants/card-colors';
 import { type CardArtwork } from '@/lib/card-artwork';
 import { type ExerciseArt } from '@/lib/exercise-media';
@@ -33,14 +33,13 @@ export function TemplateCard({ template, width, index, draggable = false }: Prop
       width={cardWidth}
       title={template.name}
       color={template.color}
-      subtitle={template.exerciseNames.join(', ')}
       onPress={() =>
         router.push({ pathname: '/template/[id]', params: { id: template.id } })
       }
       cover={
         <ArtworkLayer
           artwork={template.artwork}
-          coverHeight={cardWidth * COVER_RATIO}
+          coverHeight={coverSize(cardWidth).height}
           exerciseArt={template.exerciseArt}
         />
       }

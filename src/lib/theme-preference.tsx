@@ -3,6 +3,7 @@ import { Appearance, Platform, useColorScheme as useDeviceColorScheme } from 're
 
 import { db } from '@/db/client';
 import { getSetting, setSetting } from '@/db/seed';
+import { report } from '@/lib/observability';
 
 const PREFERENCE_KEY = 'theme_preference';
 
@@ -26,9 +27,16 @@ export function ThemePreferenceProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    getSetting(db, PREFERENCE_KEY).then((value) => {
-      if (!cancelled) setStored(isPreference(value) ? value : 'system');
-    });
+    // Same as `OnboardingProvider`: nothing renders until this resolves.
+    getSetting(db, PREFERENCE_KEY).then(
+      (value) => {
+        if (!cancelled) setStored(isPreference(value) ? value : 'system');
+      },
+      (error: unknown) => {
+        report('settings', error, { phase: 'read-theme' });
+        if (!cancelled) setStored('system');
+      }
+    );
     return () => {
       cancelled = true;
     };

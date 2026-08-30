@@ -139,7 +139,7 @@ export function Menu({
 
             {path.length === 0 && title != null && (
               <View style={styles.title}>
-                <ThemedText type="small" themeColor="textSecondary">
+                <ThemedText type="footnote" themeColor="textSecondary">
                   {title}
                 </ThemedText>
               </View>

@@ -1,4 +1,4 @@
-import { Text } from 'react-native';
+import { type StyleProp, Text, type TextStyle } from 'react-native';
 
 /**
  * One emoji glyph. The system picks the emoji font, which on iOS is Apple Color
@@ -9,6 +9,14 @@ import { Text } from 'react-native';
  * `lineHeight` is set because a bare emoji's default leading clips its top on
  * both platforms.
  */
-export function Emoji({ value, size }: { value: string; size: number }) {
-  return <Text style={{ fontSize: size, lineHeight: size * 1.2 }}>{value}</Text>;
+export function Emoji({
+  value,
+  size,
+  style,
+}: {
+  value: string;
+  size: number;
+  style?: StyleProp<TextStyle>;
+}) {
+  return <Text style={[{ fontSize: size, lineHeight: size * 1.2 }, style]}>{value}</Text>;
 }

@@ -32,14 +32,14 @@ const ramp = (light: string, mid: string, deep: string): string[] => [
 ];
 
 const GRADIENTS: Record<CardColor, CardGradient> = {
-  grey: { colors: ramp('#FBFBF9', '#EAEAE6', '#D2D2CC'), flat: '#E8E8E4' },
-  orange: { colors: ramp('#FFE3B8', '#FFC169', '#F09324'), flat: '#FFC169' },
-  red: { colors: ramp('#FFD6CB', '#FCA189', '#EA6A52'), flat: '#FCA189' },
-  pink: { colors: ramp('#FFDDEB', '#FDB2CF', '#EE8AB6'), flat: '#FDB2CF' },
-  purple: { colors: ramp('#E9DCFF', '#BFA4EC', '#9670D6'), flat: '#BFA4EC' },
-  blue: { colors: ramp('#DAECFF', '#A3CBF5', '#6EA6E8'), flat: '#A3CBF5' },
-  green: { colors: ramp('#E4F4D9', '#B4DA9C', '#86BD6B'), flat: '#B4DA9C' },
-  black: { colors: ramp('#4E4E52', '#2B2B2E', '#0D0D0F'), flat: '#2B2B2E' },
+  grey: { colors: ramp('#F4F4F3', '#DCDDDD', '#B6B8B8'), flat: '#DCDDDD' },
+  orange: { colors: ramp('#FCD8A8', '#F9B150', '#E1870D'), flat: '#F9B150' },
+  red: { colors: ramp('#FDB9B5', '#FB736B', '#D64137'), flat: '#FB736B' },
+  yellow: { colors: ramp('#FDEAA8', '#FBD550', '#C9A319'), flat: '#FBD550' },
+  purple: { colors: ramp('#DDB2EC', '#BB66DA', '#8F46A9'), flat: '#BB66DA' },
+  blue: { colors: ramp('#B7E8FC', '#6FD0F9', '#3997CB'), flat: '#6FD0F9' },
+  green: { colors: ramp('#ACEBCC', '#58D79A', '#16A362'), flat: '#58D79A' },
+  black: { colors: ramp('#5A5A5A', '#434343', '#1E1E1E'), flat: '#434343' },
 };
 
 export function cardGradient(color: CardColor | string | null | undefined): CardGradient {

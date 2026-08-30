@@ -20,6 +20,7 @@ export const Colors = {
     backgroundElement: '#F0F0F3',
     backgroundSelected: '#E0E1E6',
     textSecondary: '#60646C',
+    textTertiary: '#8B8D98',
     accent: '#007AFF',
     accentContent: '#FFFFFF',
     success: '#34C759',
@@ -42,6 +43,7 @@ export const Colors = {
     backgroundElement: '#212225',
     backgroundSelected: '#2E3135',
     textSecondary: '#B0B4BA',
+    textTertiary: '#7C8085',
     accent: '#0A84FF',
     accentContent: '#FFFFFF',
     success: '#30D158',
@@ -100,6 +102,43 @@ export const Fonts = Platform.select({
   },
 });
 
+/**
+ * The iOS text styles, which is the whole type scale — nothing sets a `fontSize`
+ * of its own. Roles are named for their Human Interface Guidelines counterparts
+ * so a screen picks a role rather than a number.
+ *
+ * `letterSpacing` is Apple's SF Pro tracking table, which React Native does not
+ * apply for us, so it is set by hand and only where that face is actually in
+ * use — Nunito is drawn with its own metrics and needs none of it.
+ */
+const track = (ios: number) => Platform.select({ ios: { letterSpacing: ios } });
+
+export const Type = {
+  largeTitle: { fontSize: 34, lineHeight: 41, fontWeight: 700, ...track(0.4) },
+  title1: { fontSize: 28, lineHeight: 34, fontWeight: 700, ...track(0.36) },
+  title2: { fontSize: 22, lineHeight: 28, fontWeight: 700, ...track(-0.26) },
+  title3: { fontSize: 20, lineHeight: 25, fontWeight: 600, ...track(0.38) },
+  headline: { fontSize: 17, lineHeight: 22, fontWeight: 600, ...track(-0.43) },
+  body: { fontSize: 17, lineHeight: 22, fontWeight: 400, ...track(-0.43) },
+  callout: { fontSize: 16, lineHeight: 21, fontWeight: 400, ...track(-0.31) },
+  subhead: { fontSize: 15, lineHeight: 20, fontWeight: 400, ...track(-0.23) },
+  footnote: { fontSize: 13, lineHeight: 18, fontWeight: 400, ...track(-0.08) },
+  caption1: { fontSize: 12, lineHeight: 16, fontWeight: 400 },
+  caption2: { fontSize: 11, lineHeight: 13, fontWeight: 500, ...track(0.06) },
+} as const;
+
+export type TypeRole = keyof typeof Type;
+
+/** The four weights bundled for Android, so a role override cannot ask for a face that will not resolve. */
+export const Weights = {
+  regular: 400,
+  medium: 500,
+  semibold: 600,
+  bold: 700,
+} as const;
+
+export type TypeWeight = keyof typeof Weights;
+
 export const Spacing = {
   half: 2,
   one: 4,
@@ -119,6 +158,27 @@ export const Spacing = {
  */
 export const Raised = {
   light: { boxShadow: '0 4px 14px rgba(0, 0, 0, 0.1)' },
+  dark: {},
+} as const;
+
+/** The much shallower lift under a template or folder cover, which sits on the page rather than over it. */
+export const CardRaised = {
+  light: { boxShadow: '0 2px 6px rgba(0, 0, 0, 0.12)' },
+  dark: {},
+} as const;
+
+/**
+ * The same lift for cut-out artwork. `boxShadow` would draw the rectangle the
+ * view occupies; the iOS `shadow*` props are derived from the layer's alpha, so
+ * a folder icon casts its own silhouette.
+ */
+export const CardRaisedShape = {
+  light: {
+    shadowColor: '#000000',
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
+  },
   dark: {},
 } as const;
 

@@ -22,7 +22,7 @@ import seedTemplateData from './seed/templates.json';
  * drizzle/0017_wipe_seeded_exercises.sql clears every app-owned exercise and
  * the history hanging off it before this runs.
  */
-export const SEED_VERSION = 13;
+export const SEED_VERSION = 14;
 
 const SEED_VERSION_KEY = 'seed_version';
 
@@ -157,44 +157,50 @@ async function seedTemplates(db: Database): Promise<void> {
     const templateId = templateIdBySource.get(template.sourceId);
     if (!templateId) continue;
 
-    const previous = await db
-      .select({ id: templateExercises.id })
-      .from(templateExercises)
-      .where(eq(templateExercises.templateId, templateId))
-      .all();
-    if (previous.length > 0) {
-      await db.delete(templateSets).where(
-        inArray(
-          templateSets.templateExerciseId,
-          previous.map((row) => row.id),
+    // The rebuild clears the template's rows before writing the new ones, so
+    // without the transaction a failure in between ships a shipped template
+    // that is present but empty.
+    await db.transaction(async (tx) => {
+      const previous = await tx
+        .select({ id: templateExercises.id })
+        .from(templateExercises)
+        .where(eq(templateExercises.templateId, templateId))
+        .all();
+      if (previous.length > 0) {
+        await tx.delete(templateSets).where(
+          inArray(
+            templateSets.templateExerciseId,
+            previous.map((row) => row.id),
+          ),
+        );
+      }
+      await tx.delete(templateExercises).where(eq(templateExercises.templateId, templateId));
+
+      // `targetSets` / `targetReps` are the JSON's authoring shape; the table
+      // stores one row per planned set, so this is the only place that expands
+      // them.
+      const rows = template.exercises
+        .map((entry, position) => {
+          const exerciseId = exerciseIdBySource.get(entry.exerciseSourceId);
+          if (!exerciseId) return null;
+          return { id: newId(), templateId, exerciseId, position, entry };
+        })
+        .filter((row) => row !== null);
+
+      if (rows.length === 0) return;
+
+      await tx.insert(templateExercises).values(rows.map(({ entry: _entry, ...row }) => row));
+
+      await tx.insert(templateSets).values(
+        rows.flatMap(({ id, entry }) =>
+          Array.from({ length: entry.targetSets }, (_, position) => ({
+            id: newId(),
+            templateExerciseId: id,
+            position,
+            reps: entry.targetReps ?? null,
+          })),
         ),
       );
-    }
-    await db.delete(templateExercises).where(eq(templateExercises.templateId, templateId));
-
-    // `targetSets` / `targetReps` are the JSON's authoring shape; the table stores
-    // one row per planned set, so this is the only place that expands them.
-    const rows = template.exercises
-      .map((entry, position) => {
-        const exerciseId = exerciseIdBySource.get(entry.exerciseSourceId);
-        if (!exerciseId) return null;
-        return { id: newId(), templateId, exerciseId, position, entry };
-      })
-      .filter((row) => row !== null);
-
-    if (rows.length === 0) continue;
-
-    await db.insert(templateExercises).values(rows.map(({ entry: _entry, ...row }) => row));
-
-    await db.insert(templateSets).values(
-      rows.flatMap(({ id, entry }) =>
-        Array.from({ length: entry.targetSets }, (_, position) => ({
-          id: newId(),
-          templateExerciseId: id,
-          position,
-          reps: entry.targetReps ?? null,
-        })),
-      ),
-    );
+    });
   }
 }

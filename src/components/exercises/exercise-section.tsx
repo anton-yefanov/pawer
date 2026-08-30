@@ -22,7 +22,7 @@ export function ExerciseSection({
   return (
     <View style={styles.section}>
       <View style={styles.header}>
-        <ThemedText type="smallBold" themeColor="textSecondary">
+        <ThemedText type="footnote" weight="semibold" themeColor="textSecondary">
           {title}
         </ThemedText>
         {trailing}

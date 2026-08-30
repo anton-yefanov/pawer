@@ -26,15 +26,23 @@ export type LoggedExercise = {
   supersetId: string | null;
 };
 
+/**
+ * Every action is a write. They resolve rather than returning void so a caller
+ * that debounces one — `useDebouncedWrite` — can tell whether the value the user
+ * typed actually landed; dropping the promise is how a half-typed weight goes
+ * missing with nothing said and nothing reported.
+ */
+type Write = Promise<unknown> | void;
+
 export type LoggingActions = {
-  addSet: (exerciseRowId: string) => void;
-  removeExercise: (exerciseRowId: string) => void;
-  setExerciseNotes: (exerciseRowId: string, notes: string | null) => void;
-  setExerciseRest: (exerciseRowId: string, seconds: number | null) => void;
-  joinSuperset: (exerciseRowId: string, targetRowId: string) => void;
-  leaveSuperset: (exerciseRowId: string) => void;
-  updateSetValues: (setId: string, values: Partial<TrackedSet>) => void;
-  setSetType: (setId: string, setType: SetType) => void;
-  setSetNotes: (setId: string, notes: string | null) => void;
-  deleteSet: (setId: string) => void;
+  addSet: (exerciseRowId: string) => Write;
+  removeExercise: (exerciseRowId: string) => Write;
+  setExerciseNotes: (exerciseRowId: string, notes: string | null) => Write;
+  setExerciseRest: (exerciseRowId: string, seconds: number | null) => Write;
+  joinSuperset: (exerciseRowId: string, targetRowId: string) => Write;
+  leaveSuperset: (exerciseRowId: string) => Write;
+  updateSetValues: (setId: string, values: Partial<TrackedSet>) => Write;
+  setSetType: (setId: string, setType: SetType) => Write;
+  setSetNotes: (setId: string, notes: string | null) => Write;
+  deleteSet: (setId: string) => Write;
 };

@@ -1,6 +1,7 @@
 import Constants from 'expo-constants';
 import PostHog from 'posthog-react-native';
 
+import { breadcrumb } from '@/lib/observability';
 import type { PaywallOutcome, PaywallSource } from '@/lib/paywall';
 import type { TrackingType } from '@/lib/tracking-types';
 import type { WeightUnit } from '@/lib/units';
@@ -68,6 +69,7 @@ type TelemetryEvents = {
   paywall_shown: { source: PaywallSource };
   paywall_result: { source: PaywallSource; outcome: PaywallOutcome };
   pro_restored: { found: boolean };
+  support_message_sent: { sent: boolean; length: number };
   app_error: { scope: string; message: string };
 };
 
@@ -75,6 +77,13 @@ export function track<K extends keyof TelemetryEvents>(
   event: K,
   properties: TelemetryEvents[K]
 ): void {
+  // Also a Sentry breadcrumb, and unconditionally — the events above are
+  // already the flat enums and counts a crash report wants attached, so a crash
+  // arrives knowing the workout was finished and the paywall was shown rather
+  // than nothing at all. It runs outside the PostHog guard because a missing
+  // analytics key must not cost the diagnostics.
+  breadcrumb('app', event, properties);
+
   if (!client) return;
   try {
     client.capture(event, properties);

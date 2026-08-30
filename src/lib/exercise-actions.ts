@@ -64,14 +64,17 @@ export async function updateCustomExercise(id: string, form: ExerciseForm) {
     .from(exercises)
     .where(eq(exercises.id, id))
     .limit(1);
-  if (previous?.imageFile && previous.imageFile !== row.imageFile) {
-    deleteExercisePhoto(previous.imageFile);
-  }
 
   await db
     .update(exercises)
     .set({ ...row, searchText: buildSearchText(row), updatedAt: Date.now() })
     .where(eq(exercises.id, id));
+
+  // After the update, not before: dropping it first meant a failed write left a
+  // live exercise pointing at a file that no longer exists.
+  if (previous?.imageFile && previous.imageFile !== row.imageFile) {
+    deleteExercisePhoto(previous.imageFile);
+  }
 }
 
 /**
@@ -88,12 +91,17 @@ export async function deleteCustomExercise(id: string) {
     .from(exercises)
     .where(eq(exercises.id, id))
     .limit(1);
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(templateExercises)
+      .set({ deletedAt, updatedAt: deletedAt })
+      .where(and(eq(templateExercises.exerciseId, id), isNull(templateExercises.deletedAt)));
+
+    await tx.update(exercises).set({ deletedAt, updatedAt: deletedAt }).where(eq(exercises.id, id));
+  });
+
+  // Same ordering as `updateCustomExercise`: the file goes only once the row it
+  // belonged to is actually gone.
   deleteExercisePhoto(row?.imageFile);
-
-  await db
-    .update(templateExercises)
-    .set({ deletedAt, updatedAt: deletedAt })
-    .where(and(eq(templateExercises.exerciseId, id), isNull(templateExercises.deletedAt)));
-
-  await db.update(exercises).set({ deletedAt, updatedAt: deletedAt }).where(eq(exercises.id, id));
 }

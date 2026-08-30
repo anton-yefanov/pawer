@@ -77,7 +77,7 @@ function OnboardingFlow() {
             ]}>
             <BigButton title="Get Started" onPress={next} />
             <View style={styles.secondSlot}>
-              <ThemedText type="small" themeColor="textSecondary" style={styles.note}>
+              <ThemedText type="footnote" themeColor="textTertiary" style={styles.note}>
                 Your workouts stay on this phone
               </ThemedText>
             </View>
@@ -170,8 +170,8 @@ function UnitCard({
           opacity: pressed ? 0.6 : 1,
         },
       ]}>
-      <ThemedText type="subtitle">{label}</ThemedText>
-      <ThemedText type="small" themeColor="textSecondary">
+      <ThemedText type="title2">{label}</ThemedText>
+      <ThemedText type="footnote" themeColor="textSecondary">
         {system}
       </ThemedText>
     </Pressable>

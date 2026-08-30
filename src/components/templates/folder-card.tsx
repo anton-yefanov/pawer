@@ -3,17 +3,19 @@ import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
 import { useAnimatedStyle } from 'react-native-reanimated';
 
-import { Icon } from '@/components/icon';
 import { DraggableCell } from '@/components/templates/draggable-cell';
-import { CARD_BORDER, GridCard } from '@/components/templates/grid-card';
+import { FolderArt } from '@/components/templates/folder-art';
+import { CARD_BORDER, COVER_SCALE, GridCard } from '@/components/templates/grid-card';
 import { useTemplateDrag } from '@/components/templates/template-drag';
 import { type CardColor } from '@/constants/card-colors';
 import { useTheme } from '@/hooks/use-theme';
+import { type CardArtwork } from '@/lib/card-artwork';
 
 export type FolderCardData = {
   id: string;
   name: string;
   color: CardColor | null;
+  artwork: CardArtwork | null;
   templateNames: readonly string[];
 };
 
@@ -30,6 +32,7 @@ export function FolderCard({
   const theme = useTheme();
   const drag = useTemplateDrag();
   const ref = useRef<View>(null);
+  const cardWidth = width - CARD_BORDER * 2;
 
   useEffect(() => drag.registerFolder(folder.id, ref), [drag, folder.id]);
 
@@ -47,21 +50,23 @@ export function FolderCard({
       cellRef={ref}
       highlight={highlight}>
       <GridCard
-        width={width - CARD_BORDER * 2}
+        width={cardWidth}
         title={folder.name}
         color={folder.color}
-        subtitle={
-          folder.templateNames.length > 0
-            ? folder.templateNames.join(', ')
-            : 'Empty — drag a template here'
-        }
+        showCover={false}
         onPress={() =>
           router.push({
             pathname: '/folder/[id]',
             params: { id: folder.id },
           })
         }
-        cover={<Icon name="folder.fill" size={44} tintColor={theme.textSecondary} />}
+        cover={
+          <FolderArt
+            color={folder.color}
+            artwork={folder.artwork}
+            width={cardWidth * COVER_SCALE}
+          />
+        }
       />
     </DraggableCell>
   );

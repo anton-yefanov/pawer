@@ -40,7 +40,7 @@ export function DayPicker({
           setOpen(true);
         }}
         style={[styles.chip, { backgroundColor: theme.backgroundElement }]}>
-        <ThemedText type="small">{formatDay(value)}</ThemedText>
+        <ThemedText type="footnote">{formatDay(value)}</ThemedText>
       </Pressable>
 
       {open && (

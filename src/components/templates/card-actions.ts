@@ -10,6 +10,13 @@ import {
 import { prompt } from '@/lib/text-prompt';
 import { deleteTemplate, duplicateTemplate } from '@/lib/template-actions';
 
+import { attempt } from '@/lib/observability';
+
+const FAILED = {
+  title: 'Couldn’t save',
+  message: 'That change wasn’t saved. Please try again.',
+};
+
 export type CardAction = {
   label: string;
   icon: IconName;
@@ -49,7 +56,7 @@ export function templateActions(
   const duplicate: CardAction = {
     label: 'Duplicate',
     icon: 'plus.square.on.square',
-    onPress: () => void duplicateTemplate(template.id),
+    onPress: () => void attempt('templates', duplicateTemplate(template.id), FAILED),
   };
 
   if (template.isBuiltIn) return [duplicate];
@@ -80,7 +87,7 @@ export function templateActions(
     actions.push({
       label: 'Remove from Folder',
       icon: 'folder.badge.minus',
-      onPress: () => void moveTemplateToFolder(template.id, null),
+      onPress: () => void attempt('templates', moveTemplateToFolder(template.id, null), FAILED),
     });
   }
 
@@ -93,7 +100,7 @@ export function templateActions(
       confirm({
         title: `Delete “${template.name}”?`,
         body: 'Workouts you logged from it are kept.',
-        onConfirm: () => void deleteTemplate(template.id),
+        onConfirm: () => void attempt('templates', deleteTemplate(template.id), FAILED),
       }),
   });
 
@@ -128,24 +135,30 @@ export function folderActions(
         confirm({
           title: `Delete “${folder.name}”?`,
           body: 'The templates inside are kept.',
-          onConfirm: () => void deleteFolder(folder.id),
+          onConfirm: () => void attempt('folders', deleteFolder(folder.id), FAILED),
         }),
     },
   ];
 }
 
 export function promptRenameFolder(folder: { id: string; name: string }): void {
-  void prompt({ title: 'Rename Folder', confirmLabel: 'Rename', initialValue: folder.name }).then(
-    (value) => {
-      const name = value.trim();
-      if (name) void renameFolder(folder.id, name);
-    },
+  void attempt(
+    'folders',
+    prompt({ title: 'Rename Folder', confirmLabel: 'Rename', initialValue: folder.name }).then(
+      (value) => {
+        const name = value.trim();
+        if (name) return attempt('folders', renameFolder(folder.id, name), FAILED);
+      },
+    ),
   );
 }
 
 export function promptNewFolder(): void {
-  void prompt({ title: 'New Folder', confirmLabel: 'Create' }).then((value) => {
-    const name = value.trim();
-    if (name) void createFolder(name);
-  });
+  void attempt(
+    'folders',
+    prompt({ title: 'New Folder', confirmLabel: 'Create' }).then((value) => {
+      const name = value.trim();
+      if (name) return attempt('folders', createFolder(name), FAILED);
+    }),
+  );
 }

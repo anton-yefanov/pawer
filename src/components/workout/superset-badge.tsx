@@ -9,7 +9,7 @@ export function SupersetBadge({ index }: { index: number }) {
 
   return (
     <View style={[styles.badge, { backgroundColor: color }]}>
-      <ThemedText type="small" themeColor="accentContent" style={styles.label}>
+      <ThemedText type="caption2" weight="bold" themeColor="accentContent">
         Superset
       </ThemedText>
     </View>
@@ -21,10 +21,5 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.half,
-  },
-  label: {
-    fontSize: 11,
-    lineHeight: 14,
-    fontWeight: 700,
   },
 });

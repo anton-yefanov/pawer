@@ -168,6 +168,9 @@ export const folders = sqliteTable('folders', {
   name: text('name').notNull(),
   position: integer('position').notNull().default(0),
   color: text('color').$type<CardColor>(),
+
+  /** Cover artwork as JSON; null is the bare gradient. See src/lib/card-artwork.ts. */
+  artwork: text('artwork'),
   ...timestamps,
 });
 

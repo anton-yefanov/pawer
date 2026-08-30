@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -13,24 +14,23 @@ import { FinishReminderProvider } from '@/lib/finish-reminder';
 import { KeyboardProvider } from '@/lib/keyboard-provider';
 import { WorkoutActivityProvider } from '@/lib/live-activity';
 import { NoticeHost } from '@/lib/notice';
+import { initObservability } from '@/lib/observability';
 import { OnboardingProvider } from '@/lib/onboarding';
 import { PurchasesProvider } from '@/lib/purchases';
 import { RestTimerProvider } from '@/lib/rest-timer';
 import { PromptHost } from '@/lib/text-prompt';
 import { ThemePreferenceProvider } from '@/lib/theme-preference';
 import { WeightUnitProvider } from '@/lib/weight-unit';
-import * as Sentry from '@sentry/react-native';
 
-SplashScreen.preventAutoHideAsync();
-
-
-Sentry.init({
-  dsn: 'https://baaae22a7e2848c8239e8c0705151a05@o4511989296398336.ingest.us.sentry.io/4511989300461568',
-  sendDefaultPii: true,
-  enableLogs: true,
+SplashScreen.preventAutoHideAsync().catch(() => {
+  // Documented to reject; the splash hiding a frame early is not worth a crash.
 });
 
-export default function TabLayout() {
+initObservability();
+
+export { AppErrorBoundary as ErrorBoundary } from '@/components/app-error-boundary';
+
+function TabLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardProvider>
@@ -73,3 +73,5 @@ function ThemedApp() {
     </ThemeProvider>
   );
 }
+
+export default Sentry.wrap(TabLayout);

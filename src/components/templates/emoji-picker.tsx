@@ -90,7 +90,7 @@ export function EmojiPicker({
         )}
       />
 
-      <View style={[styles.header, { backgroundColor: theme.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.surface }]}>
         <View style={styles.search}>
           <View style={[styles.field, { backgroundColor: theme.backgroundElement }]}>
             <Icon name="magnifyingglass" size={16} tintColor={theme.textSecondary} />
@@ -157,7 +157,6 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 17,
   },
   categories: {
     flexDirection: 'row',

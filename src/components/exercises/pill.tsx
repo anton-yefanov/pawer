@@ -1,9 +1,9 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from "react-native";
 
-import { Glyph, type IconName } from '@/components/icon';
-import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { Glyph, type IconName } from "@/components/icon";
+import { ThemedText } from "@/components/themed-text";
+import { Spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
 
 /**
  * The sheet's one control shape: a full capsule carrying a monoline glyph and a
@@ -20,14 +20,14 @@ export function Pill({
   pressed,
   onLayout,
 }: {
-  icon: IconName;
+  icon?: IconName;
   label: string;
   active?: boolean;
   /** A pill on the grey page rather than inside a card, where `backgroundElement` all but vanishes. */
   raised?: boolean;
   trailing?: IconName;
   pressed?: boolean;
-  onLayout?: React.ComponentProps<typeof View>['onLayout'];
+  onLayout?: React.ComponentProps<typeof View>["onLayout"];
 }) {
   const theme = useTheme();
   const tint = active ? theme.text : theme.textSecondary;
@@ -45,25 +45,27 @@ export function Pill({
               : theme.backgroundElement,
           opacity: pressed ? 0.6 : 1,
         },
-      ]}>
-      <Glyph name={icon} size={17} color={tint} />
-      <ThemedText style={[styles.label, { color: tint }]}>{label}</ThemedText>
-      {trailing && <Glyph name={trailing} size={13} color={theme.textSecondary} />}
+      ]}
+    >
+      {icon && <Glyph name={icon} size={17} color={tint} />}
+      <ThemedText type="subhead" weight="semibold" style={{ color: tint }}>
+        {label}
+      </ThemedText>
+      {trailing && (
+        <Glyph name={trailing} size={13} color={theme.textSecondary} />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.two,
     paddingVertical: Spacing.two + Spacing.half,
     paddingHorizontal: Spacing.three,
     // A full capsule, not a rounded rectangle — the height is what sets the radius.
     borderRadius: 999,
-  },
-  label: {
-    fontWeight: 600,
   },
 });

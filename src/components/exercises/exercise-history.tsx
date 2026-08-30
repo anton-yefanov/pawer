@@ -68,7 +68,7 @@ export function ExerciseHistory({
   const recent = sessions.slice(-HISTORY_SESSIONS).reverse();
   if (recent.length === 0) {
     return (
-      <ThemedText type="small" themeColor="textSecondary">
+      <ThemedText type="footnote" themeColor="textSecondary">
         No finished sessions with this exercise yet.
       </ThemedText>
     );
@@ -111,11 +111,11 @@ export function ExerciseHistory({
               {records > 0 && <PrChip label={String(records)} />}
 
               <View style={styles.meta}>
-                <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                <ThemedText type="footnote" themeColor="textSecondary" numberOfLines={1}>
                   {formatDay(session.startedAt)}
                 </ThemedText>
                 {session.name?.trim() ? (
-                  <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                  <ThemedText type="footnote" themeColor="textSecondary" numberOfLines={1}>
                     {session.name.trim()}
                   </ThemedText>
                 ) : null}
@@ -126,7 +126,7 @@ export function ExerciseHistory({
       })}
 
       {sessions.length > recent.length && (
-        <ThemedText type="small" themeColor="textSecondary" style={styles.footer}>
+        <ThemedText type="footnote" themeColor="textTertiary" style={styles.footer}>
           Showing the last {recent.length} of {sessions.length} sessions.
         </ThemedText>
       )}

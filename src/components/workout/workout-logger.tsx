@@ -22,7 +22,6 @@ import {
   HeaderPillButton,
 } from '@/components/workout/workout-sheet-header';
 import { WorkoutDetailsCard } from '@/components/workout/workout-details-card';
-import { WorkoutSummary } from '@/components/workout/workout-summary';
 import { SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useProgressiveMount } from '@/hooks/use-progressive-mount';
@@ -31,9 +30,8 @@ import { useLiveRows } from '@/lib/use-live-rows';
 import { useWeightUnit } from '@/lib/weight-unit';
 import * as haptics from '@/lib/haptics';
 import type { LoggedSet, LoggingActions } from '@/lib/logging-model';
+import { attempt } from '@/lib/observability';
 import { move, sortBy } from '@/lib/order';
-import { presentFirstWorkoutPaywall } from '@/lib/pro-gates';
-import { usePro } from '@/lib/purchases';
 import { DEFAULT_REST_SECONDS, useRestTimer } from '@/lib/rest-timer';
 import { supersetCandidates, supersetGroups } from '@/lib/supersets';
 import { track } from '@/lib/telemetry';
@@ -72,15 +70,28 @@ import { hasIncompleteValidSets, summarise, trackingByExercise } from '@/lib/wor
  * optimistic drag order the screen holds.
  */
 const WORKOUT_ACTIONS: Omit<LoggingActions, 'joinSuperset' | 'leaveSuperset'> = {
-  addSet: (id) => void addSet(id),
-  removeExercise: (id) => void removeWorkoutExercise(id),
-  setExerciseNotes: (id, notes) => void setWorkoutExerciseNotes(id, notes),
-  setExerciseRest: (id, seconds) => void setWorkoutExerciseRest(id, seconds),
-  updateSetValues: (id, values) => void updateSetValues(id, values),
-  setSetType: (id, setType) => void setSetType(id, setType),
-  setSetNotes: (id, notes) => void setSetNotes(id, notes),
-  deleteSet: (id) => void deleteSet(id),
+  addSet: (id) => persist(addSet(id)),
+  removeExercise: (id) => persist(removeWorkoutExercise(id)),
+  setExerciseNotes: (id, notes) => persist(setWorkoutExerciseNotes(id, notes)),
+  setExerciseRest: (id, seconds) => attempt('sets', setWorkoutExerciseRest(id, seconds)),
+  updateSetValues: (id, values) => persist(updateSetValues(id, values)),
+  setSetType: (id, setType) => persist(setSetType(id, setType)),
+  setSetNotes: (id, notes) => persist(setSetNotes(id, notes)),
+  deleteSet: (id) => persist(deleteSet(id)),
 };
+
+/**
+ * Every one of these is fired from a tap or a keystroke and nothing awaits the
+ * result, so before this a failed write simply left the row as it was — the
+ * checkmark not ticking, the weight reverting on the next live-query pass — with
+ * nothing said to the user and nothing recorded.
+ */
+function persist(work: Promise<unknown>): Promise<boolean> {
+  return attempt('sets', work, {
+    title: 'Couldn’t save',
+    message: 'Your last change wasn’t saved. Please try again.',
+  });
+}
 
 /** What a sheet-height screen shows before the first scroll. */
 const CARDS_ON_SCREEN = 2;
@@ -96,15 +107,22 @@ type Props = {
   onOpenExercise: (exerciseId: string) => void;
   onAddExercise: () => void;
   onDone: () => void;
+  /** Only ever called in `active` mode: the recap is a sheet of its own. */
+  onFinished?: () => void;
 };
 
-export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone }: Props) {
+export function WorkoutLogger({
+  id,
+  mode,
+  onOpenExercise,
+  onAddExercise,
+  onDone,
+  onFinished,
+}: Props) {
   const theme = useTheme();
   const unit = useWeightUnit();
-  const isPro = usePro();
   const rest = useRestTimer();
 
-  const [phase, setPhase] = useState<'logging' | 'summary'>('logging');
   const [confirming, setConfirming] = useState(false);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
   const [confirmingFinish, setConfirmingFinish] = useState(false);
@@ -127,7 +145,6 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
   const exercises = useLiveRows(() => workoutExercisesQuery(id), id);
   const sets = useLiveRows(() => workoutSetsQuery(id), id);
   const previous = useLiveRows(() => previousSetsQuery(id), id);
-  const records = useLiveRows(() => workoutPersonalRecordsQuery(id), id);
   const mounted = useProgressiveMount(exercises.length, CARDS_ON_SCREEN);
 
   if (!workout) return <View style={{ flex: 1, backgroundColor: theme.background }} />;
@@ -141,9 +158,9 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
     ...WORKOUT_ACTIONS,
     joinSuperset: (id, targetId) => {
       setOrder([]);
-      void joinWorkoutSuperset(id, targetId);
+      return persist(joinWorkoutSuperset(id, targetId));
     },
-    leaveSuperset: (id) => void leaveWorkoutSuperset(id),
+    leaveSuperset: (id) => persist(leaveWorkoutSuperset(id)),
   };
 
   const reorder = (from: number, to: number, settle: Settle) => {
@@ -155,7 +172,11 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
     setOrder(ids);
     settle();
     haptics.complete();
-    void reorderWorkoutExercises(ids);
+    void persist(reorderWorkoutExercises(ids)).then((written) => {
+      // The new order is on screen before the write lands, so a failure would
+      // otherwise leave the list showing an arrangement the database never took.
+      if (!written) setOrder([]);
+    });
   };
 
   const complete = async (
@@ -163,19 +184,25 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
     set: LoggedSet,
     completed: boolean,
   ) => {
-    await setSetCompleted(set.id, completed);
+    if (!(await persist(setSetCompleted(set.id, completed)))) return;
     if (mode === 'edit') return;
 
     if (!completed) {
-      if (rest.setId === set.id) await rest.cancel();
+      if (rest.setId === set.id) await attempt('rest-timer', rest.cancel());
       return;
     }
 
-    await rest.start({
-      setId: set.id,
-      seconds: parent.restSeconds ?? DEFAULT_REST_SECONDS,
-      exerciseName: parent.name,
-    });
+    // The rest timer is a separate failure from the tick: the set is logged
+    // either way, and a missing countdown must not read as a set that didn't
+    // save.
+    await attempt(
+      'rest-timer',
+      rest.start({
+        setId: set.id,
+        seconds: parent.restSeconds ?? DEFAULT_REST_SECONDS,
+        exerciseName: parent.name,
+      })
+    );
   };
 
   /**
@@ -194,15 +221,18 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
   };
 
   const finish = async () => {
-    await rest.cancel();
-    await finishWorkout(id);
+    await attempt('rest-timer', rest.cancel());
+    const finished = await attempt('workout', finishWorkout(id), {
+      title: 'Couldn’t finish workout',
+      message: 'Your sets are saved. Please try finishing again.',
+    });
+    if (!finished) return;
+
+    onFinished?.();
+
     // Read the rows the finish just wrote rather than the live query, which
-    // hasn't re-rendered yet — a PR outranks the plain finish buzz, and the
-    // difference has to land with the haptic, not a tick later.
+    // hasn't re-rendered yet.
     const earned = await workoutPersonalRecordsQuery(id);
-    if (earned.length > 0) haptics.reward();
-    else haptics.complete();
-    setPhase('summary');
 
     const totals = summarise(workout, exercises, sets);
     track('workout_finished', {
@@ -216,14 +246,22 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
   };
 
   const save = async () => {
-    await saveWorkoutEdits(id);
+    const saved = await attempt('workout', saveWorkoutEdits(id), {
+      title: 'Couldn’t save changes',
+      message: 'Please try again.',
+    });
+    if (!saved) return;
     haptics.complete();
     onDone();
   };
 
   const cancel = async () => {
-    await rest.cancel();
-    await cancelWorkout(id);
+    await attempt('rest-timer', rest.cancel());
+    const cancelled = await attempt('workout', cancelWorkout(id), {
+      title: 'Couldn’t discard workout',
+      message: 'Please try again.',
+    });
+    if (!cancelled) return;
     // Tracked here rather than in `cancelWorkout`, which `deleteWorkout` also
     // calls — deleting a finished session from history is not an abandonment.
     track('workout_cancelled', { had_sets: sets.some((set) => set.completed) });
@@ -244,28 +282,6 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
     if (hasIncompleteValidSets(sets, trackingByExercise(exercises))) setConfirming(true);
     else setConfirmingFinish(true);
   };
-
-  if (phase === 'summary') {
-    return (
-      <View style={[styles.page, { backgroundColor: theme.background }]}>
-        <SheetHeader />
-        <WorkoutSummary
-          name={workout.name?.trim() || 'Workout'}
-          summary={summarise(workout, exercises, sets)}
-          exercises={exercises}
-          sets={sets}
-          personalRecords={records}
-          unit={unit}
-          // Presented over the summary rather than after it: a modal raised
-          // into a dismissing screen is a modal iOS drops on the floor.
-          onDone={async () => {
-            await presentFirstWorkoutPaywall(isPro);
-            onDone();
-          }}
-        />
-      </View>
-    );
-  }
 
   return (
     <>
@@ -340,7 +356,7 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
             </ReorderDim>
 
             {ordered.length === 0 && (
-              <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
+              <ThemedText type="footnote" themeColor="textTertiary" style={styles.hint}>
                 Add an exercise to start logging sets.
               </ThemedText>
             )}
@@ -398,9 +414,6 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
 }
 
 const styles = StyleSheet.create({
-  page: {
-    flex: 1,
-  },
   content: {
     padding: Spacing.three,
     paddingBottom: 240,

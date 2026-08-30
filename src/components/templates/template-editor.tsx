@@ -12,7 +12,7 @@ import { ExerciseCard } from '@/components/workout/exercise-card';
 import { ExerciseReorderProvider, ReorderDim } from '@/components/workout/exercise-reorder';
 import { CloseButton, HeaderPillButton } from '@/components/workout/workout-sheet-header';
 import { SHEET_SCROLL } from '@/constants/sheet';
-import { Spacing } from '@/constants/theme';
+import { Spacing, Type, Weights } from '@/constants/theme';
 import { db } from '@/db/client';
 import { exercises } from '@/db/schema';
 import { ThemedTextInput } from '@/components/themed-text-input';
@@ -41,6 +41,7 @@ import {
 import { useLiveRows } from '@/lib/use-live-rows';
 import { useWeightUnit } from '@/lib/weight-unit';
 import { groupBy, previousSetsQuery } from '@/lib/workout-queries';
+import { attempt } from '@/lib/observability';
 
 /** Module scope keeps the identity stable without a hook. */
 const DRAFT_ACTIONS: LoggingActions = {
@@ -106,7 +107,11 @@ export function TemplateEditor({
   const name = draft.name.trim();
 
   const save = async () => {
-    await onSave({ ...draft, name });
+    const saved = await attempt('templates', onSave({ ...draft, name }), {
+      title: 'Couldn’t save template',
+      message: 'Please try again.',
+    });
+    if (!saved) return;
     resetDraft();
     router.back();
   };
@@ -117,7 +122,7 @@ export function TemplateEditor({
         title={title}
         options={{ contentStyle: { backgroundColor: theme.background } }}
         left={<CloseButton onPress={() => router.back()} />}
-        right={<HeaderPillButton title="Save" onPress={save} disabled={name === ''} />}
+        right={<HeaderPillButton title="Save" onPress={() => void save()} disabled={name === ''} />}
       />
 
       <ExerciseReorderProvider
@@ -189,7 +194,7 @@ export function TemplateEditor({
           </ReorderDim>
 
           {draft.exercises.length === 0 && (
-            <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
+            <ThemedText type="footnote" themeColor="textTertiary" style={styles.hint}>
               Add an exercise to plan its sets.
             </ThemedText>
           )}
@@ -208,10 +213,14 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   name: {
-    fontSize: 32,
+    ...Type.title1,
+    // The size already carries the hierarchy here, so the role's bold would only
+    // double up — a placeholder is the field's resting state, and a heavy one
+    // shouts through it. Medium keeps it a title without the shout.
+    fontWeight: Weights.medium,
     // No lineHeight: iOS centres the glyph box inside it and clips descenders.
+    lineHeight: undefined,
     paddingVertical: 5,
-    fontWeight: '600',
   },
   hint: {
     textAlign: 'center',

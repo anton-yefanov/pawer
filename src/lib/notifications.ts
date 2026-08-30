@@ -1,6 +1,8 @@
 import * as Notifications from 'expo-notifications';
 import { AppState, Platform } from 'react-native';
 
+import { report } from '@/lib/observability';
+
 const REST_CHANNEL_ID = 'rest-timer';
 
 /**
@@ -58,8 +60,8 @@ const androidChannels =
           name: 'Workout reminders',
           importance: Notifications.AndroidImportance.DEFAULT,
         }),
-      ]).catch((error) => {
-        console.warn('[notifications] failed to create android channels', error);
+      ]).catch((error: unknown) => {
+        report('notifications', error, { phase: 'channels' });
       })
     : Promise.resolve();
 
@@ -74,14 +76,22 @@ const androidChannels =
 export async function ensureNotificationPermission(): Promise<boolean> {
   if (Platform.OS === 'web') return false;
 
-  const current = await Notifications.getPermissionsAsync();
-  if (current.granted) return true;
-  if (!current.canAskAgain) return false;
+  // Unguarded, a throw here escapes `scheduleNotification` — which calls this
+  // above its own try — and rejects all the way back through `rest.start` into
+  // the tap that ticked a set.
+  try {
+    const current = await Notifications.getPermissionsAsync();
+    if (current.granted) return true;
+    if (!current.canAskAgain) return false;
 
-  const next = await Notifications.requestPermissionsAsync({
-    ios: { allowAlert: true, allowSound: true, allowBadge: false },
-  });
-  return next.granted;
+    const next = await Notifications.requestPermissionsAsync({
+      ios: { allowAlert: true, allowSound: true, allowBadge: false },
+    });
+    return next.granted;
+  } catch (error) {
+    report('notifications', error, { phase: 'permission' });
+    return false;
+  }
 }
 
 /**
@@ -118,7 +128,7 @@ export async function scheduleNotification(input: {
       },
     });
   } catch (error) {
-    console.warn('[notifications] failed to schedule notification', error);
+    report('notifications', error, { phase: 'schedule' });
     return null;
   }
 }
@@ -157,7 +167,7 @@ export async function cancelScheduledNotification(id: string | null): Promise<vo
   try {
     await Notifications.cancelScheduledNotificationAsync(id);
   } catch (error) {
-    console.warn('[notifications] failed to cancel notification', error);
+    report('notifications', error, { phase: 'cancel' });
   }
 }
 

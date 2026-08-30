@@ -11,7 +11,7 @@ export function PrChip({ label }: { label: string }) {
   return (
     <View style={[styles.chip, { backgroundColor: theme.goldMuted }]}>
       <Icon name="trophy.fill" size={12} tintColor={theme.gold} />
-      <ThemedText type="small" themeColor="gold" style={styles.label}>
+      <ThemedText type="caption1" weight="bold" themeColor="gold">
         {label}
       </ThemedText>
     </View>
@@ -26,10 +26,5 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.half,
-  },
-  label: {
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: 700,
   },
 });

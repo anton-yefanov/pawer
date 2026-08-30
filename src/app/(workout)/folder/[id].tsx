@@ -87,7 +87,7 @@ export default function FolderScreen() {
         {list.length === 0 && (
           <View style={styles.empty}>
             <Icon name="folder.fill" size={44} tintColor={theme.textSecondary} />
-            <ThemedText type="small" themeColor="textSecondary" style={styles.emptyText}>
+            <ThemedText type="footnote" themeColor="textSecondary" style={styles.emptyText}>
               Folder is empty. Drag a template onto this folder to add it
             </ThemedText>
           </View>
@@ -105,7 +105,7 @@ export default function FolderScreen() {
                 });
               }}>
               <ThemedText numberOfLines={1}>{template.name}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+              <ThemedText type="footnote" themeColor="textSecondary" numberOfLines={1}>
                 {(byTemplate.get(template.id) ?? []).map((row) => row.name).join(', ')}
               </ThemedText>
             </Pressable>

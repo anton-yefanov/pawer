@@ -31,6 +31,8 @@ import { createCustomExercise, updateCustomExercise } from '@/lib/exercise-actio
 import { EXERCISE_GROUPS, exerciseGroup, groupOfExercise } from '@/lib/exercise-groups';
 import { deleteExercisePhoto, importExercisePhoto } from '@/lib/exercise-photos';
 import { announceCustomExercise } from '@/lib/new-exercise-handoff';
+import { notice } from '@/lib/notice';
+import { attempt, guard, report } from '@/lib/observability';
 import { pickPhoto } from '@/lib/pick-photo';
 import {
   TRACKING_LABELS,
@@ -38,6 +40,11 @@ import {
   trackingTypeOf,
   type TrackingType,
 } from '@/lib/tracking-types';
+
+const SAVE_FAILED = {
+  title: 'Couldn’t save exercise',
+  message: 'Please try again.',
+};
 
 type Step = 'form' | 'category' | 'type';
 
@@ -86,14 +93,17 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
   );
 
   const pick = async () => {
-    const uri = await pickPhoto();
-    if (uri === null) return;
+    const uri = await guard('photos', pickPhoto(), undefined, { phase: 'pick' });
+    if (!uri) return;
 
     setImporting(true);
     try {
       const file = await importExercisePhoto(uri);
       imported.current.push(file);
       setPhoto(file);
+    } catch (error) {
+      report('photos', error, { phase: 'import-exercise' });
+      notice({ title: 'Couldn’t use that photo', message: 'Please pick a different one.' });
     } finally {
       setImporting(false);
     }
@@ -106,8 +116,19 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
     }
     saved.current = photo;
     const form = { name, group, trackingType, imageFile: photo };
-    if (exercise) await updateCustomExercise(exercise.id, form);
-    else announceCustomExercise(await createCustomExercise(form));
+    const written = exercise
+      ? await attempt('exercises', updateCustomExercise(exercise.id, form), SAVE_FAILED)
+      : await guard('exercises', createCustomExercise(form), SAVE_FAILED).then((id) => {
+          if (id === undefined) return false;
+          announceCustomExercise(id);
+          return true;
+        });
+    // The sheet used to just sit there on a failed write, with the photo already
+    // claimed by `saved.current` and so spared by the unmount cleanup.
+    if (!written) {
+      saved.current = null;
+      return;
+    }
     router.back();
   };
 
@@ -258,7 +279,6 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 17,
     minHeight: ROW_HEIGHT - Spacing.two * 2,
     paddingVertical: 0,
   },

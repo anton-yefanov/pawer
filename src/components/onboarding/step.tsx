@@ -39,19 +39,17 @@ export function Step({ index, title, body, choices, children, onBack }: Props) {
               <CircleButton symbol="chevron.left" label="Back" onPress={onBack} />
             </View>
           ) : null}
-          <ThemedText type="smallBold" themeColor="textSecondary">
+          <ThemedText type="footnote" weight="semibold" themeColor="textSecondary">
             {`Step ${index + 1} of ${STEP_COUNT}`}
           </ThemedText>
         </View>
 
         <View style={styles.copy}>
-          <ThemedText type="title" style={styles.title}>
-            {title}
-          </ThemedText>
+          <ThemedText type="title1">{title}</ThemedText>
           {paragraphs.map((paragraph, position) => (
             <ThemedText
               key={paragraph}
-              style={[styles.body, position > 0 && styles.followingParagraph]}>
+              style={position > 0 && styles.followingParagraph}>
               {paragraph}
             </ThemedText>
           ))}
@@ -79,8 +77,6 @@ const styles = StyleSheet.create({
   // The copy takes all the slack so it holds the middle of the page on every
   // step, which is what keeps the bottom slot in one place.
   copy: { flex: 1, justifyContent: 'center', gap: Spacing.three },
-  title: { fontSize: 28, lineHeight: 34, fontWeight: 700 },
-  body: { fontSize: 19, lineHeight: 27 },
   followingParagraph: { marginTop: Spacing.two },
   choices: { marginTop: Spacing.five },
   // Every step ends here, so the primary button lands in the same place on all

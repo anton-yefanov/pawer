@@ -4,6 +4,7 @@ import { type CardColor } from '@/constants/card-colors';
 import { db } from '@/db/client';
 import { newId } from '@/db/id';
 import { folders, templates } from '@/db/schema';
+import { type CardArtwork, serializeArtwork } from '@/lib/card-artwork';
 
 const touch = () => ({ updatedAt: Date.now() });
 
@@ -17,7 +18,9 @@ export async function createFolder(name: string): Promise<string> {
     .get();
 
   const id = newId();
-  await db.insert(folders).values({ id, name, position: (last?.position ?? -1) + 1 });
+  await db
+    .insert(folders)
+    .values({ id, name, color: 'blue', position: (last?.position ?? -1) + 1 });
   return id;
 }
 
@@ -28,10 +31,14 @@ export async function renameFolder(folderId: string, name: string): Promise<void
     .where(eq(folders.id, folderId));
 }
 
-export async function setFolderColor(folderId: string, color: CardColor): Promise<void> {
+export async function setFolderAppearance(
+  folderId: string,
+  color: CardColor,
+  artwork: CardArtwork | null,
+): Promise<void> {
   await db
     .update(folders)
-    .set({ color, ...touch() })
+    .set({ color, artwork: serializeArtwork(artwork), ...touch() })
     .where(eq(folders.id, folderId));
 }
 

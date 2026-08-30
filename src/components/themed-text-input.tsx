@@ -1,5 +1,7 @@
-import { TextInput, type TextInputProps } from 'react-native';
+import { StyleSheet, TextInput, type TextInputProps } from 'react-native';
 
+import { base } from '@/components/themed-text';
+import { Type } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type ThemedTextInputProps = TextInputProps & {
@@ -8,7 +10,9 @@ export type ThemedTextInputProps = TextInputProps & {
 
 /**
  * Every text field in the app, so the four theme-dependent props they all want
- * are written once.
+ * are written once, on `body` and the same face as `ThemedText` — a field left to
+ * its own devices renders Roboto on Android inside a Nunito app, which is the
+ * Material tell the rest of the type system exists to avoid.
  *
  * `underlineColorAndroid` is the one that matters: the RN template's Android
  * theme points `android:editTextBackground` at `rn_edit_text_material`, which
@@ -22,12 +26,15 @@ export function ThemedTextInput({ style, ...rest }: ThemedTextInputProps) {
 
   return (
     <TextInput
-      placeholderTextColor={theme.textSecondary}
+      placeholderTextColor={theme.textTertiary}
       underlineColorAndroid="transparent"
       cursorColor={theme.accent}
       selectionColor={theme.accent}
-      style={[{ color: theme.text }, style]}
+      style={[styles.body, { color: theme.text }, style]}
       {...rest}
     />
   );
 }
+
+/** No `lineHeight`: a field centres its glyph box inside one and clips descenders. */
+const styles = StyleSheet.create({ body: { ...base, ...Type.body, lineHeight: undefined } });

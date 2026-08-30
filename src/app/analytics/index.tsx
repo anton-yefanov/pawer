@@ -172,6 +172,7 @@ export default function AnalyticsScreen() {
         <PeriodMenu
           value={period}
           periods={PERIODS}
+          icon={null}
           raised
           locked={(id) => isPeriodLocked(id, isPro)}
           onChange={selectPeriod}
@@ -206,7 +207,7 @@ export default function AnalyticsScreen() {
       <StatRows rows={rows} />
 
       {comparable && (
-        <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
+        <ThemedText type="footnote" themeColor="textTertiary" style={styles.caption}>
           vs {comparisonLabel(range)}
         </ThemedText>
       )}

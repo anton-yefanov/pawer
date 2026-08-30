@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { Spacing, type TypeRole } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatDelta, type Delta } from '@/lib/analytics-compare';
 
@@ -84,7 +84,7 @@ function DeltaLine({ value }: { value: Delta }) {
         resizeMode="scaleAspectFit"
         style={styles.arrow}
       />
-      <ThemedText themeColor="textSecondary" style={styles.deltaText} numberOfLines={1}>
+      <ThemedText type="caption1" weight="semibold" numeric themeColor="textSecondary" numberOfLines={1}>
         {formatDelta(value)}
       </ThemedText>
     </View>
@@ -97,17 +97,14 @@ function DeltaLine({ value }: { value: Delta }) {
  * — mounting the custom range's SwiftUI date pickers is enough — and shrinks the
  * number to a fraction of its size with no way back.
  */
-function valueFontSize(value: string): number {
-  if (value.length <= 5) return 30;
-  if (value.length === 6) return 27;
-  if (value.length === 7) return 25;
-  if (value.length === 8) return 22;
-  return 19;
+function valueRole(value: string): TypeRole {
+  if (value.length <= 5) return 'title1';
+  if (value.length <= 7) return 'title2';
+  if (value.length <= 8) return 'title3';
+  return 'headline';
 }
 
 function Tile({ label, value, unit, delta, reserve }: StatTile & { reserve: boolean }) {
-  const fontSize = valueFontSize(value);
-
   return (
     <View style={styles.tile}>
       {/* The fixed box keeps labels level across cards whose values size
@@ -115,19 +112,17 @@ function Tile({ label, value, unit, delta, reserve }: StatTile & { reserve: bool
           instead of hanging it from the top. */}
       <View style={styles.measureBox}>
         <View style={styles.measure}>
-          <ThemedText
-            style={[styles.value, { fontSize, lineHeight: Math.round(fontSize * 1.2) }]}
-            numberOfLines={1}>
+          <ThemedText type={valueRole(value)} numeric style={styles.value} numberOfLines={1}>
             {value}
           </ThemedText>
           {unit && (
-            <ThemedText themeColor="textSecondary" style={styles.unit}>
+            <ThemedText type="headline" themeColor="textSecondary">
               {unit}
             </ThemedText>
           )}
         </View>
       </View>
-      <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+      <ThemedText type="footnote" themeColor="textSecondary" numberOfLines={1}>
         {label}
       </ThemedText>
       {reserve && <View style={styles.deltaSlot}>{delta && <DeltaLine value={delta} />}</View>}
@@ -175,14 +170,7 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
   },
   value: {
-    fontWeight: 700,
-    fontVariant: ['tabular-nums'],
     flexShrink: 1,
-  },
-  unit: {
-    fontSize: 17,
-    lineHeight: 22,
-    fontWeight: 600,
   },
   deltaSlot: {
     height: 16,
@@ -196,11 +184,5 @@ const styles = StyleSheet.create({
   arrow: {
     width: 11,
     height: 11,
-  },
-  deltaText: {
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: 600,
-    fontVariant: ['tabular-nums'],
   },
 });

@@ -52,7 +52,7 @@ export function SetTypeMenu({ label, setType, completed, onChange }: Props) {
               <Text
                 modifiers={[
                   foregroundStyle(theme[color]),
-                  font({ size: 14, weight: setType === 'normal' ? 'medium' : 'bold' }),
+                  font({ size: 13, weight: setType === 'normal' ? 'regular' : 'bold' }),
                 ]}>
                 {label}
               </Text>

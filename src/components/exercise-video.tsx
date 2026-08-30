@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useEventListener } from 'expo';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -7,6 +8,7 @@ import { SHEET_INNER_RADIUS } from '@/constants/sheet';
 import { useTheme } from '@/hooks/use-theme';
 import { type ExerciseArt, exercisePoster, exerciseVideo } from '@/lib/exercise-media';
 import { CLIP_ASPECT } from '@/lib/exercise-photos';
+import { report } from '@/lib/observability';
 
 /** A custom exercise has no clip, only the photo the user picked, so the still
  *  underneath is the whole frame and no `VideoView` is ever mounted. */
@@ -23,6 +25,12 @@ export function ExerciseVideo({ art }: { art: ExerciseArt }) {
     // still claims the audio session and stops the user's music mid-set.
     player.audioMixingMode = 'mixWithOthers';
     player.play();
+  });
+
+  // A clip that fails to load leaves the poster up with `firstFrame` never set,
+  // which is indistinguishable from a slow load — forever, and silently.
+  useEventListener(player, 'statusChange', ({ error }) => {
+    if (error) report('media', error, { sourceId: art.sourceId ?? 'custom' });
   });
 
   return (

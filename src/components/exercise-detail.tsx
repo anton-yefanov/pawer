@@ -1,42 +1,47 @@
-import { eq } from 'drizzle-orm';
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import * as Linking from 'expo-linking';
-import { router, type Href } from 'expo-router';
-import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { eq } from "drizzle-orm";
+import { useLiveQuery } from "drizzle-orm/expo-sqlite";
+import { router, type Href } from "expo-router";
+import { useState } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
 
-import { CircleButton } from '@/components/circle-button';
-import { ExerciseVideo } from '@/components/exercise-video';
-import { ExerciseInsights } from '@/components/exercises/exercise-insights';
-import { SheetGrabber } from '@/components/sheet-grabber';
-import { ThemedText } from '@/components/themed-text';
-import { ConfirmAlert } from '@/components/workout/confirm-alert';
-import { HEADER_CIRCLE_SIZE } from '@/components/workout/workout-sheet-header';
-import { SHEET_SCROLL } from '@/constants/sheet';
-import { Spacing } from '@/constants/theme';
-import { db } from '@/db/client';
-import { exercises } from '@/db/schema';
-import { useTheme } from '@/hooks/use-theme';
-import { deleteCustomExercise } from '@/lib/exercise-actions';
-import { techniqueSearchUrl } from '@/lib/exercise-video-search';
+import { CircleButton } from "@/components/circle-button";
+import { ExerciseVideo } from "@/components/exercise-video";
+import { ExerciseInsights } from "@/components/exercises/exercise-insights";
+import { SheetGrabber } from "@/components/sheet-grabber";
+import { ThemedText } from "@/components/themed-text";
+import { ConfirmAlert } from "@/components/workout/confirm-alert";
+import { HEADER_CIRCLE_SIZE } from "@/components/workout/workout-sheet-header";
+import { SHEET_SCROLL } from "@/constants/sheet";
+import { Spacing } from "@/constants/theme";
+import { db } from "@/db/client";
+import { exercises } from "@/db/schema";
+import { useTheme } from "@/hooks/use-theme";
+import { deleteCustomExercise } from "@/lib/exercise-actions";
+import { attempt } from "@/lib/observability";
 
-export function ExerciseDetail({ id, editHref }: { id: string; editHref?: Href }) {
+export function ExerciseDetail({
+  id,
+  editHref,
+}: {
+  id: string;
+  editHref?: Href;
+}) {
   const theme = useTheme();
   const [confirming, setConfirming] = useState(false);
 
-  const { data } = useLiveQuery(db.select().from(exercises).where(eq(exercises.id, id)).limit(1), [
-    id,
-  ]);
+  const { data } = useLiveQuery(
+    db.select().from(exercises).where(eq(exercises.id, id)).limit(1),
+    [id],
+  );
   const exercise = data?.[0];
   const editable = exercise?.isCustom === true;
 
   const remove = async () => {
-    await deleteCustomExercise(id);
-    router.back();
-  };
-
-  const lookUpTechnique = () => {
-    if (exercise) void Linking.openURL(techniqueSearchUrl(exercise.name));
+    const removed = await attempt("exercises", deleteCustomExercise(id), {
+      title: "Couldn’t delete exercise",
+      message: "Please try again.",
+    });
+    if (removed) router.back();
   };
 
   return (
@@ -51,10 +56,11 @@ export function ExerciseDetail({ id, editHref }: { id: string; editHref?: Href }
         style={{ backgroundColor: theme.surface }}
         contentContainerStyle={styles.container}
         contentInsetAdjustmentBehavior="never"
-        automaticallyAdjustContentInsets={false}>
+        automaticallyAdjustContentInsets={false}
+      >
         <ConfirmAlert
           open={confirming}
-          title={`Delete "${exercise?.name ?? ''}"?`}
+          title={`Delete "${exercise?.name ?? ""}"?`}
           message="It will be removed from your exercise list and templates. Past workouts keep their sets."
           confirmLabel="Delete"
           onConfirm={() => {
@@ -89,13 +95,9 @@ export function ExerciseDetail({ id, editHref }: { id: string; editHref?: Href }
 
             <ExerciseVideo art={exercise} />
 
-            <ThemedText style={styles.name}>{exercise.name}</ThemedText>
+            <ThemedText type="title2">{exercise.name}</ThemedText>
 
-            <ExerciseInsights
-              id={id}
-              trackingType={exercise.trackingType}
-              onOpenTechnique={editable ? undefined : lookUpTechnique}
-            />
+            <ExerciseInsights id={id} trackingType={exercise.trackingType} />
           </>
         ) : null}
       </ScrollView>
@@ -117,12 +119,7 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   actions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  name: {
-    fontSize: 24,
-    lineHeight: 30,
-    fontWeight: 700,
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
 });

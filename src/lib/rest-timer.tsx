@@ -6,6 +6,8 @@ import { useAppStateActive } from '@/hooks/use-app-state-active';
 import * as haptics from '@/lib/haptics';
 import { cancelRestNotification, scheduleRestNotification } from '@/lib/notifications';
 
+import { attempt } from '@/lib/observability';
+
 const STATE_KEY = 'rest_timer';
 
 export const DEFAULT_REST_SECONDS = 90;
@@ -43,12 +45,15 @@ export function RestTimerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    getSetting(db, STATE_KEY).then((raw) => {
-      if (cancelled || !raw) return;
-      const stored = JSON.parse(raw) as RestState;
-      if (stored.endsAt > Date.now()) setRest(stored);
-      else void clearStored();
-    });
+    void attempt(
+      'rest-timer',
+      getSetting(db, STATE_KEY).then((raw) => {
+        if (cancelled || !raw) return;
+        const stored = JSON.parse(raw) as RestState;
+        if (stored.endsAt > Date.now()) setRest(stored);
+        else void clearStored();
+      })
+    );
     return () => {
       cancelled = true;
     };

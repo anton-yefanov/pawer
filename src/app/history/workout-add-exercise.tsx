@@ -4,6 +4,7 @@ import { ExerciseLibrary } from '@/components/exercise-library';
 import { SheetGrabber } from '@/components/sheet-grabber';
 import { SHEET_BOTTOM_INSET, SHEET_TOP_INSET } from '@/constants/sheet';
 import { addExerciseToWorkout } from '@/lib/workout-actions';
+import { attempt } from '@/lib/observability';
 
 export default function HistoryAddExerciseScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -18,9 +19,11 @@ export default function HistoryAddExerciseScreen() {
         bottomInset={SHEET_BOTTOM_INSET}
         newExerciseHref="/history/new-exercise"
         detailHref={(exercise) => ({ pathname: '/history/workout-exercise', params: { id: exercise.id } })}
-        onSelect={async (exercise) => {
-          await addExerciseToWorkout(id, exercise.id);
-          router.back();
+        onSelect={(exercise) => {
+          void attempt('workout', addExerciseToWorkout(id, exercise.id), {
+            title: 'Couldn’t add exercise',
+            message: 'Please try again.',
+          }).then((added) => added && router.back());
         }}
       />
     </>

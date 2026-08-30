@@ -1,5 +1,7 @@
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 
+import { notice } from '@/lib/notice';
+import { report } from '@/lib/observability';
 import { PRO_ENTITLEMENT } from '@/lib/purchases';
 import { track } from '@/lib/telemetry';
 
@@ -29,6 +31,15 @@ export async function presentPaywall(source: PaywallSource): Promise<PaywallOutc
   track('paywall_shown', { source });
   const outcome = await present();
   track('paywall_result', { source, outcome });
+  // Every gate only checks for 'purchased', so without this a purchase that
+  // failed on a bad connection is indistinguishable from the user saying no —
+  // they get refused again with no explanation.
+  if (outcome === 'error') {
+    notice({
+      title: 'Purchase didn\u2019t complete',
+      message: 'Something went wrong. Please check your connection and try again.',
+    });
+  }
   return outcome;
 }
 
@@ -36,7 +47,7 @@ async function present(): Promise<PaywallOutcome> {
   try {
     return outcomeOf(await RevenueCatUI.presentPaywall());
   } catch (error) {
-    console.warn('[paywall] present failed', error);
+    report('paywall', error, { phase: 'present' });
     return 'error';
   }
 }
@@ -50,7 +61,7 @@ export async function presentPaywallIfNeeded(): Promise<PaywallOutcome> {
       })
     );
   } catch (error) {
-    console.warn('[paywall] present failed', error);
+    report('paywall', error, { phase: 'present-if-needed' });
     return 'error';
   }
 }
@@ -59,7 +70,11 @@ export async function presentCustomerCenter(): Promise<void> {
   try {
     await RevenueCatUI.presentCustomerCenter();
   } catch (error) {
-    console.warn('[paywall] customer center failed', error);
+    report('paywall', error, { phase: 'customer-center' });
+    notice({
+      title: 'Couldn\u2019t open subscriptions',
+      message: 'Please check your connection and try again.',
+    });
   }
 }
 
@@ -69,6 +84,7 @@ function outcomeOf(result: PAYWALL_RESULT): PaywallOutcome {
     case PAYWALL_RESULT.RESTORED:
       return 'purchased';
     case PAYWALL_RESULT.ERROR:
+      report('paywall', new Error('RevenueCat returned PAYWALL_RESULT.ERROR'));
       return 'error';
     default:
       return 'dismissed';

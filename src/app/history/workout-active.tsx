@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { WorkoutLogger } from '@/components/workout/workout-logger';
+import { presentWorkoutSummary } from '@/lib/workout-summary-route';
 
 /**
  * "Perform Again" starts a session from inside the History tab. It presents here
@@ -21,6 +22,7 @@ export default function HistoryActiveWorkoutScreen() {
       }
       onAddExercise={() => router.push({ pathname: '/history/workout-add-exercise', params: { id } })}
       onDone={() => router.back()}
+      onFinished={() => presentWorkoutSummary(id, '/history/workout-summary')}
     />
   );
 }

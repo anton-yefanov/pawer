@@ -1,20 +1,26 @@
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useLiveQuery } from "drizzle-orm/expo-sqlite";
+import { useMemo, useState } from "react";
+import { StyleSheet, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
   type SharedValue,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 
-import { ExerciseHistory, HISTORY_SESSIONS } from '@/components/exercises/exercise-history';
-import { ExerciseProgress } from '@/components/exercises/exercise-progress';
-import { ExerciseRecords } from '@/components/exercises/exercise-records';
-import { ExerciseTabs, type ExerciseTab } from '@/components/exercises/exercise-tabs';
-import { PeriodMenu } from '@/components/exercises/period-menu';
-import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import {
+  ExerciseHistory,
+  HISTORY_SESSIONS,
+} from "@/components/exercises/exercise-history";
+import { ExerciseProgress } from "@/components/exercises/exercise-progress";
+import { ExerciseRecords } from "@/components/exercises/exercise-records";
+import {
+  ExerciseTabs,
+  type ExerciseTab,
+} from "@/components/exercises/exercise-tabs";
+import { PeriodMenu } from "@/components/exercises/period-menu";
+import { ThemedText } from "@/components/themed-text";
+import { Spacing } from "@/constants/theme";
 import {
   exercisePrWorkoutsQuery,
   exerciseRecordsQuery,
@@ -22,15 +28,15 @@ import {
   exerciseSetsQuery,
   exerciseTotalsQuery,
   type ExerciseTotals,
-} from '@/lib/exercise-history-queries';
-import { totalsFor } from '@/lib/exercise-metrics';
+} from "@/lib/exercise-history-queries";
+import { totalsFor } from "@/lib/exercise-metrics";
 import {
   DEFAULT_EXERCISE_PERIOD,
   EXERCISE_PERIODS,
   exerciseRange,
   type ExercisePeriodId,
-} from '@/lib/exercise-period';
-import { trackingTypeOf } from '@/lib/tracking-types';
+} from "@/lib/exercise-period";
+import { trackingTypeOf } from "@/lib/tracking-types";
 import {
   distanceUnitFor,
   formatDistance,
@@ -38,8 +44,8 @@ import {
   formatTonnage,
   splitMeasure,
   type WeightUnit,
-} from '@/lib/units';
-import { useWeightUnit } from '@/lib/weight-unit';
+} from "@/lib/units";
+import { useWeightUnit } from "@/lib/weight-unit";
 
 const EMPTY_TOTALS: ExerciseTotals = {
   sessions: 0,
@@ -52,7 +58,7 @@ const EMPTY_TOTALS: ExerciseTotals = {
   firstAt: null,
 };
 
-const PANELS = ['stats', 'history'] as const;
+const PANELS = ["stats", "history"] as const;
 type PanelId = (typeof PANELS)[number];
 
 /** Enough travel to read as a direction, short enough not to look like a page. */
@@ -68,7 +74,11 @@ const SLIDE = 28;
  * captured in a component body as immutable — the same reason `aim` sits at
  * module scope in src/components/workout/rest-timer-button.tsx.
  */
-function slide(shift: SharedValue<number>, fade: SharedValue<number>, direction: number) {
+function slide(
+  shift: SharedValue<number>,
+  fade: SharedValue<number>,
+  direction: number,
+) {
   shift.value = direction * SLIDE;
   shift.value = withTiming(0, { duration: 220 });
   fade.value = 0;
@@ -77,24 +87,26 @@ function slide(shift: SharedValue<number>, fade: SharedValue<number>, direction:
 
 function totalMeasure(totals: ExerciseTotals, kind: string, unit: WeightUnit) {
   switch (kind) {
-    case 'volume':
+    case "volume":
       return {
-        label: 'Volume',
+        label: "Volume",
         ...splitMeasure(formatTonnage(totals.volumeKg, unit)),
       };
-    case 'distance':
+    case "distance":
       return {
-        label: 'Distance',
-        ...splitMeasure(formatDistance(totals.distanceM, distanceUnitFor(unit))),
+        label: "Distance",
+        ...splitMeasure(
+          formatDistance(totals.distanceM, distanceUnitFor(unit)),
+        ),
       };
-    case 'duration':
+    case "duration":
       return {
-        label: 'Time',
+        label: "Time",
         value: formatDuration(totals.durationSeconds),
         unit: undefined,
       };
     default:
-      return { label: 'Reps', value: String(totals.reps), unit: undefined };
+      return { label: "Reps", value: String(totals.reps), unit: undefined };
   }
 }
 
@@ -109,18 +121,17 @@ function totalMeasure(totals: ExerciseTotals, kind: string, unit: WeightUnit) {
 export function ExerciseInsights({
   id,
   trackingType,
-  onOpenTechnique,
 }: {
   id: string;
   trackingType: string | null;
-  /** Absent for a custom exercise, which has no upstream technique video. */
-  onOpenTechnique?: () => void;
 }) {
   const unit = useWeightUnit();
   const type = trackingTypeOf(trackingType);
 
-  const [tab, setTab] = useState<PanelId>('stats');
-  const [period, setPeriod] = useState<ExercisePeriodId>(DEFAULT_EXERCISE_PERIOD);
+  const [tab, setTab] = useState<PanelId>("stats");
+  const [period, setPeriod] = useState<ExercisePeriodId>(
+    DEFAULT_EXERCISE_PERIOD,
+  );
   const range = useMemo(() => exerciseRange(period), [period]);
   const shift = useSharedValue(0);
   const fade = useSharedValue(1);
@@ -132,29 +143,29 @@ export function ExerciseInsights({
 
   const select = (next: string) => {
     if (next === tab) return;
-    slide(shift, fade, PANELS.indexOf(next as PanelId) > PANELS.indexOf(tab) ? 1 : -1);
+    slide(
+      shift,
+      fade,
+      PANELS.indexOf(next as PanelId) > PANELS.indexOf(tab) ? 1 : -1,
+    );
     setTab(next as PanelId);
   };
 
   const tabs: ExerciseTab[] = [
-    { id: 'stats', label: 'Stats', icon: 'chart.bar' },
-    { id: 'history', label: 'History', icon: 'clock.arrow.circlepath' },
-    ...(onOpenTechnique
-      ? [
-          {
-            id: 'youtube',
-            label: 'YouTube',
-            icon: 'play.rectangle' as const,
-            action: onOpenTechnique,
-          },
-        ]
-      : []),
+    { id: "stats", label: "Stats" },
+    { id: "history", label: "History" },
   ];
 
-  const { data: totalRows } = useLiveQuery(exerciseTotalsQuery(id, range), [id, range]);
+  const { data: totalRows } = useLiveQuery(exerciseTotalsQuery(id, range), [
+    id,
+    range,
+  ]);
   const { data: sessions } = useLiveQuery(exerciseSessionsQuery(id), [id]);
   const { data: records } = useLiveQuery(exerciseRecordsQuery(id), [id]);
-  const { data: setRows } = useLiveQuery(exerciseSetsQuery(id, HISTORY_SESSIONS), [id]);
+  const { data: setRows } = useLiveQuery(
+    exerciseSetsQuery(id, HISTORY_SESSIONS),
+    [id],
+  );
   const { data: prRows } = useLiveQuery(exercisePrWorkoutsQuery(id), [id]);
 
   // Every section renders whether or not the exercise has been trained: an
@@ -163,51 +174,72 @@ export function ExerciseInsights({
   const totals = totalRows?.[0] ?? EMPTY_TOTALS;
 
   const tiles = [
-    { label: 'Sessions', value: String(totals.sessions), unit: undefined },
-    { label: 'Sets', value: String(totals.completedSets), unit: undefined },
+    { label: "Sessions", value: String(totals.sessions), unit: undefined },
+    { label: "Sets", value: String(totals.completedSets), unit: undefined },
     ...totalsFor(type).map((kind) => totalMeasure(totals, kind, unit)),
   ];
 
   return (
     <View style={styles.stack}>
-      <ExerciseTabs tabs={tabs} value={tab} onChange={select} />
+      <View style={styles.header}>
+        <ExerciseTabs tabs={tabs} value={tab} onChange={select} />
+
+        {tab === "stats" && (
+          <PeriodMenu
+            value={period}
+            periods={EXERCISE_PERIODS}
+            icon={null}
+            onChange={setPeriod}
+          />
+        )}
+      </View>
 
       <Animated.View style={[styles.panel, panel]}>
-        {tab === 'stats' ? (
+        {tab === "stats" ? (
           <>
-            <View style={styles.totals}>
-              <PeriodMenu value={period} periods={EXERCISE_PERIODS} onChange={setPeriod} />
-
-              <View style={styles.tiles}>
-                {tiles.map((tile) => (
-                  <View key={tile.label} style={styles.tile}>
-                    <View style={styles.measure}>
-                      <ThemedText style={styles.tileValue} numberOfLines={1}>
-                        {tile.value}
-                      </ThemedText>
-                      {tile.unit && (
-                        <ThemedText type="small" themeColor="textSecondary">
-                          {tile.unit}
-                        </ThemedText>
-                      )}
-                    </View>
-                    <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                      {tile.label}
+            <View style={styles.tiles}>
+              {tiles.map((tile) => (
+                <View key={tile.label} style={styles.tile}>
+                  <View style={styles.measure}>
+                    <ThemedText type="title2" numeric style={styles.tileValue} numberOfLines={1}>
+                      {tile.value}
                     </ThemedText>
+                    {tile.unit && (
+                      <ThemedText type="footnote" themeColor="textSecondary">
+                        {tile.unit}
+                      </ThemedText>
+                    )}
                   </View>
-                ))}
-              </View>
+                  <ThemedText
+                    type="footnote"
+                    themeColor="textSecondary"
+                    numberOfLines={1}
+                  >
+                    {tile.label}
+                  </ThemedText>
+                </View>
+              ))}
             </View>
 
-            <ExerciseRecords records={records ?? []} trackingType={type} unit={unit} />
+            <ExerciseRecords
+              records={records ?? []}
+              trackingType={type}
+              unit={unit}
+            />
 
-            <ExerciseProgress sessions={sessions ?? []} trackingType={type} unit={unit} />
+            <ExerciseProgress
+              sessions={sessions ?? []}
+              trackingType={type}
+              unit={unit}
+            />
           </>
         ) : (
           <ExerciseHistory
             sessions={sessions ?? []}
             sets={setRows ?? []}
-            prCounts={new Map((prRows ?? []).map((row) => [row.workoutId, row.records]))}
+            prCounts={
+              new Map((prRows ?? []).map((row) => [row.workoutId, row.records]))
+            }
             trackingType={type}
             unit={unit}
           />
@@ -221,32 +253,32 @@ const styles = StyleSheet.create({
   stack: {
     gap: Spacing.three,
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: Spacing.two,
+  },
   panel: {
     gap: Spacing.four,
   },
-  totals: {
-    gap: Spacing.three,
-  },
   tiles: {
-    flexDirection: 'row',
+    flexDirection: "row",
+    paddingVertical: Spacing.two,
     gap: Spacing.three,
   },
   tile: {
     flex: 1,
     gap: Spacing.half,
-    alignItems: 'center',
+    alignItems: "center",
   },
   measure: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "center",
     gap: Spacing.one,
   },
   tileValue: {
-    fontSize: 24,
-    lineHeight: 30,
-    fontWeight: 700,
-    fontVariant: ['tabular-nums'],
     flexShrink: 1,
   },
 });

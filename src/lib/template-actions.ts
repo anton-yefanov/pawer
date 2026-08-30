@@ -22,6 +22,7 @@ import {
 import { copyCoverPhoto, deleteCoverPhoto } from '@/lib/card-photos';
 import { type SetType } from '@/lib/set-types';
 import { remapSuperset } from '@/lib/supersets';
+import { span } from '@/lib/observability';
 import { track } from '@/lib/telemetry';
 import { type TrackedSet } from '@/lib/tracking-types';
 import { activeWorkoutId, type StartWorkoutResult } from '@/lib/workout-actions';
@@ -215,77 +216,79 @@ export async function updateTemplate({
   name: string;
   exercises: readonly TemplateExerciseInput[];
 }): Promise<void> {
-  const now = Date.now();
-  await db.update(templates).set({ name, updatedAt: now }).where(eq(templates.id, id));
+  return span('templates', 'template.update', async () => {
+    const now = Date.now();
+    await db.update(templates).set({ name, updatedAt: now }).where(eq(templates.id, id));
 
-  const existingExercises = await db
-    .select({ id: templateExercises.id })
-    .from(templateExercises)
-    .where(and(eq(templateExercises.templateId, id), isNull(templateExercises.deletedAt)))
-    .all();
+    const existingExercises = await db
+      .select({ id: templateExercises.id })
+      .from(templateExercises)
+      .where(and(eq(templateExercises.templateId, id), isNull(templateExercises.deletedAt)))
+      .all();
 
-  const existingSets = await db
-    .select({ id: templateSets.id })
-    .from(templateSets)
-    .innerJoin(templateExercises, eq(templateSets.templateExerciseId, templateExercises.id))
-    .where(and(eq(templateExercises.templateId, id), isNull(templateSets.deletedAt)))
-    .all();
+    const existingSets = await db
+      .select({ id: templateSets.id })
+      .from(templateSets)
+      .innerJoin(templateExercises, eq(templateSets.templateExerciseId, templateExercises.id))
+      .where(and(eq(templateExercises.templateId, id), isNull(templateSets.deletedAt)))
+      .all();
 
-  const keptExercises = new Set(exercises.map((row) => row.id));
-  const keptSets = new Set(exercises.flatMap((row) => row.sets.map((set) => set.id)));
+    const keptExercises = new Set(exercises.map((row) => row.id));
+    const keptSets = new Set(exercises.flatMap((row) => row.sets.map((set) => set.id)));
 
-  const goneExercises = existingExercises
-    .map((row) => row.id)
-    .filter((rowId) => !keptExercises.has(rowId));
-  if (goneExercises.length > 0) {
-    await db
-      .update(templateExercises)
-      .set({ deletedAt: now, updatedAt: now })
-      .where(inArray(templateExercises.id, goneExercises));
-  }
-
-  const goneSets = existingSets.map((row) => row.id).filter((setId) => !keptSets.has(setId));
-  if (goneSets.length > 0) {
-    await db
-      .update(templateSets)
-      .set({ deletedAt: now, updatedAt: now })
-      .where(inArray(templateSets.id, goneSets));
-  }
-
-  const hadExercise = new Set(existingExercises.map((row) => row.id));
-  const hadSet = new Set(existingSets.map((row) => row.id));
-
-  for (const [position, row] of exercises.entries()) {
-    const values = {
-      position,
-      notes: row.notes,
-      restSeconds: row.restSeconds,
-      supersetId: row.supersetId,
-      updatedAt: now,
-    };
-    if (hadExercise.has(row.id)) {
-      await db.update(templateExercises).set(values).where(eq(templateExercises.id, row.id));
-    } else {
-      await db.insert(templateExercises).values({
-        id: row.id,
-        templateId: id,
-        exerciseId: row.exerciseId,
-        ...values,
-      });
+    const goneExercises = existingExercises
+      .map((row) => row.id)
+      .filter((rowId) => !keptExercises.has(rowId));
+    if (goneExercises.length > 0) {
+      await db
+        .update(templateExercises)
+        .set({ deletedAt: now, updatedAt: now })
+        .where(inArray(templateExercises.id, goneExercises));
     }
 
-    for (const [setPosition, set] of row.sets.entries()) {
-      const setRow = setValues(set, row.id, setPosition);
-      if (hadSet.has(set.id)) {
-        await db
-          .update(templateSets)
-          .set({ ...setRow, updatedAt: now })
-          .where(eq(templateSets.id, set.id));
+    const goneSets = existingSets.map((row) => row.id).filter((setId) => !keptSets.has(setId));
+    if (goneSets.length > 0) {
+      await db
+        .update(templateSets)
+        .set({ deletedAt: now, updatedAt: now })
+        .where(inArray(templateSets.id, goneSets));
+    }
+
+    const hadExercise = new Set(existingExercises.map((row) => row.id));
+    const hadSet = new Set(existingSets.map((row) => row.id));
+
+    for (const [position, row] of exercises.entries()) {
+      const values = {
+        position,
+        notes: row.notes,
+        restSeconds: row.restSeconds,
+        supersetId: row.supersetId,
+        updatedAt: now,
+      };
+      if (hadExercise.has(row.id)) {
+        await db.update(templateExercises).set(values).where(eq(templateExercises.id, row.id));
       } else {
-        await db.insert(templateSets).values(setRow);
+        await db.insert(templateExercises).values({
+          id: row.id,
+          templateId: id,
+          exerciseId: row.exerciseId,
+          ...values,
+        });
+      }
+
+      for (const [setPosition, set] of row.sets.entries()) {
+        const setRow = setValues(set, row.id, setPosition);
+        if (hadSet.has(set.id)) {
+          await db
+            .update(templateSets)
+            .set({ ...setRow, updatedAt: now })
+            .where(eq(templateSets.id, set.id));
+        } else {
+          await db.insert(templateSets).values(setRow);
+        }
       }
     }
-  }
+  });
 }
 
 /** App-shipped templates keep the appearance they ship with, so the guard matters. */

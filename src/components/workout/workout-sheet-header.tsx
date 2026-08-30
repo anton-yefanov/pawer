@@ -63,7 +63,9 @@ export function HeaderPillButton({
         accessibilityRole="button"
         accessibilityState={{ disabled }}
         style={[styles.finishContent, disabled && styles.disabled]}>
-        <ThemedText style={[styles.finishLabel, { color: theme.accentContent }]}>{title}</ThemedText>
+        <ThemedText type="headline" style={{ color: theme.accentContent }}>
+          {title}
+        </ThemedText>
       </Pressable>
     </GlassCircle>
   );
@@ -111,10 +113,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  finishLabel: {
-    fontSize: 16,
-    fontWeight: '600',
   },
   disabled: {
     opacity: 0.7,

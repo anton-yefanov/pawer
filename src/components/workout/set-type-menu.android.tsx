@@ -45,7 +45,8 @@ export function SetTypeMenu({ label, setType, completed, onChange }: Props) {
           pressed && { opacity: 0.6 },
         ]}>
         <ThemedText
-          type={setType === 'normal' ? 'small' : 'smallBold'}
+          type="footnote"
+          weight={setType === 'normal' ? 'regular' : 'bold'}
           themeColor={SET_TYPES[setType].color}>
           {label}
         </ThemedText>

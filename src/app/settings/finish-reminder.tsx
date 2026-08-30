@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { PickerSheet } from '@/components/settings/picker-sheet';
 import { FINISH_REMINDER_OPTIONS, useFinishReminder } from '@/lib/finish-reminder';
 import { ensureNotificationPermission } from '@/lib/notifications';
+import { attempt } from '@/lib/observability';
 
 export default function FinishReminderSettingsScreen() {
   const { option, setOption } = useFinishReminder();
@@ -14,10 +15,10 @@ export default function FinishReminderSettingsScreen() {
       options={FINISH_REMINDER_OPTIONS}
       selected={option}
       onSelect={(id) => {
-        void setOption(id);
+        void attempt('settings', setOption(id), { title: 'Couldn’t save setting', message: 'Please try again.' });
         // Asked here rather than at launch: this is the moment the user has
         // said they want the notification.
-        if (id !== 'never') void ensureNotificationPermission();
+        if (id !== 'never') void attempt('notifications', ensureNotificationPermission());
         router.back();
       }}
     />

@@ -5,6 +5,7 @@ import Purchases, { LOG_LEVEL, type CustomerInfo } from 'react-native-purchases'
 
 import { db } from '@/db/client';
 import { getSetting, setSetting } from '@/db/seed';
+import { attempt, guard, guardSync, report } from '@/lib/observability';
 import { distinctId, track } from '@/lib/telemetry';
 
 /**
@@ -80,20 +81,27 @@ export function PurchasesProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    void Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.ERROR);
-    Purchases.configure({ apiKey: API_KEY });
+    const configured = guardSync('purchases', () => {
+      void Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.ERROR);
+      Purchases.configure({ apiKey: API_KEY });
 
-    // The attribute RevenueCat's PostHog integration looks for: it is what lands
-    // a renewal on the same person as the `paywall_shown` that sold it.
-    const id = distinctId();
-    if (id) void Purchases.setAttributes({ $posthogUserId: id });
+      // The attribute RevenueCat's PostHog integration looks for: it is what
+      // lands a renewal on the same person as the `paywall_shown` that sold it.
+      const id = distinctId();
+      if (id) void Purchases.setAttributes({ $posthogUserId: id });
 
-    Purchases.addCustomerInfoUpdateListener(setCustomerInfo);
+      Purchases.addCustomerInfoUpdateListener(setCustomerInfo);
+      return true;
+    });
+    if (!configured) return;
+
     // The listener only fires on *change*, so the state at launch has to be
-    // asked for. Offline this rejects and the cached entitlement stands.
-    Purchases.getCustomerInfo()
-      .then(setCustomerInfo)
-      .catch((error: unknown) => console.warn('[purchases] getCustomerInfo failed', error));
+    // asked for. Offline this rejects and the cached entitlement stands — but a
+    // permanently failing SDK silently downgrades a paying user once that cache
+    // goes stale, so it is worth hearing about.
+    void attempt('purchases', Purchases.getCustomerInfo().then(setCustomerInfo), undefined, {
+      phase: 'launch',
+    });
 
     return () => {
       Purchases.removeCustomerInfoUpdateListener(setCustomerInfo);
@@ -109,18 +117,24 @@ export function PurchasesProvider({ children }: { children: ReactNode }) {
     const active = isProActive(customerInfo);
     if (active === persisted.current) return;
     persisted.current = active;
-    void setSetting(db, PRO_CACHE_KEY, String(active));
+    void attempt('purchases', setSetting(db, PRO_CACHE_KEY, String(active)), undefined, {
+      phase: 'cache',
+    }).then((written) => {
+      // A failed write used to leave this ref sure the cache was current, so
+      // nothing ever retried and the next offline cold start took Pro away from
+      // someone who paid for it. Clearing it makes the next change try again.
+      if (!written) persisted.current = null;
+    });
   }, [customerInfo]);
 
   const value: PurchasesValue = {
     isPro,
     customerInfo,
     refresh: async () => {
-      try {
-        setCustomerInfo(await Purchases.getCustomerInfo());
-      } catch (error) {
-        console.warn('[purchases] refresh failed', error);
-      }
+      const info = await guard('purchases', Purchases.getCustomerInfo(), undefined, {
+        phase: 'refresh',
+      });
+      if (info) setCustomerInfo(info);
     },
     restore: async () => {
       try {
@@ -130,6 +144,7 @@ export function PurchasesProvider({ children }: { children: ReactNode }) {
         track('pro_restored', { found });
         return found ? { status: 'restored' } : { status: 'nothing' };
       } catch (error) {
+        report('purchases', error, { phase: 'restore' });
         return { status: 'error', message: messageOf(error) };
       }
     },

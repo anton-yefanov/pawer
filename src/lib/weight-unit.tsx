@@ -3,6 +3,7 @@ import { createContext, use, useEffect, useState, type ReactNode } from 'react';
 import { db } from '@/db/client';
 import { getSetting, setSetting } from '@/db/seed';
 import type { WeightUnit } from '@/lib/units';
+import { attempt } from '@/lib/observability';
 
 export const WEIGHT_UNIT_KEY = 'weight_unit';
 
@@ -23,9 +24,12 @@ export function WeightUnitProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    getSetting(db, WEIGHT_UNIT_KEY).then((value) => {
-      if (!cancelled && value === 'lb') setStored('lb');
-    });
+    void attempt(
+      'settings',
+      getSetting(db, WEIGHT_UNIT_KEY).then((value) => {
+        if (!cancelled && value === 'lb') setStored('lb');
+      })
+    );
     return () => {
       cancelled = true;
     };

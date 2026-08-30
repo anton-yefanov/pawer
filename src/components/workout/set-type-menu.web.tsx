@@ -33,7 +33,8 @@ export function SetTypeMenu({
         },
       ]}>
       <ThemedText
-        type={setType === 'normal' ? 'small' : 'smallBold'}
+        type="footnote"
+        weight={setType === 'normal' ? 'regular' : 'bold'}
         themeColor={SET_TYPES[setType].color}>
         {label}
       </ThemedText>

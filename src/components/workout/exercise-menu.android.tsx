@@ -173,7 +173,7 @@ function CustomRest({
 
       <View style={styles.centreScreen} pointerEvents="box-none">
         <View style={[styles.card, { backgroundColor: theme.surface }]}>
-          <ThemedText type="smallBold" themeColor="textSecondary">
+          <ThemedText type="footnote" weight="semibold" themeColor="textSecondary">
             Rest timer
           </ThemedText>
           <View style={styles.wheels}>
@@ -191,7 +191,7 @@ function CustomRest({
             />
           </View>
           <Pressable onPress={onClose} style={styles.done}>
-            <ThemedText type="smallBold" themeColor="accent">
+            <ThemedText type="footnote" weight="semibold" themeColor="accent">
               Done
             </ThemedText>
           </Pressable>

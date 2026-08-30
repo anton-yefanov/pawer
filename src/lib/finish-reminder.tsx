@@ -16,6 +16,8 @@ import {
 import { activeWorkoutId } from '@/lib/workout-actions';
 import { activeWorkoutForReminder } from '@/lib/workout-queries';
 
+import { attempt } from '@/lib/observability';
+
 const PREFERENCE_KEY = 'finish_reminder_minutes';
 const STATE_KEY = 'finish_reminder';
 
@@ -74,24 +76,30 @@ export function FinishReminderProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    getSetting(db, PREFERENCE_KEY).then((value) => {
-      if (!cancelled && isOption(value)) setStored(value);
-    });
+    void attempt(
+      'settings',
+      getSetting(db, PREFERENCE_KEY).then((value) => {
+        if (!cancelled && isOption(value)) setStored(value);
+      })
+    );
     return () => {
       cancelled = true;
     };
   }, []);
 
   useEffect(() => {
-    void (async () => {
-      const raw = await getSetting(db, STATE_KEY);
-      if (!raw) return;
-      scheduledRef.current = JSON.parse(raw) as Scheduled;
-      // Whatever was pending was scheduled for a session we can no longer see,
-      // or the app is open now, which is itself the answer to "still working
-      // out?" — either way it is stale.
-      await clear();
-    })();
+    void attempt(
+      'finish-reminder',
+      (async () => {
+        const raw = await getSetting(db, STATE_KEY);
+        if (!raw) return;
+        scheduledRef.current = JSON.parse(raw) as Scheduled;
+        // Whatever was pending was scheduled for a session we can no longer
+        // see, or the app is open now, which is itself the answer to "still
+        // working out?" — either way it is stale.
+        await clear();
+      })()
+    );
   }, []);
 
   useEffect(() => {

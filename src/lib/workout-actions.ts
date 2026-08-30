@@ -1,8 +1,9 @@
 import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
-import { db } from '@/db/client';
+import { db, type Executor } from '@/db/client';
 import { newId } from '@/db/id';
 import { personalRecords, sets, workoutExercises, workouts } from '@/db/schema';
+import { span } from '@/lib/observability';
 import { recordPersonalRecords } from '@/lib/personal-records';
 import type { SetType } from '@/lib/set-types';
 import { joinPlan, leavePlan, remapSuperset } from '@/lib/supersets';
@@ -245,9 +246,12 @@ export async function deleteSet(setId: string): Promise<void> {
  * Which column matters depends on the exercise's tracking type, but checking all
  * three is equivalent here and saves joining back to `exercises`.
  */
-export async function completeUnfinishedSets(workoutId: string): Promise<void> {
+export async function completeUnfinishedSets(
+  workoutId: string,
+  exec: Executor = db
+): Promise<void> {
   const now = Date.now();
-  await db
+  await exec
     .update(sets)
     .set({ completed: true, completedAt: now, updatedAt: now })
     .where(
@@ -264,9 +268,9 @@ export async function completeUnfinishedSets(workoutId: string): Promise<void> {
 }
 
 /** Sets left empty are noise in history, so they go rather than getting logged as zeroes. */
-async function purgeIncompleteSets(workoutId: string): Promise<void> {
+async function purgeIncompleteSets(workoutId: string, exec: Executor = db): Promise<void> {
   const now = Date.now();
-  await db
+  await exec
     .update(sets)
     .set({ deletedAt: now, updatedAt: now })
     .where(
@@ -281,16 +285,26 @@ async function purgeIncompleteSets(workoutId: string): Promise<void> {
     );
 }
 
+/**
+ * One transaction, because the three steps are not independent: a throw in
+ * `recordPersonalRecords` used to leave the workout already stamped `finishedAt`
+ * with its records deleted and none written back, and nothing recomputes them.
+ */
 export async function finishWorkout(workoutId: string): Promise<void> {
   const now = Date.now();
-  await purgeIncompleteSets(workoutId);
 
-  await db
-    .update(workouts)
-    .set({ finishedAt: now, updatedAt: now })
-    .where(eq(workouts.id, workoutId));
+  await span('workout', 'workout.finish', () =>
+    db.transaction(async (tx) => {
+      await purgeIncompleteSets(workoutId, tx);
 
-  await recordPersonalRecords(workoutId);
+      await tx
+        .update(workouts)
+        .set({ finishedAt: now, updatedAt: now })
+        .where(eq(workouts.id, workoutId));
+
+      await recordPersonalRecords(workoutId, tx);
+    })
+  );
 }
 
 /**
@@ -300,10 +314,14 @@ export async function finishWorkout(workoutId: string): Promise<void> {
  * the workout keeps its place in history.
  */
 export async function saveWorkoutEdits(workoutId: string): Promise<void> {
-  await completeUnfinishedSets(workoutId);
-  await purgeIncompleteSets(workoutId);
-  await db.update(workouts).set(touch()).where(eq(workouts.id, workoutId));
-  await recordPersonalRecords(workoutId);
+  await span('workout', 'workout.save-edits', () =>
+    db.transaction(async (tx) => {
+      await completeUnfinishedSets(workoutId, tx);
+      await purgeIncompleteSets(workoutId, tx);
+      await tx.update(workouts).set(touch()).where(eq(workouts.id, workoutId));
+      await recordPersonalRecords(workoutId, tx);
+    })
+  );
 }
 
 /**

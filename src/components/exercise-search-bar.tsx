@@ -26,6 +26,7 @@ import type { ExerciseFilters, FacetMenu } from '@/lib/exercise-filters';
 import * as haptics from '@/lib/haptics';
 import { allowNewCustomExercise } from '@/lib/pro-gates';
 import { usePro } from '@/lib/purchases';
+import { guard } from '@/lib/observability';
 
 const SEARCH_BAR_HEIGHT = 48;
 const TOP_GAP = Spacing.one;
@@ -257,7 +258,7 @@ export function ExerciseSearchBar({
               style={styles.capsuleContent}
               onPress={() => {
                 haptics.tap();
-                void allowNewCustomExercise(isPro).then((allowed) => {
+                void guard('pro-gates', allowNewCustomExercise(isPro)).then((allowed) => {
                   if (allowed) router.push(newExerciseHref);
                 });
               }}
@@ -326,7 +327,6 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 17,
     paddingVertical: 0,
   },
   cancel: {
@@ -334,11 +334,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'flex-end',
     overflow: 'hidden',
-  },
-  // Colored at the render site with `theme.accent`, the same tint the filter
-  // menu uses when a facet is active.
-  cancelLabel: {
-    fontSize: 17,
-    paddingLeft: Spacing.two,
   },
 });

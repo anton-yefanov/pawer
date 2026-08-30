@@ -1,29 +1,41 @@
 import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
 
-import { Fonts, ThemeColor } from '@/constants/theme';
+import { Fonts, ThemeColor, Type, type TypeRole, type TypeWeight, Weights } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type ThemedTextProps = TextProps & {
-  type?: 'default' | 'title' | 'small' | 'smallBold' | 'subtitle' | 'link' | 'linkPrimary' | 'code';
+  type?: TypeRole | 'code';
+  weight?: TypeWeight;
+  /** Fixed-width figures, for anything that ticks or lines up in a column. */
+  numeric?: boolean;
   themeColor?: ThemeColor;
 };
 
-export function ThemedText({ style, type = 'default', themeColor, ...rest }: ThemedTextProps) {
+/**
+ * Every string in the app. A caller picks a role from `Type`, never a size — the
+ * scale is the only place a `fontSize` is written, which is what keeps a section
+ * header from being three different things on three screens.
+ */
+export function ThemedText({
+  style,
+  type = 'body',
+  weight,
+  numeric,
+  themeColor,
+  maxFontSizeMultiplier,
+  ...rest
+}: ThemedTextProps) {
   const theme = useTheme();
 
   return (
     <Text
+      maxFontSizeMultiplier={maxFontSizeMultiplier ?? SCALE_CAP[type]}
       style={[
         base,
-        { color: theme[themeColor ?? (type === 'linkPrimary' ? 'accent' : 'text')] },
-        type === 'default' && styles.default,
-        type === 'title' && styles.title,
-        type === 'small' && styles.small,
-        type === 'smallBold' && styles.smallBold,
-        type === 'subtitle' && styles.subtitle,
-        type === 'link' && styles.link,
-        type === 'linkPrimary' && styles.linkPrimary,
-        type === 'code' && styles.code,
+        styles[type],
+        { color: theme[themeColor ?? 'text'] },
+        weight && { fontWeight: Weights[weight] },
+        numeric && tabular,
         style,
       ]}
       {...rest}
@@ -35,45 +47,31 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
  * iOS resolves the system face by falling through, so only Android is named —
  * left alone it lands on Roboto, which is the loudest Material tell in the app.
  */
-const base = Platform.select({ android: { fontFamily: Fonts.sans } });
+export const base = Platform.select({ android: { fontFamily: Fonts.sans } });
+
+const tabular = StyleSheet.create({ nums: { fontVariant: ['tabular-nums'] } }).nums;
+
+/**
+ * How far Dynamic Type may take each role. Titles are already large and sit in
+ * layouts that cannot reflow much; the small roles carry the labels someone
+ * turning text up is actually trying to read, so they get the most room.
+ */
+const SCALE_CAP: Record<TypeRole | 'code', number> = {
+  largeTitle: 1.2,
+  title1: 1.2,
+  title2: 1.2,
+  title3: 1.3,
+  headline: 1.4,
+  body: 1.4,
+  callout: 1.4,
+  subhead: 1.4,
+  footnote: 1.6,
+  caption1: 1.6,
+  caption2: 1.6,
+  code: 1.4,
+};
 
 const styles = StyleSheet.create({
-  small: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: 500,
-  },
-  smallBold: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: 700,
-  },
-  default: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: 500,
-  },
-  title: {
-    fontSize: 48,
-    fontWeight: 600,
-    lineHeight: 52,
-  },
-  subtitle: {
-    fontSize: 32,
-    lineHeight: 44,
-    fontWeight: 600,
-  },
-  link: {
-    lineHeight: 30,
-    fontSize: 14,
-  },
-  linkPrimary: {
-    lineHeight: 30,
-    fontSize: 14,
-  },
-  code: {
-    fontFamily: Fonts.mono,
-    fontWeight: Platform.select({ android: 700 }) ?? 500,
-    fontSize: 12,
-  },
+  ...Type,
+  code: { ...Type.caption1, fontFamily: Fonts.mono },
 });

@@ -1,16 +1,17 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from "react-native";
 
-import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
-import * as haptics from '@/lib/haptics';
+import {
+  ExerciseTabs,
+  type ExerciseTab,
+} from "@/components/exercises/exercise-tabs";
+import { Spacing } from "@/constants/theme";
 
-export type ArtworkMode = 'exercises' | 'emoji' | 'media';
+export type ArtworkMode = "exercises" | "emoji" | "media";
 
-const TABS: readonly { mode: ArtworkMode; label: string }[] = [
-  { mode: 'exercises', label: 'Exercises' },
-  { mode: 'emoji', label: 'Emojis' },
-  { mode: 'media', label: 'Media' },
+const TABS: readonly ExerciseTab[] = [
+  { id: "exercises", label: "Exercises" },
+  { id: "emoji", label: "Emojis" },
+  { id: "media", label: "Media" },
 ];
 
 /** Picks which of the three sources the cover draws from, and so what the
@@ -23,55 +24,20 @@ export function ArtworkTabs({
   mode: ArtworkMode;
   onChange: (mode: ArtworkMode) => void;
 }) {
-  const theme = useTheme();
-
   return (
     <View style={styles.row}>
-      {TABS.map((tab) => {
-        const selected = tab.mode === mode;
-        return (
-          <Pressable
-            key={tab.mode}
-            onPress={() => {
-              haptics.select();
-              onChange(tab.mode);
-            }}
-            accessibilityRole="tab"
-            accessibilityState={{ selected }}
-            style={({ pressed }) => [
-              styles.pill,
-              {
-                backgroundColor: theme.backgroundElement,
-                borderColor: selected ? theme.accent : 'transparent',
-              },
-              pressed && styles.pressed,
-            ]}>
-            <ThemedText type="small" themeColor={selected ? 'accent' : 'text'}>
-              {tab.label}
-            </ThemedText>
-          </Pressable>
-        );
-      })}
+      <ExerciseTabs
+        tabs={TABS}
+        value={mode}
+        onChange={(id) => onChange(id as ArtworkMode)}
+      />
     </View>
   );
 }
 
-const BORDER = 1;
-
 const styles = StyleSheet.create({
   row: {
-    flexDirection: 'row',
-    gap: Spacing.two,
     paddingHorizontal: Spacing.three,
     paddingBottom: Spacing.three,
-  },
-  pill: {
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    borderRadius: 999,
-    borderWidth: BORDER,
-  },
-  pressed: {
-    opacity: 0.7,
   },
 });
