@@ -21,7 +21,6 @@ import { useTheme } from '@/hooks/use-theme';
 import { asCardArtwork } from '@/lib/card-artwork';
 import { moveTemplateToFolder, reorderFolders } from '@/lib/folder-actions';
 import * as haptics from '@/lib/haptics';
-import { useOnboarding } from '@/lib/onboarding';
 import { move, sortBy } from '@/lib/order';
 import { reorderTemplates } from '@/lib/template-actions';
 import {
@@ -50,7 +49,6 @@ export default function StartWorkoutScreen() {
   const { data: mine } = useLiveQuery(templatesQuery(false), []);
   const { data: builtIn } = useLiveQuery(templatesQuery(true), []);
   const { data: folders } = useLiveQuery(foldersQuery(), []);
-  const { reset: resetOnboarding } = useOnboarding();
   const { data: templateExercises } = useLiveQuery(templateCardExercisesQuery(), []);
 
   // One join for the whole grid, sliced per template here rather than a query
@@ -195,15 +193,6 @@ export default function StartWorkoutScreen() {
           />
 
           <TemplateSection title="Library" templates={builtInCards} collapsible />
-
-          {/* TEMPORARY: replays the onboarding flow while it is being built. */}
-          {__DEV__ ? (
-            <BigButton
-              title="Show Onboarding"
-              variant="tinted"
-              onPress={() => void resetOnboarding()}
-            />
-          ) : null}
         </ScrollView>
 
         <ActiveWorkoutPrompt

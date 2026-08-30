@@ -8,6 +8,13 @@ import { useTheme } from '@/hooks/use-theme';
 import * as haptics from '@/lib/haptics';
 
 export const ROW_HEIGHT = 56;
+export const TILE_SIZE = 29;
+
+/** A leading tile sits as far from the row's edge as it does from its top. */
+const TILE_MARGIN = (ROW_HEIGHT - TILE_SIZE) / 2;
+
+/** Where a separator starts once every row in the card carries a tile. */
+export const TILE_INSET = TILE_MARGIN + TILE_SIZE + Spacing.two;
 
 export function Card({ children }: { children: ReactNode }) {
   const theme = useTheme();
@@ -36,21 +43,27 @@ export function SectionFooter({
   );
 }
 
-export function Separator() {
+export function Separator({ inset = Spacing.three }: { inset?: number }) {
   const theme = useTheme();
-  return <View style={[groupedStyles.separator, { backgroundColor: theme.backgroundElement }]} />;
+  return (
+    <View
+      style={[groupedStyles.separator, { backgroundColor: theme.backgroundElement, marginLeft: inset }]}
+    />
+  );
 }
 
 export function DisclosureRow({
   label,
   detail,
   value,
+  leading,
   chevron = true,
   onPress,
 }: {
   label: string;
   detail?: string;
   value?: string;
+  leading?: ReactNode;
   chevron?: boolean;
   onPress: () => void;
 }) {
@@ -64,8 +77,10 @@ export function DisclosureRow({
       }}
       style={({ pressed }) => [
         groupedStyles.row,
+        leading != null && groupedStyles.rowWithLeading,
         pressed && { backgroundColor: theme.backgroundSelected },
       ]}>
+      {leading}
       <View style={groupedStyles.rowText}>
         <ThemedText>{label}</ThemedText>
         {detail && (
@@ -143,11 +158,13 @@ export const groupedStyles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
   },
+  rowWithLeading: {
+    paddingLeft: TILE_MARGIN,
+  },
   rowText: {
     flex: 1,
   },
   separator: {
     height: StyleSheet.hairlineWidth,
-    marginLeft: Spacing.three,
   },
 });

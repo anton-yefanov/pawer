@@ -77,13 +77,7 @@
         ]
       },
       "infoPlist": {
-        "NSLocalNetworkUsageDescription": "Allow pawer to connect to the development server on your local network.",
-        "NSBonjourServices": [
-          "_expo-development-server._tcp",
-          "_expo-development-server._udp",
-          "_exp._tcp",
-          "_exp._udp"
-        ]
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -156,7 +150,9 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow pawer to show your photos so you can use one as a template cover or an exercise thumbnail."
+          "photosPermission": "Allow pawer to show your photos so you can use one as a template cover or an exercise thumbnail.",
+          "cameraPermission": false,
+          "microphonePermission": false
         }
       ],
       "./plugins/with-no-aps-environment",

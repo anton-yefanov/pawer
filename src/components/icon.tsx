@@ -6,6 +6,7 @@ import { ArrowSquareOutIcon } from "phosphor-react-native/src/icons/ArrowSquareO
 import { ArrowUpRightIcon } from "phosphor-react-native/src/icons/ArrowUpRight";
 import { ArrowsClockwiseIcon } from "phosphor-react-native/src/icons/ArrowsClockwise";
 import { BarbellIcon } from "phosphor-react-native/src/icons/Barbell";
+import { BellRingingIcon } from "phosphor-react-native/src/icons/BellRinging";
 import { CalendarBlankIcon } from "phosphor-react-native/src/icons/CalendarBlank";
 import { CaretDownIcon } from "phosphor-react-native/src/icons/CaretDown";
 import { CaretLeftIcon } from "phosphor-react-native/src/icons/CaretLeft";
@@ -23,22 +24,28 @@ import { FolderIcon } from "phosphor-react-native/src/icons/Folder";
 import { FolderMinusIcon } from "phosphor-react-native/src/icons/FolderMinus";
 import { FolderPlusIcon } from "phosphor-react-native/src/icons/FolderPlus";
 import { GearIcon } from "phosphor-react-native/src/icons/Gear";
+import { HandWavingIcon } from "phosphor-react-native/src/icons/HandWaving";
 import { HouseIcon } from "phosphor-react-native/src/icons/House";
 import { ImageIcon } from "phosphor-react-native/src/icons/Image";
 import { InfoIcon } from "phosphor-react-native/src/icons/Info";
 import { KeyboardIcon } from "phosphor-react-native/src/icons/Keyboard";
 import { LockSimpleIcon } from "phosphor-react-native/src/icons/LockSimple";
+import { MagicWandIcon } from "phosphor-react-native/src/icons/MagicWand";
 import { MagnifyingGlassIcon } from "phosphor-react-native/src/icons/MagnifyingGlass";
 import { MinusIcon } from "phosphor-react-native/src/icons/Minus";
+import { MoonIcon } from "phosphor-react-native/src/icons/Moon";
 import { NoteBlankIcon } from "phosphor-react-native/src/icons/NoteBlank";
 import { NotePencilIcon } from "phosphor-react-native/src/icons/NotePencil";
 import { PaletteIcon } from "phosphor-react-native/src/icons/Palette";
 import { PencilSimpleIcon } from "phosphor-react-native/src/icons/PencilSimple";
 import { PersonArmsSpreadIcon } from "phosphor-react-native/src/icons/PersonArmsSpread";
+import { QuestionIcon } from "phosphor-react-native/src/icons/Question";
 import { PlusIcon } from "phosphor-react-native/src/icons/Plus";
+import { ScalesIcon } from "phosphor-react-native/src/icons/Scales";
 import { PlusCircleIcon } from "phosphor-react-native/src/icons/PlusCircle";
 import { SlidersHorizontalIcon } from "phosphor-react-native/src/icons/SlidersHorizontal";
 import { SmileyIcon } from "phosphor-react-native/src/icons/Smiley";
+import { StarIcon } from "phosphor-react-native/src/icons/Star";
 import { StackPlusIcon } from "phosphor-react-native/src/icons/StackPlus";
 import { TimerIcon } from "phosphor-react-native/src/icons/Timer";
 import { TrashIcon } from "phosphor-react-native/src/icons/Trash";
@@ -175,6 +182,21 @@ const ICONS = {
     glyph: GearIcon,
     weight: "fill",
   },
+  "bell.badge.fill": {
+    symbol: { ios: "bell.badge.fill", android: "notifications_active" },
+    glyph: BellRingingIcon,
+    weight: "fill",
+  },
+  "hand.wave.fill": {
+    symbol: { ios: "hand.wave.fill", android: "waving_hand" },
+    glyph: HandWavingIcon,
+    weight: "fill",
+  },
+  "scalemass.fill": {
+    symbol: { ios: "scalemass.fill", android: "scale" },
+    glyph: ScalesIcon,
+    weight: "fill",
+  },
   house: { symbol: { ios: "house", android: "home" }, glyph: HouseIcon },
   "house.fill": {
     symbol: { ios: "house.fill", android: "home_filled" },
@@ -248,6 +270,25 @@ const ICONS = {
     symbol: { ios: "trophy.fill", android: "trophy" },
     glyph: TrophyIcon,
     weight: "fill",
+  },
+  "moon.fill": {
+    symbol: { ios: "moon.fill", android: "dark_mode" },
+    glyph: MoonIcon,
+    weight: "fill",
+  },
+  "questionmark.circle.fill": {
+    symbol: { ios: "questionmark.circle.fill", android: "help" },
+    glyph: QuestionIcon,
+    weight: "bold",
+  },
+  "star.fill": {
+    symbol: { ios: "star.fill", android: "star" },
+    glyph: StarIcon,
+    weight: "fill",
+  },
+  "wand.and.stars": {
+    symbol: { ios: "wand.and.stars", android: "auto_fix_high" },
+    glyph: MagicWandIcon,
   },
   xmark: { symbol: { ios: "xmark", android: "close" }, glyph: XIcon },
 } as const satisfies Record<string, IconEntry>;

@@ -2,7 +2,14 @@ import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet } from "react-native";
 
-import { Card, DisclosureRow, Separator } from "@/components/grouped-list";
+import {
+  Card,
+  DisclosureRow,
+  Separator,
+  TILE_INSET,
+} from "@/components/grouped-list";
+import { IconTile } from "@/components/icon-tile";
+import { ProBanner } from "@/components/settings/pro-banner";
 import { ToggleRow } from "@/components/settings/toggle-row";
 import { BottomTabInset, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
@@ -68,52 +75,49 @@ export default function SettingsScreen() {
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic"
     >
-      <Card>
-        {isPro ? (
+      {isPro ? (
+        <Card>
           <DisclosureRow
             label="Manage Subscription"
             onPress={() => void presentCustomerCenter()}
           />
-        ) : (
-          <>
-            <DisclosureRow
-              label={`Upgrade to ${PRO_NAME}`}
-              onPress={() => void presentPaywall("settings")}
-            />
-            <Separator />
-            <DisclosureRow
-              label="Restore Purchases"
-              onPress={() => void onRestorePressed()}
-            />
-          </>
-        )}
-      </Card>
+        </Card>
+      ) : (
+        <ProBanner
+          label={`Upgrade to ${PRO_NAME}`}
+          onPress={() => void presentPaywall("settings")}
+        />
+      )}
 
       <Card>
         <DisclosureRow
           label="Dark Theme"
+          leading={<IconTile name="moon.fill" tint="indigo" />}
           value={
             THEME_PREFERENCES.find((option) => option.id === preference)?.short
           }
           chevron={false}
           onPress={() => router.push("/settings/theme")}
         />
-        <Separator />
+        <Separator inset={TILE_INSET} />
         <DisclosureRow
           label="Weight Unit"
+          leading={<IconTile name="dumbbell" tint="blue" />}
           value={unit}
           chevron={false}
           onPress={() => router.push("/settings/weight-unit")}
         />
-        <Separator />
+        <Separator inset={TILE_INSET} />
         <ToggleRow
           label="Autofill Weight"
+          leading={<IconTile name="wand.and.stars" tint="purple" />}
           value={autofillWeight}
           onChange={setAutofillWeight}
         />
-        <Separator />
+        <Separator inset={TILE_INSET} />
         <DisclosureRow
           label="Finish Reminder"
+          leading={<IconTile name="timer" tint="orange" />}
           value={
             FINISH_REMINDER_OPTIONS.find(
               (option) => option.id === finishReminder,
@@ -122,9 +126,10 @@ export default function SettingsScreen() {
           chevron={false}
           onPress={() => router.push("/settings/finish-reminder")}
         />
-        <Separator />
+        <Separator inset={TILE_INSET} />
         <ToggleRow
           label="Share Anonymous Usage Data"
+          leading={<IconTile name="chart.bar" tint="green" />}
           value={shareUsage}
           onChange={(next) => {
             setShareUsage(next);
@@ -136,16 +141,28 @@ export default function SettingsScreen() {
             });
           }}
         />
-        <Separator />
+        <Separator inset={TILE_INSET} />
         <DisclosureRow
           label="Support"
+          leading={<IconTile name="questionmark.circle.fill" tint="teal" />}
           onPress={() => router.push("/settings/support")}
         />
-        <Separator />
+        <Separator inset={TILE_INSET} />
         <DisclosureRow
           label="Rate Pawer on App Store"
+          leading={<IconTile name="star.fill" tint="yellow" />}
           onPress={() => void openReview()}
         />
+        {!isPro && (
+          <>
+            <Separator inset={TILE_INSET} />
+            <DisclosureRow
+              label="Restore Purchases"
+              leading={<IconTile name="arrow.clockwise" tint="grey" />}
+              onPress={() => void onRestorePressed()}
+            />
+          </>
+        )}
       </Card>
     </ScrollView>
   );

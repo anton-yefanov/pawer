@@ -70,15 +70,16 @@ function OnboardingFlow() {
         <View style={{ width }}>
           <Step
             index={0}
+            icon="hand.wave.fill"
             title="Welcome to Pawer"
             body={[
-              'The interface is pretty intuitive, but if you need help finding certain features, please refer to Guidebook in Settings.',
-              'If you have any questions, suggestions or found a bug, please use Contact form in Settings, we will try responding as quickly as possible.',
+              'We hope it helps you achieve your fitness goals and makes your workouts easier.',
+              'If you have any questions, suggestions or found a bug, please use Support form in Settings.',
             ]}>
             <BigButton title="Get Started" onPress={next} />
             <View style={styles.secondSlot}>
               <ThemedText type="footnote" themeColor="textTertiary" style={styles.note}>
-                Your workouts stay on this phone
+                Your data is stored locally on your device
               </ThemedText>
             </View>
           </Step>
@@ -88,8 +89,9 @@ function OnboardingFlow() {
           <Step
             index={1}
             onBack={back}
+            icon="scalemass.fill"
             title="Units"
-            body="Pick how weights are shown. You can change this any time in Settings."
+            body="You can change this any time in Settings"
             choices={
               <View style={styles.units}>
                 {UNITS.map((unit) => (
@@ -122,6 +124,7 @@ function OnboardingFlow() {
           <Step
             index={2}
             onBack={back}
+            icon="bell.badge.fill"
             title="Know when rest is over"
             body="Pawer can send a notification the moment your rest timer ends, so you can put your phone down between sets.">
             <View style={styles.actions}>

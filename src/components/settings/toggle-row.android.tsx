@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Switch, View } from 'react-native';
 
 import { groupedStyles } from '@/components/grouped-list';
@@ -7,16 +8,18 @@ import * as haptics from '@/lib/haptics';
 
 type Props = {
   label: string;
+  leading?: ReactNode;
   value: boolean;
   onChange: (next: boolean) => void;
 };
 
 /** RN's `Switch` is already the Material 3 switch on Android — no host needed. */
-export function ToggleRow({ label, value, onChange }: Props) {
+export function ToggleRow({ label, leading, value, onChange }: Props) {
   const theme = useTheme();
 
   return (
-    <View style={groupedStyles.row}>
+    <View style={[groupedStyles.row, leading != null && groupedStyles.rowWithLeading]}>
+      {leading}
       <View style={groupedStyles.rowText}>
         <ThemedText>{label}</ThemedText>
       </View>

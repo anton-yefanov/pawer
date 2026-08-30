@@ -3,13 +3,17 @@ import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CircleButton, CIRCLE_BUTTON_SIZE } from '@/components/circle-button';
+import { Icon, type IconName } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 export const STEP_COUNT = 3;
 
 type Props = {
   index: number;
+  /** Sits above the title, tinted accent — the step's subject at a glance. */
+  icon: IconName;
   title: string;
   /** Several strings render as separate paragraphs. */
   body: string | string[];
@@ -22,8 +26,9 @@ type Props = {
   onBack?: () => void;
 };
 
-export function Step({ index, title, body, choices, children, onBack }: Props) {
+export function Step({ index, icon, title, body, choices, children, onBack }: Props) {
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
   const paragraphs = Array.isArray(body) ? body : [body];
 
   return (
@@ -45,6 +50,9 @@ export function Step({ index, title, body, choices, children, onBack }: Props) {
         </View>
 
         <View style={styles.copy}>
+          <View style={styles.icon}>
+            <Icon name={icon} size={44} tintColor={theme.accent} />
+          </View>
           <ThemedText type="title1">{title}</ThemedText>
           {paragraphs.map((paragraph, position) => (
             <ThemedText
@@ -77,6 +85,7 @@ const styles = StyleSheet.create({
   // The copy takes all the slack so it holds the middle of the page on every
   // step, which is what keeps the bottom slot in one place.
   copy: { flex: 1, justifyContent: 'center', gap: Spacing.three },
+  icon: { alignSelf: 'flex-start' },
   followingParagraph: { marginTop: Spacing.two },
   choices: { marginTop: Spacing.five },
   // Every step ends here, so the primary button lands in the same place on all

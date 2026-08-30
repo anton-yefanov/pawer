@@ -14,7 +14,7 @@ import { distinctId, track } from '@/lib/telemetry';
  */
 export const PRO_ENTITLEMENT = 'pro';
 
-export const PRO_NAME = 'Pawer Pro';
+export const PRO_NAME = 'Pro';
 
 /**
  * The last known entitlement, mirrored into SQLite. The app has to work in a

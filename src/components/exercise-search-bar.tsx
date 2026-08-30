@@ -1,6 +1,6 @@
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useRef } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import {
   Easing,
   Extrapolation,
@@ -31,10 +31,6 @@ import { guard } from '@/lib/observability';
 const SEARCH_BAR_HEIGHT = 48;
 const TOP_GAP = Spacing.one;
 const GAP = Spacing.two;
-
-/** Room for "Cancel" at 17pt plus its leading gap. Fixed so the label never
- *  reflows mid-animation the way a measured width would. */
-const CANCEL_WIDTH = 62;
 
 /**
  * Deliberately timing, not spring. A spring overshoots past both ends, and
@@ -177,15 +173,6 @@ export function ExerciseSearchBar({
       marginLeft: -GAP * (1 - out),
       opacity: out,
       pointerEvents: out < 1 ? 'none' : 'auto',
-    };
-  });
-
-  const cancelStyle = useAnimatedStyle(() => {
-    const inn = interpolate(progress.value, [MIDPOINT, 1], [0, 1], Extrapolation.CLAMP);
-    return {
-      width: CANCEL_WIDTH * inn,
-      opacity: inn,
-      pointerEvents: inn > 0 ? 'auto' : 'none',
     };
   });
 
