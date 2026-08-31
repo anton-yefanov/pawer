@@ -6,13 +6,14 @@ App Store Connect: `Pawer Workout Tracker Gym L…` · bundle `com.antonyefanov.
 
 ## 1. Blockers
 
-- [ ] **Production RevenueCat key.** `app.json` `extra.revenueCat` is `test_YagBgAzFucASRGNovnWGGEfCpdW`. `CONFIGURED` in `src/lib/purchases.tsx:38` is false for any non-dev build on a `test_` key, so `Purchases.configure` never runs, `isPro` is permanently false, and every `presentPaywall()` returns `'error'`. Reviewer taps the paywall → Guideline 2.1 rejection. Replace both `ios` and `android` with the `appl_…` / `goog_…` keys.
-- [ ] **App Group mismatch — native project is stale.** `app.json` and both `.entitlements` say `group.com.antdream.pawer`; `ios/Pawer/Info.plist` still has `ExpoWidgetsAppGroupIdentifier = group.com.antonyefanov.pawer`. The Live Activity can't reach the group.
-  - [ ] Confirm `group.com.antdream.pawer` exists on team `CDG4MY328T` in the developer portal.
-  - [ ] `npx expo prebuild -p ios --clean`
-  - [ ] Restore `SENTRY_AUTH_TOKEN` into `ios/sentry.properties` from `.env.local` — prebuild regenerates it without the token, and without it every production stack trace arrives unsymbolicated.
-  - [ ] Verify `ios/Pawer/PrivacyInfo.xcprivacy` still holds the real manifest, not the empty template. Prebuild has silently replaced it here before. (Checked *before* the prebuild: it currently holds all 5 collected data types — so this is only a post-prebuild re-check.)
-  - [ ] Verify `ExpoWidgetsAppGroupIdentifier` in the regenerated Info.plist now reads `group.com.antdream.pawer`. (Confirmed still stale at `ios/Pawer/Info.plist:44` — both `.entitlements` already say `antdream`, so the plist is the only thing left disagreeing.)
+- [x] **Production RevenueCat key.** `extra.revenueCat.ios` is now the `appl_…` key; the `android` entry is gone (iOS-only launch — a missing key leaves `CONFIGURED` in `src/lib/purchases.tsx:38` false, the same harmless path the `test_` key took). Takes effect on the next build.
+- [x] **App Group unified and native project regenerated.** Everything now says `group.com.antdream.pawer` — the identifier that actually exists on team `CDG4MY328T` (confirmed in the portal). `app.json`, both `.entitlements`, and *both* Info.plists agree; nothing in `src/` reads the id.
+  - [x] `group.com.antdream.pawer` confirmed registered under Identifiers ▸ App Groups. Still to confirm on the first archive: that it is enabled on both App IDs, `com.antonyefanov.pawer` and `com.antonyefanov.pawer.ExpoWidgetsTarget`. Xcode's automatic signing normally handles this; the portal is only needed if signing fails.
+  - [x] `npx expo prebuild -p ios --clean` — CocoaPods installed clean. The `--clean` matters: the earlier staleness was a non-clean prebuild leaving the old `ExpoWidgetsAppGroupIdentifier` behind in the plists.
+  - [x] `SENTRY_AUTH_TOKEN` restored into `ios/sentry.properties` from `.env.local`.
+  - [x] `ios/Pawer/PrivacyInfo.xcprivacy` survived: all 5 collected data types intact, `NSPrivacyTracking` false.
+  - [x] `ExpoWidgetsAppGroupIdentifier` matches the entitlements in both `ios/Pawer/Info.plist` and `ios/ExpoWidgetsTarget/Info.plist` — the extension plist carries the key too, and it is the one that decides whether the Live Activity can reach the group.
+  - [ ] **Regressed by the prebuild:** `NSBonjourServices` and `NSLocalNetworkUsageDescription` are back in `ios/Pawer/Info.plist` — they come from the `expo-dev-client` plugin, not `app.json`, so §2's fix can't hold them out. The dev-launcher code is excluded from a Release archive, so no local-network prompt should fire in production; strip the two keys from the plist immediately before archiving if you want them gone, but not sooner — a dev build needs them to reach Metro.
 
 ## 2. Config fixes before archiving
 
@@ -61,7 +62,7 @@ App Store Connect: `Pawer Workout Tracker Gym L…` · bundle `com.antonyefanov.
 - [ ] Sandbox purchase of each product completes and unlocks Pro.
 - [ ] Restore Purchases finds a prior purchase on a fresh install.
 - [ ] Pro survives a cold start in airplane mode (the SQLite entitlement mirror).
-- [ ] Live Activity appears on Lock Screen and Dynamic Island during a workout, after the prebuild.
+- [x] Live Activity appears on Lock Screen and Dynamic Island during a workout, after the prebuild. Verified on the iPhone 17 Pro simulator: banner renders with the elapsed clock and set/volume line, compact pill shows glyphs only. Signing of the App Group entitlement is still only proven by a device build or the archive.
 - [ ] Onboarding runs clean on a first install (delete the app first — the seed and migrations run before any screen).
 - [ ] All 412 clips play; no missing-asset Metro error (`npm run videos:pull` on a clean clone).
 

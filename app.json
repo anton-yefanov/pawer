@@ -185,8 +185,7 @@
     ],
     "extra": {
       "revenueCat": {
-        "ios": "test_YagBgAzFucASRGNovnWGGEfCpdW",
-        "android": "test_YagBgAzFucASRGNovnWGGEfCpdW"
+        "ios": "appl_MtQuDFbLJqrrTKiOQIUJyOXKFUR"
       },
       "sentry": {
         "dsn": "https://baaae22a7e2848c8239e8c0705151a05@o4511989296398336.ingest.us.sentry.io/4511989300461568"
