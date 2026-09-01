@@ -1,11 +1,7 @@
 import { Stack } from "expo-router";
 
 import { tabBarScreenLayout } from "@/components/app-tabs";
-import {
-  stackScreenOptions,
-  surfacePageOptions,
-  TAB_ROOT_HEADER,
-} from "@/constants/navigation";
+import { stackScreenOptions, surfacePageOptions } from "@/constants/navigation";
 import {
   DETAIL_SHEET,
   FULL_SHEET,
@@ -31,10 +27,11 @@ export default function WorkoutLayout() {
 
   return (
     <Stack screenOptions={stackScreenOptions(theme)} screenLayout={tabBarScreenLayout}>
-      <Stack.Screen
-        name="index"
-        options={{ title: "Home", ...TAB_ROOT_HEADER }}
-      />
+      {/* The only tab root without a native large title: Home's title is drawn
+          in the screen so the achievements button can sit beside it. iOS puts a
+          bar-button item above an expanded large title, never inside its row. */}
+      <Stack.Screen name="index" options={{ title: "Home", headerShown: false }} />
+      <Stack.Screen name="achievements" options={{ ...FULL_SHEET, title: "Achievements" }} />
       <Stack.Screen name="active" options={{ ...FULL_SHEET, title: "" }} />
       {/*
         Both pickers render their own floating search row, so they want no nav

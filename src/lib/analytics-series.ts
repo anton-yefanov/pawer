@@ -99,3 +99,27 @@ export function formatBucketRange(point: SeriesPoint, bucket: Bucket): string {
   const lastLabel = last.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
   return `${firstLabel} – ${lastLabel}`;
 }
+
+const TREND_WINDOW: Record<Bucket, number> = { day: 7, week: 4, month: 3 };
+
+/**
+ * A centred rolling mean, holding the point count and the bucket boundaries so
+ * the axis labels and the scrub index keep indexing the same calendar days.
+ * The window is clamped at the ends rather than shortened, so the line starts
+ * and finishes on real values instead of trailing off.
+ */
+export function trendSeries(series: Series): Series {
+  const half = Math.floor(TREND_WINDOW[series.bucket] / 2);
+  const { points } = series;
+
+  return {
+    ...series,
+    points: points.map((point, index) => {
+      const from = Math.max(0, index - half);
+      const to = Math.min(points.length - 1, index + half);
+      let sum = 0;
+      for (let at = from; at <= to; at += 1) sum += points[at].value;
+      return { ...point, value: sum / (to - from + 1) };
+    }),
+  };
+}

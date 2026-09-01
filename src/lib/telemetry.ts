@@ -1,6 +1,7 @@
 import Constants from 'expo-constants';
 import PostHog from 'posthog-react-native';
 
+import type { AchievementTier } from '@/constants/achievement-tiers';
 import { breadcrumb } from '@/lib/observability';
 import type { PaywallOutcome, PaywallSource } from '@/lib/paywall';
 import type { TrackingType } from '@/lib/tracking-types';
@@ -70,6 +71,8 @@ type TelemetryEvents = {
   paywall_result: { source: PaywallSource; outcome: PaywallOutcome };
   pro_restored: { found: boolean };
   support_message_sent: { sent: boolean; length: number };
+  achievements_opened: { unlocked: number; exercises: number };
+  achievement_badge_viewed: { tier: AchievementTier['id']; unlocked: boolean };
   review_opened: { source: 'settings' };
   app_error: { scope: string; message: string };
 };

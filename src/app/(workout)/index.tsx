@@ -2,7 +2,9 @@ import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AchievementsButton } from '@/components/achievements/achievements-button';
 import { type FolderCardData } from '@/components/templates/folder-card';
 import { type TemplateCardData } from '@/components/templates/template-card';
 import {
@@ -43,6 +45,7 @@ const MOVE_FAILED = {
 export default function StartWorkoutScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { data } = useLiveQuery(activeWorkoutQuery(), []);
   const active = data?.[0];
 
@@ -163,9 +166,17 @@ export default function StartWorkoutScreen() {
       <View style={styles.screen}>
         <ScrollView
           style={{ backgroundColor: theme.background }}
-          contentContainerStyle={styles.container}
-          contentInsetAdjustmentBehavior="automatic"
+          contentContainerStyle={[styles.container, { paddingTop: insets.top + Spacing.two }]}
+          // The title is content on this screen, so the notch is cleared by the
+          // padding above rather than by the scroll view's own adjustment —
+          // which only iOS makes, and only from a header this screen has not got.
+          contentInsetAdjustmentBehavior="never"
           scrollEnabled={!dragging}>
+          <View style={styles.title}>
+            <ThemedText type="largeTitle">Home</ThemedText>
+            <AchievementsButton />
+          </View>
+
           {active ? (
             <View style={styles.section}>
               <View style={[styles.card, { backgroundColor: theme.surface }]}>
@@ -230,6 +241,11 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     paddingBottom: BottomTabInset + Spacing.four,
     gap: Spacing.four,
+  },
+  title: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   section: {
     gap: Spacing.two,

@@ -41,9 +41,6 @@ export function RecordsCard({
           <ThemedText type="footnote" themeColor="textSecondary">
             No records this period
           </ThemedText>
-          <ThemedText type="footnote" themeColor="textTertiary">
-            They come in waves, so keep going
-          </ThemedText>
         </View>
       ) : (
         <View>
