@@ -45,6 +45,7 @@ import {
   splitMeasure,
   type WeightUnit,
 } from "@/lib/units";
+import { useIncludeWarmup } from "@/lib/warmup-stats";
 import { useWeightUnit } from "@/lib/weight-unit";
 
 const EMPTY_TOTALS: ExerciseTotals = {
@@ -126,6 +127,7 @@ export function ExerciseInsights({
   trackingType: string | null;
 }) {
   const unit = useWeightUnit();
+  const includeWarmup = useIncludeWarmup();
   const type = trackingTypeOf(trackingType);
 
   const [tab, setTab] = useState<PanelId>("stats");
@@ -156,11 +158,14 @@ export function ExerciseInsights({
     { id: "history", label: "History" },
   ];
 
-  const { data: totalRows } = useLiveQuery(exerciseTotalsQuery(id, range), [
-    id,
-    range,
-  ]);
-  const { data: sessions } = useLiveQuery(exerciseSessionsQuery(id), [id]);
+  const { data: totalRows } = useLiveQuery(
+    exerciseTotalsQuery(id, range, includeWarmup),
+    [id, range, includeWarmup],
+  );
+  const { data: sessions } = useLiveQuery(
+    exerciseSessionsQuery(id, includeWarmup),
+    [id, includeWarmup],
+  );
   const { data: records } = useLiveQuery(exerciseRecordsQuery(id), [id]);
   const { data: setRows } = useLiveQuery(
     exerciseSetsQuery(id, HISTORY_SESSIONS),

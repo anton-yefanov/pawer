@@ -11,11 +11,16 @@ import { exercises, personalRecords, sets, workoutExercises, workouts } from '@/
 export const VOLUME_TRACKING_TYPES = sql`${exercises.trackingType} IN ('weight_reps', 'weighted_bodyweight')`;
 
 /**
- * Warm-ups are logged but never counted — they'd inflate volume and set counts
- * and could take a personal record. Every aggregate over sets is gated on this;
- * `countsWork` in src/lib/set-types.ts is the same rule for the JS side.
+ * Warm-ups are logged but counted only when the lifter asks for it — left out
+ * they'd otherwise inflate volume and set counts. Every aggregate over sets is
+ * gated on this and passes the Include Warmup in Stats preference down;
+ * `isWorkSet` in src/lib/set-types.ts is the same rule for the JS side.
+ *
+ * Personal records are the one aggregate that never asks: they pass `false`.
  */
-export const WORK_SETS = sql`${sets.setType} <> 'warmup'`;
+export function workSets(includeWarmup: boolean) {
+  return includeWarmup ? sql`1` : sql`${sets.setType} <> 'warmup'`;
+}
 
 export function activeWorkoutQuery() {
   return db
@@ -94,7 +99,9 @@ export async function finishedWorkoutCount(): Promise<number> {
   return row?.total ?? 0;
 }
 
-export function finishedWorkoutsQuery() {
+export function finishedWorkoutsQuery(includeWarmup: boolean) {
+  const work = workSets(includeWarmup);
+
   return db
     .select({
       id: workouts.id,
@@ -102,8 +109,8 @@ export function finishedWorkoutsQuery() {
       startedAt: workouts.startedAt,
       finishedAt: workouts.finishedAt,
       exerciseCount: countDistinct(workoutExercises.id),
-      completedSets: sql<number>`COALESCE(SUM(CASE WHEN ${sets.completed} = 1 AND ${WORK_SETS} THEN 1 ELSE 0 END), 0)`,
-      volumeKg: sql<number>`COALESCE(SUM(CASE WHEN ${sets.completed} = 1 AND ${WORK_SETS} AND ${VOLUME_TRACKING_TYPES} THEN COALESCE(${sets.weightKg}, 0) * COALESCE(${sets.reps}, 0) ELSE 0 END), 0)`,
+      completedSets: sql<number>`COALESCE(SUM(CASE WHEN ${sets.completed} = 1 AND ${work} THEN 1 ELSE 0 END), 0)`,
+      volumeKg: sql<number>`COALESCE(SUM(CASE WHEN ${sets.completed} = 1 AND ${work} AND ${VOLUME_TRACKING_TYPES} THEN COALESCE(${sets.weightKg}, 0) * COALESCE(${sets.reps}, 0) ELSE 0 END), 0)`,
       // A scalar subquery, not a fourth join: joining records in would multiply
       // the set fan-out that COUNT(DISTINCT) above only just contains.
       prCount: sql<number>`(SELECT COUNT(*) FROM ${personalRecords} pr
@@ -132,7 +139,7 @@ export function finishedWorkoutsQuery() {
  * joining sets in would fan the rows out. It counts only completed work sets, so
  * "3x Deadlift" means three sets that actually happened.
  */
-export function finishedWorkoutExercisesQuery() {
+export function finishedWorkoutExercisesQuery(includeWarmup: boolean) {
   return db
     .select({
       workoutId: workoutExercises.workoutId,
@@ -140,7 +147,7 @@ export function finishedWorkoutExercisesQuery() {
       name: exercises.name,
       setCount: sql<number>`(SELECT COUNT(*) FROM ${sets}
         WHERE ${sets.workoutExerciseId} = ${workoutExercises.id}
-          AND ${sets.deletedAt} IS NULL AND ${sets.completed} = 1 AND ${WORK_SETS})`,
+          AND ${sets.deletedAt} IS NULL AND ${sets.completed} = 1 AND ${workSets(includeWarmup)})`,
     })
     .from(workoutExercises)
     .innerJoin(exercises, eq(exercises.id, workoutExercises.exerciseId))

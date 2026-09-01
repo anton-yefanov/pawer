@@ -8,6 +8,7 @@ import { WorkoutLogRow } from '@/components/history/workout-log-row';
 import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useIncludeWarmup } from '@/lib/warmup-stats';
 import {
   finishedWorkoutExercisesQuery,
   finishedWorkoutsQuery,
@@ -20,8 +21,11 @@ import { formatMonth, monthKey } from '@/lib/workout-stats';
 export default function HistoryScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { data } = useLiveQuery(finishedWorkoutsQuery(), []);
-  const { data: exerciseRows } = useLiveQuery(finishedWorkoutExercisesQuery(), []);
+  const includeWarmup = useIncludeWarmup();
+  const { data } = useLiveQuery(finishedWorkoutsQuery(includeWarmup), [includeWarmup]);
+  const { data: exerciseRows } = useLiveQuery(finishedWorkoutExercisesQuery(includeWarmup), [
+    includeWarmup,
+  ]);
 
   // One join for the whole list, sliced per row here rather than a query per
   // workout.

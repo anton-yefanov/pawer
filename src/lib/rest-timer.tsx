@@ -101,7 +101,7 @@ export function RestTimerProvider({ children }: { children: ReactNode }) {
         await clearStored();
         return;
       }
-      const endsAt = Date.now() + seconds * 1000;
+      const endsAt = onTheSecond(Date.now() + seconds * 1000);
       const notificationId = await scheduleRestNotification(endsAt, `Next set: ${exerciseName}`);
       const next = { setId, endsAt, total: seconds, notificationId };
       setNow(Date.now());
@@ -112,7 +112,7 @@ export function RestTimerProvider({ children }: { children: ReactNode }) {
     adjust: async (deltaSeconds) => {
       if (!rest) return;
       await cancelRestNotification(rest.notificationId);
-      const endsAt = Math.max(Date.now(), rest.endsAt + deltaSeconds * 1000);
+      const endsAt = onTheSecond(Math.max(Date.now(), rest.endsAt + deltaSeconds * 1000));
       const notificationId = await scheduleRestNotification(endsAt, 'Next set');
       const next = {
         ...rest,
@@ -138,6 +138,16 @@ export function useRestTimer(): RestTimer {
   const value = use(RestTimerContext);
   if (!value) throw new Error('useRestTimer must be used inside RestTimerProvider');
   return value;
+}
+
+/**
+ * A date trigger is delivered with whole-second resolution, so an end time
+ * landing mid-second is announced at the second *below* it — up to a second
+ * before the countdown on screen runs out. Rounding the end up instead keeps
+ * the alert, the haptic and the last tick of the clock on the same instant.
+ */
+function onTheSecond(ms: number) {
+  return Math.ceil(ms / 1000) * 1000;
 }
 
 function clearStored() {

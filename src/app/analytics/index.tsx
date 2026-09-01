@@ -34,6 +34,7 @@ import { comparisonLabel, delta, previousRange } from '@/lib/analytics-compare';
 import { buildQuickSummary } from '@/lib/analytics-insights';
 import { buildSeries } from '@/lib/analytics-series';
 import { distanceUnitFor, formatDistance, formatTonnage, splitMeasure } from '@/lib/units';
+import { useIncludeWarmup } from '@/lib/warmup-stats';
 import { formatHoursMinutes } from '@/lib/workout-stats';
 
 export default function AnalyticsScreen() {
@@ -57,11 +58,19 @@ export default function AnalyticsScreen() {
     [period, customFrom, customTo],
   );
 
+  const includeWarmup = useIncludeWarmup();
+
   const previous = useMemo(() => previousRange(range), [range]);
 
   const { data: workoutRows } = useLiveQuery(workoutTotalsQuery(range), [range]);
-  const { data: setRows } = useLiveQuery(setTotalsQuery(range), [range]);
-  const { data: metricRows } = useLiveQuery(metricSeriesQuery(range), [range]);
+  const { data: setRows } = useLiveQuery(setTotalsQuery(range, includeWarmup), [
+    range,
+    includeWarmup,
+  ]);
+  const { data: metricRows } = useLiveQuery(metricSeriesQuery(range, includeWarmup), [
+    range,
+    includeWarmup,
+  ]);
   const { data: prRows } = useLiveQuery(prTotalsQuery(range), [range]);
   const { data: recordRows } = useLiveQuery(periodRecordsQuery(range), [range]);
 
@@ -69,7 +78,10 @@ export default function AnalyticsScreen() {
   // comparison; the result is discarded when `previous` is null.
   const comparison = previous ?? range;
   const { data: pastWorkoutRows } = useLiveQuery(workoutTotalsQuery(comparison), [comparison]);
-  const { data: pastSetRows } = useLiveQuery(setTotalsQuery(comparison), [comparison]);
+  const { data: pastSetRows } = useLiveQuery(setTotalsQuery(comparison, includeWarmup), [
+    comparison,
+    includeWarmup,
+  ]);
   const { data: pastPrRows } = useLiveQuery(prTotalsQuery(comparison), [comparison]);
 
   const totals = combineTotals(workoutRows?.[0], setRows?.[0], prRows?.[0]);

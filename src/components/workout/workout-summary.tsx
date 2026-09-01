@@ -18,6 +18,7 @@ import { presentFirstWorkoutPaywall } from '@/lib/pro-gates';
 import { usePro } from '@/lib/purchases';
 import { useLiveRows } from '@/lib/use-live-rows';
 import { useWeightUnit } from '@/lib/weight-unit';
+import { useIncludeWarmup } from '@/lib/warmup-stats';
 import {
   workoutExercisesQuery,
   workoutPersonalRecordsQuery,
@@ -34,6 +35,7 @@ import { summarise } from '@/lib/workout-stats';
 export function WorkoutSummary({ id }: { id: string }) {
   const theme = useTheme();
   const unit = useWeightUnit();
+  const includeWarmup = useIncludeWarmup();
   const isPro = usePro();
 
   const workout = useLiveRows(() => workoutQuery(id), id)[0];
@@ -74,7 +76,7 @@ export function WorkoutSummary({ id }: { id: string }) {
           {workout.name?.trim() || 'Workout'}
         </ThemedText>
 
-        <SummaryStats summary={summarise(workout, exercises, sets)} unit={unit} />
+        <SummaryStats summary={summarise(workout, exercises, sets, includeWarmup)} unit={unit} />
 
         <ExerciseBreakdown
           exercises={exercises}

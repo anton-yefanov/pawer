@@ -9,6 +9,7 @@ import { breadcrumb, guard, guardSync, report } from '@/lib/observability';
 import { useRestTimer } from '@/lib/rest-timer';
 import { isWorkSet } from '@/lib/set-types';
 import { formatTonnage } from '@/lib/units';
+import { useIncludeWarmup } from '@/lib/warmup-stats';
 import { useWeightUnit } from '@/lib/weight-unit';
 import {
   activeWorkoutQuery,
@@ -45,6 +46,7 @@ const TINT = Colors.dark.accent;
 function useWorkoutActivity() {
   const unit = useWeightUnit();
   const rest = useRestTimer();
+  const includeWarmup = useIncludeWarmup();
 
   const { data: activeRows, updatedAt } = useLiveQuery(activeWorkoutQuery(), []);
   const active = activeRows[0];
@@ -82,25 +84,27 @@ function useWorkoutActivity() {
     const exercises = exerciseRows ?? [];
     const sets = setRows ?? [];
     const tracking = trackingByExercise(exercises);
-    const workSets = sets.filter(isWorkSet);
-    const position = currentPosition(exercises, sets, tracking);
+    const counted = sets.filter((set) => isWorkSet(set, includeWarmup));
+    const position = currentPosition(exercises, sets, tracking, includeWarmup);
 
-    const resting = rest.endsAt != null;
     const setAt =
       position == null ? null : `Set ${position.setIndex} of ${position.setCount}`;
 
     const props: WorkoutActivityProps = {
       title: active.name?.trim() || 'Workout',
-      headline: resting ? 'Rest' : (position?.exerciseName ?? idle(exercises.length)),
-      subline: resting
-        ? position && `Next: ${position.exerciseName}`
-        : setAt,
+      // Rest is said by the bar alone, never by the headline. JS is suspended
+      // while the phone is locked — exactly when the activity is on screen — so
+      // nothing pushes an update the moment a rest runs out; a headline reading
+      // "Rest" would sit there until the app came back, while a drained bar
+      // beside the next set is already telling the truth.
+      headline: position?.exerciseName ?? idle(exercises.length),
+      subline: setAt,
       startedAt: active.startedAt,
       endedAt: null,
       restStartedAt: instant(rest.endsAt == null ? null : rest.endsAt - rest.total * 1000),
       restEndsAt: instant(rest.endsAt),
-      setsLabel: `${workSets.filter((set) => set.completed).length}/${workSets.length} sets`,
-      volumeLabel: formatTonnage(totalVolumeKg(sets, tracking), unit),
+      setsLabel: `${counted.filter((set) => set.completed).length}/${counted.length} sets`,
+      volumeLabel: formatTonnage(totalVolumeKg(sets, tracking, includeWarmup), unit),
       exercisesLabel: exercises.length === 1 ? '1 exercise' : `${exercises.length} exercises`,
       tint: TINT,
     };
@@ -132,7 +136,7 @@ function useWorkoutActivity() {
 
     const [instance] = workoutActivity.getInstances();
     if (instance) push(instance, props, previous);
-  }, [updatedAt, active, exerciseRows, setRows, rest.endsAt, rest.total, unit]);
+  }, [updatedAt, active, exerciseRows, setRows, rest.endsAt, rest.total, unit, includeWarmup]);
 }
 
 /**

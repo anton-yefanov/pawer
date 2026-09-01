@@ -20,6 +20,7 @@ import { DotsSixVerticalIcon } from "phosphor-react-native/src/icons/DotsSixVert
 import { DotsThreeIcon } from "phosphor-react-native/src/icons/DotsThree";
 import { DownloadSimpleIcon } from "phosphor-react-native/src/icons/DownloadSimple";
 import { FilePlusIcon } from "phosphor-react-native/src/icons/FilePlus";
+import { FlameIcon } from "phosphor-react-native/src/icons/Flame";
 import { FolderIcon } from "phosphor-react-native/src/icons/Folder";
 import { FolderMinusIcon } from "phosphor-react-native/src/icons/FolderMinus";
 import { FolderPlusIcon } from "phosphor-react-native/src/icons/FolderPlus";
@@ -159,6 +160,11 @@ const ICONS = {
     // Phosphor has no weightlifting figure. This one labels the muscle facet,
     // sitting beside the equipment facet's barbell, so a plain body reads it.
     glyph: PersonArmsSpreadIcon,
+  },
+  "flame.fill": {
+    symbol: { ios: "flame.fill", android: "local_fire_department" },
+    glyph: FlameIcon,
+    weight: "fill",
   },
   "folder.badge.minus": {
     symbol: { ios: "folder.badge.minus", android: "folder_off" },

@@ -8,6 +8,7 @@ import { isPrKind, PR_LABELS } from '@/lib/personal-records';
 import { isWorkSet } from '@/lib/set-types';
 import { formatPreviousSet, trackingTypeOf } from '@/lib/tracking-types';
 import { formatWeight, type WeightUnit } from '@/lib/units';
+import { useIncludeWarmup } from '@/lib/warmup-stats';
 import {
   groupBy,
   type WorkoutExerciseRow,
@@ -59,6 +60,7 @@ export function ExerciseBreakdown({
   showSets?: boolean;
 }) {
   const theme = useTheme();
+  const includeWarmup = useIncludeWarmup();
   if (exercises.length === 0) return null;
 
   const setsByExercise = groupBy(sets, (set) => set.workoutExerciseId);
@@ -68,7 +70,7 @@ export function ExerciseBreakdown({
     <View style={[styles.card, styles.exercises, { backgroundColor: theme.surface }]}>
       {exercises.map((exercise) => {
         const logged = (setsByExercise.get(exercise.id) ?? []).filter(
-          (set) => set.completed && isWorkSet(set)
+          (set) => set.completed && isWorkSet(set, includeWarmup)
         );
         const records = (recordsByExercise.get(exercise.exerciseId) ?? []).filter((record) =>
           isPrKind(record.kind)

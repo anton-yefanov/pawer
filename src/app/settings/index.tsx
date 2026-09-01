@@ -27,6 +27,7 @@ import {
   writeTelemetryOptOut,
 } from "@/lib/telemetry-opt-out";
 import { THEME_PREFERENCES, useThemePreference } from "@/lib/theme-preference";
+import { useWarmupStatsPreference } from "@/lib/warmup-stats";
 import { useWeightUnit } from "@/lib/weight-unit";
 import { attempt } from "@/lib/observability";
 
@@ -41,6 +42,8 @@ export default function SettingsScreen() {
   const unit = useWeightUnit();
   const { enabled: autofillWeight, setEnabled: setAutofillWeight } =
     useAutofillWeightPreference();
+  const { enabled: includeWarmup, setEnabled: setIncludeWarmup } =
+    useWarmupStatsPreference();
   const { option: finishReminder } = useFinishReminder();
   const { isPro, restore } = usePurchases();
   const [shareUsage, setShareUsage] = useState(true);
@@ -113,6 +116,13 @@ export default function SettingsScreen() {
           leading={<IconTile name="wand.and.stars" tint="purple" />}
           value={autofillWeight}
           onChange={setAutofillWeight}
+        />
+        <Separator inset={TILE_INSET} />
+        <ToggleRow
+          label="Include Warmup in Stats"
+          leading={<IconTile name="flame.fill" tint="yellow" />}
+          value={includeWarmup}
+          onChange={setIncludeWarmup}
         />
         <Separator inset={TILE_INSET} />
         <DisclosureRow

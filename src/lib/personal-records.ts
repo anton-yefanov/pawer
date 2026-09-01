@@ -5,7 +5,7 @@ import { newId } from '@/db/id';
 import { exercises, personalRecords, sets, workoutExercises } from '@/db/schema';
 import { trackingTypeOf, type TrackedSet, type TrackingType } from '@/lib/tracking-types';
 import { formatTonnage, formatWeight, type WeightUnit } from '@/lib/units';
-import { WORK_SETS } from '@/lib/workout-queries';
+import { workSets } from '@/lib/workout-queries';
 
 export const PR_KINDS = ['heaviest_weight', 'best_1rm', 'best_volume', 'most_reps'] as const;
 export type PrKind = (typeof PR_KINDS)[number];
@@ -112,7 +112,10 @@ export async function recordPersonalRecords(workoutId: string, exec: Executor = 
       and(
         eq(workoutExercises.workoutId, workoutId),
         eq(sets.completed, true),
-        WORK_SETS,
+        // The one aggregate the Include Warmup in Stats preference never reaches:
+        // `personal_records` is append-only and written once, here, so a later
+        // toggle could not rewrite it — and a warm-up must not take a record.
+        workSets(false),
         isNull(sets.deletedAt),
         isNull(workoutExercises.deletedAt)
       )

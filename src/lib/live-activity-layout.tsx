@@ -92,13 +92,12 @@ const buildWorkoutActivity = () =>
     // the frame has nothing left to align. This aligns the glyphs themselves.
     const clock = (size: number, modifiers: ReturnType<typeof frame>[] = []) => (
       <Text
-        timerInterval={resting ? restRange : elapsedRange}
-        countsDown={resting}
+        timerInterval={elapsedRange}
+        countsDown={false}
         modifiers={[
           font({ size, weight: 'semibold', design: 'rounded' }),
           monospacedDigit(),
           multilineTextAlignment('trailing'),
-          ...(resting ? [foregroundStyle(props.tint)] : []),
           ...modifiers,
         ]}
       />
@@ -148,6 +147,9 @@ const buildWorkoutActivity = () =>
       </HStack>
     );
 
+    // `ProgressView(timerInterval:)` draws its own countdown beside the bar and
+    // there is no way through to SwiftUI's `currentValueLabel` to replace it, so
+    // this is the rest clock — the elapsed one above never switches to rest.
     const restBar = (
       <ProgressView
         timerInterval={restRange}

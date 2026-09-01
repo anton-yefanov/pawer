@@ -88,10 +88,13 @@ export function hasIncompleteValidSets(
 export function currentPosition(
   workoutExercises: readonly WorkoutExerciseRow[],
   sets: readonly WorkoutSetRow[],
-  tracking: TrackingByExercise
+  tracking: TrackingByExercise,
+  includeWarmup: boolean
 ): { exerciseName: string; setIndex: number; setCount: number } | null {
   for (const exercise of workoutExercises) {
-    const own = sets.filter((set) => set.workoutExerciseId === exercise.id && isWorkSet(set));
+    const own = sets.filter(
+      (set) => set.workoutExerciseId === exercise.id && isWorkSet(set, includeWarmup)
+    );
     const index = own.findIndex((set) => !set.completed && isValidSet(set, typeOf(set, tracking)));
     if (index === -1) continue;
     return { exerciseName: exercise.name, setIndex: index + 1, setCount: own.length };
@@ -102,10 +105,15 @@ export function currentPosition(
 /** Only the types where weight × reps is work the user actually moved. */
 export function totalVolumeKg(
   sets: readonly WorkoutSetRow[],
-  tracking: TrackingByExercise
+  tracking: TrackingByExercise,
+  includeWarmup: boolean
 ): number {
   return sets.reduce((sum, set) => {
-    if (!set.completed || !isWorkSet(set) || !TRACKING[typeOf(set, tracking)].countsVolume)
+    if (
+      !set.completed ||
+      !isWorkSet(set, includeWarmup) ||
+      !TRACKING[typeOf(set, tracking)].countsVolume
+    )
       return sum;
     return sum + (set.weightKg ?? 0) * (set.reps ?? 0);
   }, 0);
@@ -121,12 +129,13 @@ export type WorkoutSummary = {
 export function summarise(
   workout: { startedAt: number; finishedAt: number | null },
   workoutExercises: readonly WorkoutExerciseRow[],
-  sets: readonly WorkoutSetRow[]
+  sets: readonly WorkoutSetRow[],
+  includeWarmup: boolean
 ): WorkoutSummary {
   return {
     durationMs: (workout.finishedAt ?? Date.now()) - workout.startedAt,
-    volumeKg: totalVolumeKg(sets, trackingByExercise(workoutExercises)),
-    completedSets: sets.filter((set) => set.completed && isWorkSet(set)).length,
+    volumeKg: totalVolumeKg(sets, trackingByExercise(workoutExercises), includeWarmup),
+    completedSets: sets.filter((set) => set.completed && isWorkSet(set, includeWarmup)).length,
     exerciseCount: workoutExercises.length,
   };
 }

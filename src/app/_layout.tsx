@@ -20,6 +20,7 @@ import { PurchasesProvider } from '@/lib/purchases';
 import { RestTimerProvider } from '@/lib/rest-timer';
 import { PromptHost } from '@/lib/text-prompt';
 import { ThemePreferenceProvider } from '@/lib/theme-preference';
+import { WarmupStatsProvider } from '@/lib/warmup-stats';
 import { WeightUnitProvider } from '@/lib/weight-unit';
 
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -40,9 +41,11 @@ function TabLayout() {
               <WeightUnitProvider>
                 <OnboardingProvider>
                   <AutofillWeightProvider>
-                    <FinishReminderProvider>
-                      <ThemedApp />
-                    </FinishReminderProvider>
+                    <WarmupStatsProvider>
+                      <FinishReminderProvider>
+                        <ThemedApp />
+                      </FinishReminderProvider>
+                    </WarmupStatsProvider>
                   </AutofillWeightProvider>
                 </OnboardingProvider>
               </WeightUnitProvider>

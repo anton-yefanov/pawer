@@ -15,6 +15,7 @@ import { SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useWeightUnit } from '@/lib/weight-unit';
+import { useIncludeWarmup } from '@/lib/warmup-stats';
 import {
   workoutExercisesQuery,
   workoutPersonalRecordsQuery,
@@ -36,6 +37,7 @@ export function WorkoutDetails({
 }) {
   const theme = useTheme();
   const unit = useWeightUnit();
+  const includeWarmup = useIncludeWarmup();
 
   const workout = useLiveQuery(workoutQuery(id), [id]).data?.[0];
   const { data: exercises } = useLiveQuery(workoutExercisesQuery(id), [id]);
@@ -81,7 +83,10 @@ export function WorkoutDetails({
           {formatStartTime(workout.startedAt)}
         </ThemedText>
 
-        <SummaryStats summary={summarise(workout, exercises ?? [], sets ?? [])} unit={unit} />
+        <SummaryStats
+          summary={summarise(workout, exercises ?? [], sets ?? [], includeWarmup)}
+          unit={unit}
+        />
 
         <ExerciseBreakdown
           exercises={exercises ?? []}

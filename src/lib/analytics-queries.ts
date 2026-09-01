@@ -15,7 +15,7 @@ import {
 import { db } from '@/db/client';
 import { exercises, personalRecords, sets, workoutExercises, workouts } from '@/db/schema';
 import type { DateRange } from '@/lib/analytics-period';
-import { VOLUME_TRACKING_TYPES, WORK_SETS } from '@/lib/workout-queries';
+import { VOLUME_TRACKING_TYPES, workSets } from '@/lib/workout-queries';
 
 /**
  * Query *builders*, handed to `useLiveQuery` like the ones in
@@ -112,8 +112,8 @@ export function periodRecordsQuery(range: DateRange) {
 
 export type PeriodRecordRow = Awaited<ReturnType<typeof periodRecordsQuery>>[number];
 
-export function setTotalsQuery(range: DateRange) {
-  const completed = sql`${sets.completed} = 1 AND ${WORK_SETS}`;
+export function setTotalsQuery(range: DateRange, includeWarmup: boolean) {
+  const completed = sql`${sets.completed} = 1 AND ${workSets(includeWarmup)}`;
 
   return db
     .select({
@@ -155,8 +155,8 @@ export type MetricRow = {
  * SQLite's `date()` is UTC and its `'localtime'` modifier would quietly
  * disagree with the range bounds.
  */
-export function metricSeriesQuery(range: DateRange) {
-  const completed = sql`${sets.completed} = 1 AND ${WORK_SETS}`;
+export function metricSeriesQuery(range: DateRange, includeWarmup: boolean) {
+  const completed = sql`${sets.completed} = 1 AND ${workSets(includeWarmup)}`;
 
   return db
     .select({

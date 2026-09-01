@@ -28,6 +28,7 @@ import { useProgressiveMount } from '@/hooks/use-progressive-mount';
 import { useTheme } from '@/hooks/use-theme';
 import { useLiveRows } from '@/lib/use-live-rows';
 import { useWeightUnit } from '@/lib/weight-unit';
+import { useIncludeWarmup } from '@/lib/warmup-stats';
 import * as haptics from '@/lib/haptics';
 import type { LoggedSet, LoggingActions } from '@/lib/logging-model';
 import { attempt } from '@/lib/observability';
@@ -121,6 +122,7 @@ export function WorkoutLogger({
 }: Props) {
   const theme = useTheme();
   const unit = useWeightUnit();
+  const includeWarmup = useIncludeWarmup();
   const rest = useRestTimer();
 
   const [confirming, setConfirming] = useState(false);
@@ -234,7 +236,7 @@ export function WorkoutLogger({
     // hasn't re-rendered yet.
     const earned = await workoutPersonalRecordsQuery(id);
 
-    const totals = summarise(workout, exercises, sets);
+    const totals = summarise(workout, exercises, sets, includeWarmup);
     track('workout_finished', {
       duration_min: Math.round(totals.durationMs / 60_000),
       exercise_count: totals.exerciseCount,

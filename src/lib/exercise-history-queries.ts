@@ -3,7 +3,7 @@ import { and, asc, countDistinct, desc, eq, gte, isNotNull, isNull, lt, sql } fr
 import { db } from '@/db/client';
 import { exercises, personalRecords, sets, workoutExercises, workouts } from '@/db/schema';
 import type { DateRange } from '@/lib/analytics-period';
-import { VOLUME_TRACKING_TYPES, WORK_SETS } from '@/lib/workout-queries';
+import { VOLUME_TRACKING_TYPES, workSets } from '@/lib/workout-queries';
 
 /**
  * Query *builders* for one exercise's own history, handed to `useLiveQuery` like
@@ -14,11 +14,11 @@ import { VOLUME_TRACKING_TYPES, WORK_SETS } from '@/lib/workout-queries';
  * land in the chart as a half-height bar that grows while the user logs into it.
  */
 
-function loggedSets(exerciseId: string, range?: DateRange) {
+function loggedSets(exerciseId: string, includeWarmup: boolean, range?: DateRange) {
   return and(
     eq(workoutExercises.exerciseId, exerciseId),
     eq(sets.completed, true),
-    WORK_SETS,
+    workSets(includeWarmup),
     isNull(sets.deletedAt),
     isNull(workoutExercises.deletedAt),
     isNull(workouts.deletedAt),
@@ -50,7 +50,11 @@ export function exerciseRecordsQuery(exerciseId: string) {
 
 export type ExerciseRecordRow = Awaited<ReturnType<typeof exerciseRecordsQuery>>[number];
 
-export function exerciseTotalsQuery(exerciseId: string, range: DateRange) {
+export function exerciseTotalsQuery(
+  exerciseId: string,
+  range: DateRange,
+  includeWarmup: boolean
+) {
   return db
     .select({
       sessions: countDistinct(workouts.id),
@@ -66,7 +70,7 @@ export function exerciseTotalsQuery(exerciseId: string, range: DateRange) {
     .innerJoin(workoutExercises, eq(sets.workoutExerciseId, workoutExercises.id))
     .innerJoin(workouts, eq(workouts.id, workoutExercises.workoutId))
     .innerJoin(exercises, eq(exercises.id, workoutExercises.exerciseId))
-    .where(loggedSets(exerciseId, range));
+    .where(loggedSets(exerciseId, includeWarmup, range));
 }
 
 export type ExerciseTotals = Awaited<ReturnType<typeof exerciseTotalsQuery>>[number];
@@ -79,7 +83,7 @@ export type ExerciseTotals = Awaited<ReturnType<typeof exerciseTotalsQuery>>[num
  * back the bare weight for every set under 30 reps. This is `epley1rm` from
  * src/lib/personal-records.ts, and the two have to stay the same formula.
  */
-export function exerciseSessionsQuery(exerciseId: string) {
+export function exerciseSessionsQuery(exerciseId: string, includeWarmup: boolean) {
   return db
     .select({
       workoutId: workouts.id,
@@ -97,7 +101,7 @@ export function exerciseSessionsQuery(exerciseId: string) {
     .from(sets)
     .innerJoin(workoutExercises, eq(sets.workoutExerciseId, workoutExercises.id))
     .innerJoin(workouts, eq(workouts.id, workoutExercises.workoutId))
-    .where(loggedSets(exerciseId))
+    .where(loggedSets(exerciseId, includeWarmup))
     .groupBy(workouts.id)
     .orderBy(asc(workouts.startedAt));
 }
