@@ -1,14 +1,18 @@
-import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useMemo, useState } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
 
-import { AreaChart } from '@/components/analytics/area-chart';
-import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
-import { useEasedProgress } from '@/hooks/use-eased-progress';
-import { useTheme } from '@/hooks/use-theme';
-import { periodLabel, type PeriodId } from '@/lib/analytics-period';
-import { formatBucketRange, trendSeries, type Series } from '@/lib/analytics-series';
-import * as haptics from '@/lib/haptics';
+import { AreaChart } from "@/components/analytics/area-chart";
+import { ThemedText } from "@/components/themed-text";
+import { Spacing } from "@/constants/theme";
+import { useEasedProgress } from "@/hooks/use-eased-progress";
+import { useTheme } from "@/hooks/use-theme";
+import { periodLabel, type PeriodId } from "@/lib/analytics-period";
+import {
+  formatBucketRange,
+  trendSeries,
+  type Series,
+} from "@/lib/analytics-series";
+import * as haptics from "@/lib/haptics";
 
 export function MetricChart({
   title,
@@ -40,7 +44,8 @@ export function MetricChart({
       ...series,
       points: series.points.map((point, index) => ({
         ...point,
-        value: point.value + (trended.points[index].value - point.value) * progress,
+        value:
+          point.value + (trended.points[index].value - point.value) * progress,
       })),
     };
   }, [series, trended, progress]);
@@ -49,7 +54,15 @@ export function MetricChart({
   const empty = shown.points.length === 0;
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.surface }]}>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: theme.surface,
+          borderColor: theme.backgroundElement,
+        },
+      ]}
+    >
       <View style={styles.header}>
         <ThemedText type="headline" numberOfLines={1} style={styles.title}>
           {title} ({series.label})
@@ -63,11 +76,17 @@ export function MetricChart({
             style={({ pressed }) => [
               styles.chip,
               {
-                backgroundColor: trend ? theme.backgroundSelected : theme.backgroundElement,
+                backgroundColor: trend
+                  ? theme.backgroundSelected
+                  : theme.backgroundElement,
                 opacity: pressed ? 0.6 : 1,
               },
-            ]}>
-            <ThemedText type="footnote" themeColor={trend ? 'text' : 'textSecondary'}>
+            ]}
+          >
+            <ThemedText
+              type="footnote"
+              themeColor={trend ? "text" : "textSecondary"}
+            >
               Trend
             </ThemedText>
           </Pressable>
@@ -81,7 +100,9 @@ export function MetricChart({
               {format(point ? point.value : total)}
             </ThemedText>
             <ThemedText type="footnote" themeColor="textSecondary">
-              {point ? formatBucketRange(point, shown.bucket) : periodLabel(period)}
+              {point
+                ? formatBucketRange(point, shown.bucket)
+                : periodLabel(period)}
             </ThemedText>
           </View>
 
@@ -94,7 +115,11 @@ export function MetricChart({
           />
         </>
       ) : (
-        <ThemedText type="footnote" themeColor="textSecondary" style={styles.empty}>
+        <ThemedText
+          type="footnote"
+          themeColor="textSecondary"
+          style={styles.empty}
+        >
           No finished workouts in this period.
         </ThemedText>
       )}
@@ -105,13 +130,14 @@ export function MetricChart({
 const styles = StyleSheet.create({
   card: {
     borderRadius: 14,
+    borderWidth: 1,
     padding: Spacing.three,
     gap: Spacing.three,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: Spacing.two,
   },
   title: {

@@ -1,9 +1,11 @@
 /**
  * The five rungs every achievement ladder has, and the only place their artwork
  * lives. `multiplier` scales the exercise's base value from
- * src/lib/achievement-scale.ts, so Gold is the base itself — a solid,
- * respectable effort — and Diamond is the cap: there is deliberately nothing
- * above it, which is what keeps a 2000 kg bench press badge from existing.
+ * src/lib/achievement-scale.ts, so `gold` (Tier III) is the base itself — a
+ * solid, respectable effort — and `diamond` (Tier V) is the cap: there is
+ * deliberately nothing above it, which is what keeps a 2000 kg bench press
+ * badge from existing. The ids stay metals because the artwork does; only the
+ * names the user reads are tiers.
  *
  * `material` is artwork rather than theme tokens, the same call
  * `card-colors.ts` makes for a template cover, and for the same reason: a badge
@@ -34,7 +36,7 @@ export type AchievementTier = {
 export const TIERS: readonly AchievementTier[] = [
   {
     id: 'bronze',
-    name: 'Bronze',
+    name: 'Tier I',
     numeral: 'I',
     multiplier: 0.5,
     material: {
@@ -46,7 +48,7 @@ export const TIERS: readonly AchievementTier[] = [
   },
   {
     id: 'silver',
-    name: 'Silver',
+    name: 'Tier II',
     numeral: 'II',
     multiplier: 0.75,
     material: {
@@ -58,7 +60,7 @@ export const TIERS: readonly AchievementTier[] = [
   },
   {
     id: 'gold',
-    name: 'Gold',
+    name: 'Tier III',
     numeral: 'III',
     multiplier: 1,
     material: {
@@ -70,7 +72,7 @@ export const TIERS: readonly AchievementTier[] = [
   },
   {
     id: 'platinum',
-    name: 'Platinum',
+    name: 'Tier IV',
     numeral: 'IV',
     multiplier: 1.3,
     material: {
@@ -82,7 +84,7 @@ export const TIERS: readonly AchievementTier[] = [
   },
   {
     id: 'diamond',
-    name: 'Diamond',
+    name: 'Tier V',
     numeral: 'V',
     multiplier: 1.7,
     material: {

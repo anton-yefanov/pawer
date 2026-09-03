@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { InteractionManager } from 'react-native';
 
 /**
  * Splits a long list's mount into the part a screen shows at once and the rest.
@@ -20,8 +19,8 @@ export function useProgressiveMount(total: number, visible: number) {
     if (count >= total) return;
     // Latched past `total` rather than set to it: the wait is what an opening
     // screen needs, and an exercise added later should appear on the spot.
-    const task = InteractionManager.runAfterInteractions(() => setCount(Number.MAX_SAFE_INTEGER));
-    return () => task.cancel();
+    const task = requestIdleCallback(() => setCount(Number.MAX_SAFE_INTEGER));
+    return () => cancelIdleCallback(task);
   }, [count, total]);
 
   return Math.min(count, total);

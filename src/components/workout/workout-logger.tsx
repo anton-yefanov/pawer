@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { KeyboardDismissButton } from '@/components/keyboard-dismiss';
 import { KeyboardScrollView } from '@/components/keyboard-scroll-view';
 import { SheetHeader } from '@/components/sheet-header';
+import { SheetOverlay } from '@/components/sheet-overlay';
 import { ThemedText } from '@/components/themed-text';
 import { BigButton } from '@/components/workout/big-button';
 import { ConfirmAlert } from '@/components/workout/confirm-alert';
@@ -357,11 +358,7 @@ export function WorkoutLogger({
               <BigButton title="Add Exercise" symbol="plus.circle" onPress={onAddExercise} />
             </ReorderDim>
 
-            {ordered.length === 0 && (
-              <ThemedText type="footnote" themeColor="textTertiary" style={styles.hint}>
-                Add an exercise to start logging sets.
-              </ThemedText>
-            )}
+
 
             {mode === 'active' && (
               <ReorderDim>
@@ -372,45 +369,47 @@ export function WorkoutLogger({
         </KeyboardScrollView>
       </ExerciseReorderProvider>
 
-      <KeyboardDismissButton />
+      <SheetOverlay>
+        <KeyboardDismissButton />
 
-      <ConfirmAlert
-        open={confirmingCancel}
-        title="Cancel workout?"
-        message="Are you sure you want to cancel this workout? All progress will be lost."
-        confirmLabel="Cancel workout"
-        dismissLabel="Don't cancel"
-        onConfirm={() => {
-          setConfirmingCancel(false);
-          void cancel();
-        }}
-        onDismiss={() => setConfirmingCancel(false)}
-      />
+        <ConfirmAlert
+          open={confirmingCancel}
+          title="Cancel workout?"
+          message="Are you sure you want to cancel this workout? All progress will be lost."
+          confirmLabel="Cancel workout"
+          dismissLabel="Don't cancel"
+          onConfirm={() => {
+            setConfirmingCancel(false);
+            void cancel();
+          }}
+          onDismiss={() => setConfirmingCancel(false)}
+        />
 
-      <ConfirmAlert
-        open={confirmingFinish}
-        title="Finish workout?"
-        confirmLabel="Finish"
-        confirmRole="default"
-        onConfirm={() => {
-          setConfirmingFinish(false);
-          void finish();
-        }}
-        onDismiss={() => setConfirmingFinish(false)}
-      />
-      <ConfirmFinish
-        open={confirming}
-        onCompleteUnfinished={async () => {
-          setConfirming(false);
-          await completeUnfinishedSets(id);
-          await finish();
-        }}
-        onCancelWorkout={async () => {
-          setConfirming(false);
-          await cancel();
-        }}
-        onDismiss={() => setConfirming(false)}
-      />
+        <ConfirmAlert
+          open={confirmingFinish}
+          title="Finish workout?"
+          confirmLabel="Finish"
+          confirmRole="default"
+          onConfirm={() => {
+            setConfirmingFinish(false);
+            void finish();
+          }}
+          onDismiss={() => setConfirmingFinish(false)}
+        />
+        <ConfirmFinish
+          open={confirming}
+          onCompleteUnfinished={async () => {
+            setConfirming(false);
+            await completeUnfinishedSets(id);
+            await finish();
+          }}
+          onCancelWorkout={async () => {
+            setConfirming(false);
+            await cancel();
+          }}
+          onDismiss={() => setConfirming(false)}
+        />
+      </SheetOverlay>
     </>
   );
 }

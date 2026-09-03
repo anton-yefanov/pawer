@@ -1,18 +1,26 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from "react-native";
 
-import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
-import type { QuickSummary as Summary } from '@/lib/analytics-insights';
+import { ThemedText } from "@/components/themed-text";
+import { Spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
+import type { QuickSummary as Summary } from "@/lib/analytics-insights";
 
 export function QuickSummary({ summary }: { summary: Summary }) {
   const theme = useTheme();
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.surface }]}>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: theme.surface,
+          borderColor: theme.backgroundElement,
+        },
+      ]}
+    >
       <ThemedText type="headline">Quick summary</ThemedText>
 
-      {summary.kind === 'placeholder' ? (
+      {summary.kind === "placeholder" ? (
         <View style={styles.lines}>
           {summary.lines.map((line) => (
             <ThemedText key={line} type="footnote" themeColor="textSecondary">
@@ -29,7 +37,7 @@ export function QuickSummary({ summary }: { summary: Summary }) {
               </ThemedText>
             ) : (
               segment.text
-            )
+            ),
           )}
         </ThemedText>
       )}
@@ -40,6 +48,7 @@ export function QuickSummary({ summary }: { summary: Summary }) {
 const styles = StyleSheet.create({
   card: {
     borderRadius: 14,
+    borderWidth: 1,
     padding: Spacing.three,
     gap: Spacing.two,
   },

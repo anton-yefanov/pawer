@@ -30,6 +30,7 @@ import { HouseIcon } from "phosphor-react-native/src/icons/House";
 import { ImageIcon } from "phosphor-react-native/src/icons/Image";
 import { InfoIcon } from "phosphor-react-native/src/icons/Info";
 import { KeyboardIcon } from "phosphor-react-native/src/icons/Keyboard";
+import { LightningIcon } from "phosphor-react-native/src/icons/Lightning";
 import { LockSimpleIcon } from "phosphor-react-native/src/icons/LockSimple";
 import { MagicWandIcon } from "phosphor-react-native/src/icons/MagicWand";
 import { MagnifyingGlassIcon } from "phosphor-react-native/src/icons/MagnifyingGlass";
@@ -217,6 +218,11 @@ const ICONS = {
   "line.3.horizontal": {
     symbol: { ios: "line.3.horizontal", android: "drag_handle" },
     glyph: DotsSixVerticalIcon,
+  },
+  "bolt.fill": {
+    symbol: { ios: "bolt.fill", android: "bolt" },
+    glyph: LightningIcon,
+    weight: "fill",
   },
   "lock.fill": {
     symbol: { ios: "lock.fill", android: "lock" },

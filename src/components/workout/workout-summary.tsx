@@ -90,7 +90,7 @@ export function WorkoutSummary({ id }: { id: string }) {
 
       <ScrollView {...SHEET_SCROLL} style={styles.scroll} contentContainerStyle={styles.content}>
         <ThemedText type="title2" style={styles.title}>
-          Nice work
+          Nice work!
         </ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.title}>
           {badges.length > 0

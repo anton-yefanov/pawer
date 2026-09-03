@@ -30,6 +30,7 @@ const COLUMNS = 3;
 export function BadgeStrip({
   badges,
   exerciseId,
+  exerciseName,
   newKeys,
   metric,
   best,
@@ -39,6 +40,7 @@ export function BadgeStrip({
 }: {
   badges: readonly Badge[];
   exerciseId: string;
+  exerciseName: string;
   /** Badges unlocked since the user last looked at them — see `achievement-news.ts`. */
   newKeys: ReadonlySet<string>;
   metric: LadderMetric;
@@ -86,6 +88,7 @@ export function BadgeStrip({
         {
           id: slotId(badge),
           tier: badge.tier,
+          exercise: exerciseName,
           unlocked: badge.unlockedAt != null,
           requirement: formatLadderValue(metric, badge.threshold, unit),
           detail: detailFor(badge, metric, best, unit),
@@ -118,8 +121,9 @@ export function BadgeStrip({
                       pointerEvents="none">
                       <ThemedText
                         type="caption2"
-                        weight="semibold"
-                        style={{ color: theme.accentContent }}>
+                        weight="bold"
+                        maxFontSizeMultiplier={1}
+                        style={[styles.chipLabel, { color: theme.accentContent }]}>
                         NEW
                       </ThemedText>
                     </View>
@@ -172,7 +176,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     right: 0,
-    paddingHorizontal: Spacing.one,
-    borderRadius: 6,
+    height: 14,
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+    borderRadius: 7,
+  },
+  // Off the Type scale on purpose: a marker this small has no role in it.
+  chipLabel: {
+    fontSize: 9,
+    lineHeight: 10,
+    letterSpacing: 0.4,
   },
 });

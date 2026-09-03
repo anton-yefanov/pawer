@@ -1,13 +1,13 @@
-import { Fragment } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Fragment } from "react";
+import { StyleSheet, View } from "react-native";
 
-import { PrChip } from '@/components/pr-chip';
-import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
-import type { PeriodRecordRow } from '@/lib/analytics-queries';
-import { formatPrValue, isPrKind, PR_LABELS } from '@/lib/personal-records';
-import type { WeightUnit } from '@/lib/units';
+import { PrChip } from "@/components/pr-chip";
+import { ThemedText } from "@/components/themed-text";
+import { Spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
+import type { PeriodRecordRow } from "@/lib/analytics-queries";
+import { formatPrValue, isPrKind, PR_LABELS } from "@/lib/personal-records";
+import type { WeightUnit } from "@/lib/units";
 
 /** A highlight reel, not a log: a hard quarter can set dozens of records. */
 const VISIBLE = 8;
@@ -26,7 +26,15 @@ export function RecordsCard({
   const hidden = known.length - shown.length;
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.surface }]}>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: theme.surface,
+          borderColor: theme.backgroundElement,
+        },
+      ]}
+    >
       <View style={styles.header}>
         <ThemedText type="headline">Personal records</ThemedText>
         {known.length > 0 && (
@@ -47,15 +55,24 @@ export function RecordsCard({
           {shown.map((record, index) => (
             <Fragment key={record.id}>
               {index > 0 && (
-                <View style={[styles.divider, { backgroundColor: theme.backgroundElement }]} />
+                <View
+                  style={[
+                    styles.divider,
+                    { backgroundColor: theme.backgroundElement },
+                  ]}
+                />
               )}
               <View style={styles.row}>
                 <ThemedText numberOfLines={1} style={styles.name}>
                   {record.exerciseName}
                 </ThemedText>
-                {isPrKind(record.kind) && <PrChip label={PR_LABELS[record.kind]} />}
+                {isPrKind(record.kind) && (
+                  <PrChip label={PR_LABELS[record.kind]} />
+                )}
                 <ThemedText type="headline" numeric style={styles.value}>
-                  {isPrKind(record.kind) ? formatPrValue(record.kind, record.value, unit) : ''}
+                  {isPrKind(record.kind)
+                    ? formatPrValue(record.kind, record.value, unit)
+                    : ""}
                 </ThemedText>
               </View>
             </Fragment>
@@ -63,7 +80,12 @@ export function RecordsCard({
 
           {hidden > 0 && (
             <>
-              <View style={[styles.divider, { backgroundColor: theme.backgroundElement }]} />
+              <View
+                style={[
+                  styles.divider,
+                  { backgroundColor: theme.backgroundElement },
+                ]}
+              />
               <View style={styles.row}>
                 <ThemedText type="footnote" themeColor="textSecondary">
                   + {hidden} more
@@ -80,18 +102,19 @@ export function RecordsCard({
 const styles = StyleSheet.create({
   card: {
     borderRadius: 14,
+    borderWidth: 1,
     padding: Spacing.three,
     gap: Spacing.two,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: Spacing.two,
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.two,
     minHeight: 40,
   },
@@ -102,7 +125,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   value: {
-    marginLeft: 'auto',
+    marginLeft: "auto",
   },
   empty: {
     gap: Spacing.one,

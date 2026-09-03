@@ -1,17 +1,17 @@
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { useLiveQuery } from "drizzle-orm/expo-sqlite";
+import { useMemo, useState } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
 
-import { DayPicker } from '@/components/analytics/day-picker';
-import { MetricChart } from '@/components/analytics/metric-chart';
-import { QuickSummary } from '@/components/analytics/quick-summary';
-import { RecordsCard } from '@/components/analytics/records-card';
-import { StatRows, type StatRow } from '@/components/analytics/stat-rows';
-import { PeriodMenu } from '@/components/exercises/period-menu';
-import { ThemedText } from '@/components/themed-text';
-import { BottomTabInset, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
-import { useWeightUnit } from '@/lib/weight-unit';
+import { DayPicker } from "@/components/analytics/day-picker";
+import { MetricChart } from "@/components/analytics/metric-chart";
+import { QuickSummary } from "@/components/analytics/quick-summary";
+import { RecordsCard } from "@/components/analytics/records-card";
+import { StatRows, type StatRow } from "@/components/analytics/stat-rows";
+import { PeriodMenu } from "@/components/exercises/period-menu";
+import { ThemedText } from "@/components/themed-text";
+import { BottomTabInset, Spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
+import { useWeightUnit } from "@/lib/weight-unit";
 import {
   combineTotals,
   firstWorkoutQuery,
@@ -20,22 +20,27 @@ import {
   prTotalsQuery,
   setTotalsQuery,
   workoutTotalsQuery,
-} from '@/lib/analytics-queries';
+} from "@/lib/analytics-queries";
 import {
   DEFAULT_PERIOD,
   PERIODS,
   isPeriodLocked,
   rangeFor,
   type PeriodId,
-} from '@/lib/analytics-period';
-import { allowPeriod } from '@/lib/pro-gates';
-import { usePro } from '@/lib/purchases';
-import { comparisonLabel, delta, previousRange } from '@/lib/analytics-compare';
-import { buildQuickSummary } from '@/lib/analytics-insights';
-import { buildSeries } from '@/lib/analytics-series';
-import { distanceUnitFor, formatDistance, formatTonnage, splitMeasure } from '@/lib/units';
-import { useIncludeWarmup } from '@/lib/warmup-stats';
-import { formatHoursMinutes } from '@/lib/workout-stats';
+} from "@/lib/analytics-period";
+import { allowPeriod } from "@/lib/pro-gates";
+import { usePro } from "@/lib/purchases";
+import { comparisonLabel, delta, previousRange } from "@/lib/analytics-compare";
+import { buildQuickSummary } from "@/lib/analytics-insights";
+import { buildSeries } from "@/lib/analytics-series";
+import {
+  distanceUnitFor,
+  formatDistance,
+  formatTonnage,
+  splitMeasure,
+} from "@/lib/units";
+import { useIncludeWarmup } from "@/lib/warmup-stats";
+import { formatHoursMinutes } from "@/lib/workout-stats";
 
 export default function AnalyticsScreen() {
   const theme = useTheme();
@@ -43,7 +48,7 @@ export default function AnalyticsScreen() {
   const isPro = usePro();
 
   const [period, setPeriod] = useState<PeriodId>(DEFAULT_PERIOD);
-  const [customFrom, setCustomFrom] = useState(() => rangeFor('d7').from);
+  const [customFrom, setCustomFrom] = useState(() => rangeFor("d7").from);
   const [customTo, setCustomTo] = useState(() => Date.now());
   const [today] = useState(() => Date.now());
 
@@ -54,7 +59,8 @@ export default function AnalyticsScreen() {
   };
 
   const range = useMemo(
-    () => rangeFor(period, { from: new Date(customFrom), to: new Date(customTo) }),
+    () =>
+      rangeFor(period, { from: new Date(customFrom), to: new Date(customTo) }),
     [period, customFrom, customTo],
   );
 
@@ -62,30 +68,41 @@ export default function AnalyticsScreen() {
 
   const previous = useMemo(() => previousRange(range), [range]);
 
-  const { data: workoutRows } = useLiveQuery(workoutTotalsQuery(range), [range]);
+  const { data: workoutRows } = useLiveQuery(workoutTotalsQuery(range), [
+    range,
+  ]);
   const { data: setRows } = useLiveQuery(setTotalsQuery(range, includeWarmup), [
     range,
     includeWarmup,
   ]);
-  const { data: metricRows } = useLiveQuery(metricSeriesQuery(range, includeWarmup), [
-    range,
-    includeWarmup,
-  ]);
+  const { data: metricRows } = useLiveQuery(
+    metricSeriesQuery(range, includeWarmup),
+    [range, includeWarmup],
+  );
   const { data: prRows } = useLiveQuery(prTotalsQuery(range), [range]);
   const { data: recordRows } = useLiveQuery(periodRecordsQuery(range), [range]);
 
   // Always built, so the hook order never depends on whether the period has a
   // comparison; the result is discarded when `previous` is null.
   const comparison = previous ?? range;
-  const { data: pastWorkoutRows } = useLiveQuery(workoutTotalsQuery(comparison), [comparison]);
-  const { data: pastSetRows } = useLiveQuery(setTotalsQuery(comparison, includeWarmup), [
+  const { data: pastWorkoutRows } = useLiveQuery(
+    workoutTotalsQuery(comparison),
+    [comparison],
+  );
+  const { data: pastSetRows } = useLiveQuery(
+    setTotalsQuery(comparison, includeWarmup),
+    [comparison, includeWarmup],
+  );
+  const { data: pastPrRows } = useLiveQuery(prTotalsQuery(comparison), [
     comparison,
-    includeWarmup,
   ]);
-  const { data: pastPrRows } = useLiveQuery(prTotalsQuery(comparison), [comparison]);
 
   const totals = combineTotals(workoutRows?.[0], setRows?.[0], prRows?.[0]);
-  const past = combineTotals(pastWorkoutRows?.[0], pastSetRows?.[0], pastPrRows?.[0]);
+  const past = combineTotals(
+    pastWorkoutRows?.[0],
+    pastSetRows?.[0],
+    pastPrRows?.[0],
+  );
 
   const { data: firstRows } = useLiveQuery(firstWorkoutQuery(), []);
   const firstWorkoutAt = firstRows?.[0]?.startedAt ?? null;
@@ -97,8 +114,12 @@ export default function AnalyticsScreen() {
   // covers, or a partial window reads as an impossible gain. And it has to
   // contain a workout at all.
   const settled =
-    pastWorkoutRows?.[0]?.from === comparison.from && pastPrRows?.[0]?.from === comparison.from;
-  const covered = previous !== null && firstWorkoutAt !== null && firstWorkoutAt <= previous.from;
+    pastWorkoutRows?.[0]?.from === comparison.from &&
+    pastPrRows?.[0]?.from === comparison.from;
+  const covered =
+    previous !== null &&
+    firstWorkoutAt !== null &&
+    firstWorkoutAt <= previous.from;
   const comparable = covered && settled && past.workouts > 0;
 
   const since = (pick: (of: typeof totals) => number) =>
@@ -119,12 +140,12 @@ export default function AnalyticsScreen() {
     {
       tiles: [
         {
-          label: 'Workouts',
+          label: "Workouts",
           value: String(totals.workouts),
           delta: since((of) => of.workouts),
         },
         {
-          label: 'Total tonnage',
+          label: "Total tonnage",
           ...splitMeasure(formatTonnage(totals.volumeKg, unit)),
           delta: since((of) => of.volumeKg),
         },
@@ -133,13 +154,17 @@ export default function AnalyticsScreen() {
     {
       split: [
         {
-          label: 'Sets',
+          label: "Sets",
           value: String(totals.completedSets),
           delta: since((of) => of.completedSets),
         },
-        { label: 'Reps', value: String(totals.reps), delta: since((of) => of.reps) },
         {
-          label: 'PRs',
+          label: "Reps",
+          value: String(totals.reps),
+          delta: since((of) => of.reps),
+        },
+        {
+          label: "PRs",
           value: String(totals.records),
           delta: since((of) => of.records),
         },
@@ -148,12 +173,12 @@ export default function AnalyticsScreen() {
     {
       tiles: [
         {
-          label: 'Time in gym',
+          label: "Time in gym",
           value: formatHoursMinutes(totals.durationMs),
           delta: since((of) => of.durationMs),
         },
         {
-          label: 'Avg duration',
+          label: "Avg duration",
           value: formatHoursMinutes(totals.avgDurationMs),
           delta: since((of) => of.avgDurationMs),
         },
@@ -162,13 +187,15 @@ export default function AnalyticsScreen() {
     {
       tiles: [
         {
-          label: 'Avg tonnage',
+          label: "Avg tonnage",
           ...splitMeasure(formatTonnage(totals.avgVolumeKg, unit)),
           delta: since((of) => of.avgVolumeKg),
         },
         {
-          label: 'Total distance',
-          ...splitMeasure(formatDistance(totals.distanceM, distanceUnitFor(unit))),
+          label: "Total distance",
+          ...splitMeasure(
+            formatDistance(totals.distanceM, distanceUnitFor(unit)),
+          ),
           delta: since((of) => of.distanceM),
         },
       ],
@@ -179,7 +206,8 @@ export default function AnalyticsScreen() {
     <ScrollView
       style={{ backgroundColor: theme.background }}
       contentContainerStyle={styles.content}
-      contentInsetAdjustmentBehavior="automatic">
+      contentInsetAdjustmentBehavior="automatic"
+    >
       <View style={styles.periodRow}>
         <PeriodMenu
           value={period}
@@ -191,8 +219,16 @@ export default function AnalyticsScreen() {
         />
       </View>
 
-      {period === 'custom' && (
-        <View style={[styles.card, { backgroundColor: theme.surface }]}>
+      {period === "custom" && (
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: theme.surface,
+              borderColor: theme.backgroundElement,
+            },
+          ]}
+        >
           <View style={styles.cardRow}>
             <ThemedText themeColor="textSecondary">From</ThemedText>
             <DayPicker
@@ -201,7 +237,12 @@ export default function AnalyticsScreen() {
               onChange={(next) => setCustomFrom(next.getTime())}
             />
           </View>
-          <View style={[styles.divider, { backgroundColor: theme.backgroundElement }]} />
+          <View
+            style={[
+              styles.divider,
+              { backgroundColor: theme.backgroundElement },
+            ]}
+          />
           <View style={styles.cardRow}>
             <ThemedText themeColor="textSecondary">To</ThemedText>
             <DayPicker
@@ -219,7 +260,11 @@ export default function AnalyticsScreen() {
       <StatRows rows={rows} />
 
       {comparable && (
-        <ThemedText type="footnote" themeColor="textTertiary" style={styles.caption}>
+        <ThemedText
+          type="footnote"
+          themeColor="textTertiary"
+          style={styles.caption}
+        >
           vs {comparisonLabel(range)}
         </ThemedText>
       )}
@@ -253,16 +298,17 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 14,
+    borderWidth: 1,
     paddingHorizontal: Spacing.three,
   },
   periodRow: {
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
     paddingBottom: Spacing.one,
   },
   cardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: Spacing.two,
     minHeight: 48,
   },

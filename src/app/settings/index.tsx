@@ -78,14 +78,7 @@ export default function SettingsScreen() {
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic"
     >
-      {isPro ? (
-        <Card>
-          <DisclosureRow
-            label="Manage Subscription"
-            onPress={() => void presentCustomerCenter()}
-          />
-        </Card>
-      ) : (
+      {!isPro && (
         <ProBanner
           label={`Upgrade to ${PRO_NAME}`}
           onPress={() => void presentPaywall("settings")}
@@ -163,15 +156,19 @@ export default function SettingsScreen() {
           leading={<IconTile name="star.fill" tint="yellow" />}
           onPress={() => void openReview()}
         />
-        {!isPro && (
-          <>
-            <Separator inset={TILE_INSET} />
-            <DisclosureRow
-              label="Restore Purchases"
-              leading={<IconTile name="arrow.clockwise" tint="grey" />}
-              onPress={() => void onRestorePressed()}
-            />
-          </>
+        <Separator inset={TILE_INSET} />
+        {isPro ? (
+          <DisclosureRow
+            label="Manage Subscription"
+            leading={<IconTile name="bolt.fill" tint="pink" />}
+            onPress={() => void presentCustomerCenter()}
+          />
+        ) : (
+          <DisclosureRow
+            label="Restore Purchases"
+            leading={<IconTile name="arrow.clockwise" tint="grey" />}
+            onPress={() => void onRestorePressed()}
+          />
         )}
       </Card>
     </ScrollView>

@@ -29,6 +29,7 @@ export type SpotlightBadge = {
   /** Identifies the slot it came from, so that slot can be left empty. */
   id: string;
   tier: AchievementTier;
+  exercise: string;
   unlocked: boolean;
   requirement: string;
   detail: string;
@@ -234,11 +235,20 @@ export function BadgeSpotlight({ children }: { children: React.ReactNode }) {
                   caption,
                 ]}
                 pointerEvents="none">
-                <ThemedText type="title2">{badge.tier.name}</ThemedText>
-                <ThemedText type="body" themeColor="textSecondary" numeric>
+                <ThemedText
+                  type="caption2"
+                  weight="semibold"
+                  themeColor="textTertiary"
+                  style={styles.eyebrow}>
+                  {badge.tier.name}
+                </ThemedText>
+                <ThemedText type="title3" numberOfLines={2} style={styles.exercise}>
+                  {badge.exercise}
+                </ThemedText>
+                <ThemedText type="largeTitle" numeric style={styles.value}>
                   {badge.requirement}
                 </ThemedText>
-                <ThemedText type="footnote" themeColor="textTertiary" numeric>
+                <ThemedText type="footnote" themeColor="textSecondary" numeric>
                   {badge.detail}
                 </ThemedText>
               </Animated.View>
@@ -270,6 +280,15 @@ const styles = StyleSheet.create({
     left: Spacing.four,
     right: Spacing.four,
     alignItems: 'center',
-    gap: Spacing.half,
+  },
+  eyebrow: {
+    textTransform: 'uppercase',
+  },
+  exercise: {
+    marginTop: Spacing.one,
+    textAlign: 'center',
+  },
+  value: {
+    marginTop: Spacing.two,
   },
 });

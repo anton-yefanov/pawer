@@ -16,6 +16,7 @@ import { BigButton } from '@/components/workout/big-button';
 import { SheetFooter } from '@/components/sheet-footer';
 import { SHEET_FOOTER_HEIGHT } from '@/components/sheet-footer.types';
 import { SheetHeader } from '@/components/sheet-header';
+import { SheetOverlay } from '@/components/sheet-overlay';
 import { HEADER_CIRCLE_SIZE } from '@/components/workout/workout-sheet-header';
 import { SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
@@ -106,33 +107,35 @@ export function TemplatePreview({ id }: { id: string }) {
         ))}
       </ScrollView>
 
-      <SheetFooter>
-        <BigButton title="Start Workout" onPress={() => void start()} />
-      </SheetFooter>
+      <SheetOverlay>
+        <SheetFooter>
+          <BigButton title="Start Workout" onPress={() => void start()} />
+        </SheetFooter>
 
-      {/* Deleting the template this sheet is showing takes the sheet with it. */}
-      <ConfirmAlert
-        open={pending != null}
-        title={pending?.title ?? ''}
-        message={pending?.body ?? ''}
-        confirmLabel="Delete"
-        onConfirm={() => {
-          pending?.onConfirm();
-          setPending(null);
-          router.back();
-        }}
-        onDismiss={() => setPending(null)}
-      />
+        {/* Deleting the template this sheet is showing takes the sheet with it. */}
+        <ConfirmAlert
+          open={pending != null}
+          title={pending?.title ?? ''}
+          message={pending?.body ?? ''}
+          confirmLabel="Delete"
+          onConfirm={() => {
+            pending?.onConfirm();
+            setPending(null);
+            router.back();
+          }}
+          onDismiss={() => setPending(null)}
+        />
 
-      <ActiveWorkoutPrompt
-        open={blockedBy != null}
-        onResume={() => {
-          const id = blockedBy;
-          setBlockedBy(null);
-          if (id) open(id);
-        }}
-        onDismiss={() => setBlockedBy(null)}
-      />
+        <ActiveWorkoutPrompt
+          open={blockedBy != null}
+          onResume={() => {
+            const id = blockedBy;
+            setBlockedBy(null);
+            if (id) open(id);
+          }}
+          onDismiss={() => setBlockedBy(null)}
+        />
+      </SheetOverlay>
     </>
   );
 }

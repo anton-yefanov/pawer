@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { SheetHeader } from '@/components/sheet-header';
+import { SheetOverlay } from '@/components/sheet-overlay';
 import { CardMenu } from '@/components/templates/card-menu';
 import { type ConfirmDestructive, type ConfirmRequest } from '@/components/templates/card-actions';
 import { ThemedText } from '@/components/themed-text';
@@ -97,27 +98,29 @@ export function WorkoutDetails({
         />
       </ScrollView>
 
-      <ConfirmAlert
-        open={pending != null}
-        title={pending?.title ?? ''}
-        message={pending?.body ?? ''}
-        confirmLabel="Delete"
-        onConfirm={() => {
-          pending?.onConfirm();
-          setPending(null);
-        }}
-        onDismiss={() => setPending(null)}
-      />
+      <SheetOverlay>
+        <ConfirmAlert
+          open={pending != null}
+          title={pending?.title ?? ''}
+          message={pending?.body ?? ''}
+          confirmLabel="Delete"
+          onConfirm={() => {
+            pending?.onConfirm();
+            setPending(null);
+          }}
+          onDismiss={() => setPending(null)}
+        />
 
-      <ActiveWorkoutPrompt
-        open={blockedBy != null}
-        onResume={() => {
-          const id = blockedBy;
-          setBlockedBy(null);
-          if (id) onOpenWorkout(id);
-        }}
-        onDismiss={() => setBlockedBy(null)}
-      />
+        <ActiveWorkoutPrompt
+          open={blockedBy != null}
+          onResume={() => {
+            const id = blockedBy;
+            setBlockedBy(null);
+            if (id) onOpenWorkout(id);
+          }}
+          onDismiss={() => setBlockedBy(null)}
+        />
+      </SheetOverlay>
     </>
   );
 }

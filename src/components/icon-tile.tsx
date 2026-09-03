@@ -12,6 +12,7 @@ const TINTS = {
   green: ["#5FE08C", "#1DA653"],
   teal: ["#4FDCD0", "#10A79A"],
   yellow: ["#FFD75C", "#F0A80D"],
+  pink: ["#FF8FB1", "#E0246B"],
   grey: ["#B4BAC3", "#7A828E"],
 } as const;
 

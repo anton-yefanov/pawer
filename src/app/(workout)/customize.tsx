@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 
 import { CIRCLE_BUTTON_SIZE, CircleButton } from '@/components/circle-button';
 import { SheetGrabber } from '@/components/sheet-grabber';
+import { SheetOverlay } from '@/components/sheet-overlay';
 import { ArtworkLayer } from '@/components/templates/artwork-layer';
 import { type ArtworkMode, ArtworkTabs } from '@/components/templates/artwork-tabs';
 import { CardCover } from '@/components/templates/card-cover';
@@ -232,12 +233,14 @@ export default function CustomizeScreen() {
       )}
       {/* Where Close and Finish sit on the workout sheet. This sheet draws no
           nav bar, so the buttons are placed rather than handed to one. */}
-      <View style={styles.close}>
-        <CloseButton onPress={close} />
-      </View>
-      <View style={styles.save}>
-        <HeaderPillButton title="Save" onPress={() => void save()} />
-      </View>
+      <SheetOverlay>
+        <View style={styles.close}>
+          <CloseButton onPress={close} />
+        </View>
+        <View style={styles.save}>
+          <HeaderPillButton title="Save" onPress={() => void save()} />
+        </View>
+      </SheetOverlay>
     </>
   );
 }

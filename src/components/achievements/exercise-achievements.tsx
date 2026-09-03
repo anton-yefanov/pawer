@@ -73,6 +73,7 @@ export function ExerciseAchievements({
             <BadgeStrip
               badges={badges}
               exerciseId={item.exerciseId}
+              exerciseName={item.name}
               newKeys={newKeys}
               metric={ladder.metric}
               best={ladder.best}
