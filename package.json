@@ -66,6 +66,8 @@
   },
   "scripts": {
     "start": "expo start",
+    "storekit": "node scripts/link-storekit.mjs",
+    "storekit:off": "node scripts/link-storekit.mjs --unlink",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
     "ios": "expo run:ios",

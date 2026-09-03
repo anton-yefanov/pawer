@@ -28,6 +28,9 @@ npm run build:images     # vendor posters -> shipped webp (see §Assets)
 npm run build:videos     # vendor mp4 -> assets/exercise-videos/, ~45 min (see §Assets)
 npm run videos:pull      # mirror the encoded clips down from Vercel Blob — needed before prebuild
 npm run videos:push      # the other direction, after a re-encode
+
+npm run storekit         # point the Xcode scheme at Pawer.storekit — re-run after every prebuild
+npm run storekit:off     # back to the App Store sandbox
 ```
 
 There is no test runner in this project. Verification is `npm run typecheck && npm run lint` plus running the app.
