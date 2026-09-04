@@ -8,7 +8,7 @@ import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-export const STEP_COUNT = 4;
+export const STEP_COUNT = 3;
 
 type Props = {
   index: number;

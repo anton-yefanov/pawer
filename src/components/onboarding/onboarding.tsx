@@ -13,6 +13,7 @@ import { BigButton, BIG_BUTTON_HEIGHT } from '@/components/workout/big-button';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import * as haptics from '@/lib/haptics';
+import { openLegalDocument, PRIVACY_POLICY_URL } from '@/lib/legal';
 import { ensureNotificationPermission } from '@/lib/notifications';
 import { useOnboarding } from '@/lib/onboarding';
 import { track } from '@/lib/telemetry';
@@ -74,8 +75,16 @@ function OnboardingFlow() {
             title="Welcome to Pawer"
             body={[
               'We hope it helps you achieve your fitness goals and makes your workouts easier.',
+              'Pawer collects limited anonymous diagnostics and product-usage data to improve the app and fix errors. Your workouts, sets, weights, notes, photos, and exercise names stay on your device.',
               'If you have any questions, suggestions or found a bug, please use Support form in Settings.',
-            ]}>
+            ]}
+            choices={
+              <Pressable onPress={() => void openLegalDocument(PRIVACY_POLICY_URL)}>
+                <ThemedText type="footnote" weight="semibold" themeColor="accent">
+                  Read Privacy Policy
+                </ThemedText>
+              </Pressable>
+            }>
             <BigButton title="Get Started" onPress={next} />
             <View style={styles.secondSlot}>
               <ThemedText type="footnote" themeColor="textTertiary" style={styles.note}>
