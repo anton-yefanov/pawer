@@ -3,8 +3,7 @@ import { useEffect } from 'react';
 
 import { setObservabilityTags } from '@/lib/observability';
 import { usePro } from '@/lib/purchases';
-import { registerContext, screen, setOptedOut } from '@/lib/telemetry';
-import { readTelemetryConsent } from '@/lib/telemetry-opt-out';
+import { enableTelemetry, registerContext, screen } from '@/lib/telemetry';
 import { useWeightUnit } from '@/lib/weight-unit';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -20,13 +19,13 @@ export function TelemetrySync() {
   const pathname = usePathname();
 
   useEffect(() => {
+    enableTelemetry();
+  }, []);
+
+  useEffect(() => {
     registerContext({ isPro, weightUnit });
     setObservabilityTags({ is_pro: isPro, weight_unit: weightUnit });
   }, [isPro, weightUnit]);
-
-  useEffect(() => {
-    void readTelemetryConsent().then((consented) => setOptedOut(consented !== true));
-  }, []);
 
   useEffect(() => {
     screen(normalize(pathname));

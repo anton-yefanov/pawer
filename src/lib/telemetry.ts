@@ -24,9 +24,9 @@ const config = (Constants.expoConfig?.extra?.posthog ?? {}) as {
 const client = config.apiKey
   ? new PostHog(config.apiKey, {
       host: config.host,
-      // Analytics stays off until the user has made an explicit choice during
-      // onboarding. This also suppresses automatic lifecycle events at launch.
-      disabled: true,
+      // Product analytics are enabled by default. They contain only the
+      // allowlisted events below and never include workout content.
+      disabled: false,
       disableGeoip: true,
       captureAppLifecycleEvents: true,
       enableSessionReplay: false,
@@ -103,18 +103,13 @@ export function registerContext(context: { isPro: boolean; weightUnit: WeightUni
   }
 }
 
-/**
- * The SDK persists this itself and honours it before lifecycle events fire on
- * the next launch. `true` means analytics remain disabled.
- */
-export function setOptedOut(next: boolean): void {
+/** Enables collection for existing installs that previously selected Not Now. */
+export function enableTelemetry(): void {
   if (!client) return;
   try {
-    void (next ? client.optOut() : client.optIn()).catch((error: unknown) =>
-      warn('optOut', error)
-    );
+    void client.optIn().catch((error: unknown) => warn('optIn', error));
   } catch (error) {
-    warn('optOut', error);
+    warn('optIn', error);
   }
 }
 

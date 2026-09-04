@@ -1,5 +1,4 @@
-import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { router } from "expo-router";
 import { ScrollView, StyleSheet } from "react-native";
 
 import {
@@ -26,10 +25,6 @@ import {
 import { notice } from "@/lib/notice";
 import { presentCustomerCenter, presentPaywall } from "@/lib/paywall";
 import { PRO_NAME, usePurchases } from "@/lib/purchases";
-import {
-  readTelemetryConsent,
-  writeTelemetryConsent,
-} from "@/lib/telemetry-opt-out";
 import { THEME_PREFERENCES, useThemePreference } from "@/lib/theme-preference";
 import { useWarmupStatsPreference } from "@/lib/warmup-stats";
 import { useWeightUnit } from "@/lib/weight-unit";
@@ -50,25 +45,6 @@ export default function SettingsScreen() {
     useWarmupStatsPreference();
   const { option: finishReminder } = useFinishReminder();
   const { isPro, restore } = usePurchases();
-  const [shareUsage, setShareUsage] = useState(false);
-
-  // Native tabs mount their screens behind onboarding. Reading only on mount
-  // can therefore cache the pre-onboarding `null` value as false forever.
-  // Refreshing on focus picks up the choice just made in onboarding (and any
-  // change made from another app surface).
-  useFocusEffect(useCallback(() => {
-    let cancelled = false;
-    void attempt(
-      "settings",
-      readTelemetryConsent().then((consented) => {
-        if (!cancelled) setShareUsage(consented === true);
-      }),
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, []));
-
   const onRestorePressed = async () => {
     const result = await restore();
     notice({
@@ -129,21 +105,6 @@ export default function SettingsScreen() {
           }
           chevron={false}
           onPress={() => router.push("/settings/finish-reminder")}
-        />
-        <Separator inset={TILE_INSET} />
-        <ToggleRow
-          label="Share Anonymous Usage Data"
-          leading={<IconTile name="chart.bar" tint="green" />}
-          value={shareUsage}
-          onChange={(next) => {
-            setShareUsage(next);
-            void attempt("settings", writeTelemetryConsent(next), {
-              title: "Couldn’t save setting",
-              message: "Please try again.",
-            }).then((written) => {
-              if (!written) setShareUsage(!next);
-            });
-          }}
         />
         <Separator inset={TILE_INSET} />
         <DisclosureRow

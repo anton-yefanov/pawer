@@ -13,11 +13,9 @@ import { BigButton, BIG_BUTTON_HEIGHT } from '@/components/workout/big-button';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import * as haptics from '@/lib/haptics';
-import { openLegalDocument, PRIVACY_POLICY_URL } from '@/lib/legal';
 import { ensureNotificationPermission } from '@/lib/notifications';
 import { useOnboarding } from '@/lib/onboarding';
 import { track } from '@/lib/telemetry';
-import { writeTelemetryConsent } from '@/lib/telemetry-opt-out';
 import type { WeightUnit } from '@/lib/units';
 import { useWeightUnitPreference } from '@/lib/weight-unit';
 
@@ -28,7 +26,7 @@ const UNITS: { id: WeightUnit; label: string; system: string }[] = [
   { id: 'lb', label: 'lb', system: 'Imperial' },
 ];
 
-const STEP_NAMES = ['welcome', 'units', 'notifications', 'analytics-choice'] as const;
+const STEP_NAMES = ['welcome', 'units', 'notifications'] as const;
 
 export function Onboarding() {
   const { done } = useOnboarding();
@@ -59,8 +57,7 @@ function OnboardingFlow() {
   const next = () => setStep((current) => current + 1);
   const back = () => setStep((current) => current - 1);
 
-  const finish = async (shareUsage: boolean) => {
-    await writeTelemetryConsent(shareUsage);
+  const finish = async () => {
     track('onboarding_completed', {
       notifications_granted: notificationsGranted,
     });
@@ -137,9 +134,9 @@ function OnboardingFlow() {
                   void ensureNotificationPermission().then(
                     (granted) => {
                       setNotificationsGranted(granted);
-                      next();
+                      void finish();
                     },
-                    () => next()
+                    () => void finish()
                   );
                 }}
               />
@@ -148,36 +145,13 @@ function OnboardingFlow() {
                 variant="tinted"
                 onPress={() => {
                   setNotificationsGranted(false);
-                  next();
+                  void finish();
                 }}
               />
             </View>
           </Step>
         </View>
 
-        <View style={{ width }}>
-          <Step
-            index={3}
-            onBack={back}
-            icon="chart.bar.fill"
-            title="Help improve Pawer"
-            body={[
-              'May we collect anonymous usage events, such as screens opened and whether a workout was finished? This never includes your sets, weights, notes, photos, or workout totals.',
-              'You can change this any time in Settings → Share Anonymous Usage Data.',
-            ]}
-            choices={
-              <Pressable onPress={() => void openLegalDocument(PRIVACY_POLICY_URL)}>
-                <ThemedText type="footnote" weight="semibold" themeColor="accent">
-                  Read Privacy Policy
-                </ThemedText>
-              </Pressable>
-            }>
-            <View style={styles.actions}>
-              <BigButton title="Share Anonymous Usage Data" onPress={() => void finish(true)} />
-              <BigButton title="Not Now" variant="tinted" onPress={() => void finish(false)} />
-            </View>
-          </Step>
-        </View>
       </Animated.View>
     </View>
   );

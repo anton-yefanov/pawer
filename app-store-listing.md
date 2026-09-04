@@ -77,7 +77,7 @@ PERSONAL RECORDS AND PROGRESS
 Pawer spots it when you beat your heaviest set or your best estimated 1RM, and marks the workout that earned it. Achievements track the streaks and milestones behind them. Stats add up your workouts, tonnage, sets, reps, PRs and time in the gym, and chart how each lift is trending.
 
 YOUR DATA STAYS YOURS
-No account. No sign-up. Nothing to log into. Your workouts live in a database on your device, and the app has never needed the network to open. Usage analytics are anonymous and can be turned off in Settings.
+No account. No sign-up. Nothing to log into. Your workouts live in a database on your device, and the app has never needed the network to open. Pawer collects limited, anonymous usage analytics to improve the app; it never includes your sets, weights, notes, photos, or workout totals.
 
 LOGGING IS FREE, FOREVER
 Unlimited workouts, the full exercise library, full history, rest timer and PR detection cost nothing and always will. Pawer Pro lifts the limits: unlimited templates and custom exercises, plus your stats over any stretch of training rather than the last 30 days.
