@@ -1,5 +1,5 @@
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet } from "react-native";
 
 import {
@@ -52,7 +52,11 @@ export default function SettingsScreen() {
   const { isPro, restore } = usePurchases();
   const [shareUsage, setShareUsage] = useState(false);
 
-  useEffect(() => {
+  // Native tabs mount their screens behind onboarding. Reading only on mount
+  // can therefore cache the pre-onboarding `null` value as false forever.
+  // Refreshing on focus picks up the choice just made in onboarding (and any
+  // change made from another app surface).
+  useFocusEffect(useCallback(() => {
     let cancelled = false;
     void attempt(
       "settings",
@@ -63,7 +67,7 @@ export default function SettingsScreen() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, []));
 
   const onRestorePressed = async () => {
     const result = await restore();
