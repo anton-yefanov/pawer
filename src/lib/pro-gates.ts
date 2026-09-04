@@ -2,9 +2,7 @@ import { and, count, eq, isNull } from 'drizzle-orm';
 
 import { db } from '@/db/client';
 import { exercises, templates } from '@/db/schema';
-import { getSetting, setSetting } from '@/db/seed';
 import { isPeriodLocked, type PeriodId } from '@/lib/analytics-period';
-import { attempt, guard } from '@/lib/observability';
 import { presentPaywall } from '@/lib/paywall';
 
 /**
@@ -13,8 +11,6 @@ import { presentPaywall } from '@/lib/paywall';
  */
 export const FREE_TEMPLATE_LIMIT = 3;
 export const FREE_CUSTOM_EXERCISE_LIMIT = 3;
-
-const FIRST_WORKOUT_PAYWALL_KEY = 'paywall_first_workout';
 
 /** Resolves true once the user may create another template — buying counts. */
 export async function allowNewTemplate(isPro: boolean): Promise<boolean> {
@@ -48,18 +44,4 @@ export async function allowNewCustomExercise(isPro: boolean): Promise<boolean> {
 export async function allowPeriod(id: PeriodId, isPro: boolean): Promise<boolean> {
   if (!isPeriodLocked(id, isPro)) return true;
   return (await presentPaywall('analytics_period')) === 'purchased';
-}
-
-/**
- * The one unprompted paywall in the app, and it lands after the first workout
- * the user finishes rather than at launch: they have to feel the thing work
- * once. The flag is written before presenting, so a dismissal — or a crash
- * mid-present — never asks twice.
- */
-export async function presentFirstWorkoutPaywall(isPro: boolean): Promise<void> {
-  if (isPro) return;
-  if (await guard('pro-gates', getSetting(db, FIRST_WORKOUT_PAYWALL_KEY))) return;
-
-  await attempt('pro-gates', setSetting(db, FIRST_WORKOUT_PAYWALL_KEY, String(Date.now())));
-  await attempt('pro-gates', presentPaywall('first_workout'));
 }

@@ -1,9 +1,11 @@
 import { createContext, useContext, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   cancelAnimation,
   Easing,
+  Extrapolation,
   interpolate,
   runOnJS,
   useAnimatedStyle,
@@ -14,7 +16,9 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { BadgeAura } from '@/components/achievements/badge-aura';
 import { SpinnableBadge } from '@/components/achievements/badge-canvas';
+import { ShareBadgeButton } from '@/components/achievements/share-badge-button';
 import { SpotlightBackdrop } from '@/components/achievements/spotlight-backdrop';
 import { ThemedText } from '@/components/themed-text';
 import type { AchievementTier } from '@/constants/achievement-tiers';
@@ -23,6 +27,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { lockedMaterial, struckMaterial } from '@/lib/badge-material';
 import { REST_TILT } from '@/lib/badge-mesh';
 import * as haptics from '@/lib/haptics';
+import { useShareCardAssets } from '@/lib/share-card-assets';
 import { track } from '@/lib/telemetry';
 
 export type SpotlightBadge = {
@@ -55,6 +60,9 @@ export function useBadgeSpotlight() {
   return spotlight;
 }
 
+/** Far enough below the bottom edge that the button is off-screen at rest. */
+const ACTIONS_TRAVEL = 160;
+
 const MAX_X = (55 * Math.PI) / 180;
 /** Radians per pixel dragged — about 0.55° per point. */
 const RATE = 0.0096;
@@ -74,6 +82,8 @@ const RETURN = 200;
  */
 export function BadgeSpotlight({ children }: { children: React.ReactNode }) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
+  const shareAssets = useShareCardAssets();
   const root = useRef<View>(null);
   const [badge, setBadge] = useState<SpotlightBadge | null>(null);
   const [box, setBox] = useState({ width: 0, height: 0 });
@@ -156,6 +166,10 @@ export function BadgeSpotlight({ children }: { children: React.ReactNode }) {
   };
 
   const spin = Gesture.Pan()
+    // Without an activation offset the Pan claims the touch on touch-down and
+    // cancels it in every view under it, so the Share button never sees a tap.
+    .activeOffsetX([-8, 8])
+    .activeOffsetY([-8, 8])
     .onStart(() => {
       cancelAnimation(ry);
       grabX.value = ry.value;
@@ -196,6 +210,17 @@ export function BadgeSpotlight({ children }: { children: React.ReactNode }) {
     transform: [{ translateY: interpolate(progress.value, [0, 1], [16, 0]) }],
   }));
 
+  // Slides in rather than fading: the button is glass, and a GlassView keeps
+  // refracting through an animated opacity — the effect is lost and what is
+  // left is an untinted label. So it arrives from off the bottom edge instead.
+  // It also lives inside the gesture subtree rather than beside it: a sibling
+  // above the spin's Pan never receives the tap at all, whatever its z-order.
+  const actions = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: interpolate(progress.value, [0, 1], [ACTIONS_TRAVEL, 0], Extrapolation.CLAMP) },
+    ],
+  }));
+
   const material = badge?.unlocked
     ? struckMaterial(badge.tier.id, badge.tier.material)
     : lockedMaterial(theme);
@@ -217,6 +242,16 @@ export function BadgeSpotlight({ children }: { children: React.ReactNode }) {
                 onPress={close}
                 accessibilityLabel="Close"
               />
+
+              {badge.unlocked && (
+                <BadgeAura
+                  cx={box.width / 2}
+                  cy={box.height * 0.42}
+                  size={size}
+                  progress={progress}
+                  material={material}
+                />
+              )}
 
               <Animated.View style={[styles.stage, { width: size, height: size }, stage]}>
                 <SpinnableBadge
@@ -252,9 +287,28 @@ export function BadgeSpotlight({ children }: { children: React.ReactNode }) {
                   {badge.detail}
                 </ThemedText>
               </Animated.View>
+
+              {badge.unlocked && (
+              <Animated.View
+                style={[
+                  styles.actions,
+                  { bottom: Math.max(insets.bottom, Spacing.four) + Spacing.four },
+                  actions,
+                ]}>
+                <ShareBadgeButton
+                  assets={shareAssets}
+                  tier={badge.tier}
+                  exercise={badge.exercise}
+                  requirement={badge.requirement}
+                  detail={badge.detail}
+                  material={material}
+                />
+              </Animated.View>
+              )}
             </View>
           </GestureDetector>
         )}
+
       </View>
     </SpotlightContext.Provider>
   );
@@ -290,5 +344,11 @@ const styles = StyleSheet.create({
   },
   value: {
     marginTop: Spacing.two,
+  },
+  actions: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
   },
 });

@@ -2,14 +2,14 @@ import { Image } from "expo-image";
 import { StyleSheet, View } from "react-native";
 
 import { Emoji } from "@/components/emoji";
+import { COVER_ASPECT, coverRadius } from "@/components/templates/grid-card";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { type CardArtwork } from "@/lib/card-artwork";
 import { coverPhotoSource } from "@/lib/card-photos";
 import {
-  ART_CORNER_SCALE,
   type ExerciseArt,
-  exerciseThumbnail,
+  exercisePoster,
   reportMissingArt,
 } from "@/lib/exercise-media";
 import { report } from "@/lib/observability";
@@ -27,30 +27,23 @@ const EMOJI_SCALE = [0.5, 0.37, 0.26];
 const GAP_SCALE = 0.03;
 
 /**
- * How many cells go on each row, by cell count. Six is the most a cover holds,
- * and past five thumbnails the sixth is a `+N` counter — so every longer
- * template lays out the same.
+ * Four cells at most, the fourth a `+N` counter once a template runs past four
+ * exercises — so a long template lays out like a four-exercise one.
  */
-const EXERCISE_ROWS: readonly (readonly number[])[] = [
-  [1],
-  [2],
-  [3],
-  [2, 2],
-  [3, 2],
-  [3, 3],
-];
-const EXERCISE_SCALE = [0.46, 0.46, 0.34, 0.38, 0.34, 0.34];
-const EXERCISE_GAP_SCALE = 0.045;
-const MAX_THUMBS = 5;
-const RING_SCALE = 0.03;
+const MAX_CELLS = 4;
+/** The inset around the cells and the gap between them: one value, because a
+ *  cell's margin to the cover's edge has to match its margin to its neighbour. */
+const EXERCISE_GAP_SCALE = 0.055;
 const SHADOW_SCALE = 0.06;
 /** A cover is pastel in both schemes, so what sits on it never follows the theme. */
 const COVER_PAPER = Colors.light.surface;
-/** Half-transparent, so the halo takes the gradient it sits on rather than cutting a hole in it. */
-const COVER_RING = "rgba(255, 255, 255, 0.5)";
-const COVER_INK = Colors.light.text;
+/** The counter is a hole in the grid, not a fifth exercise: white washed over
+ *  the cover rather than the paper a thumbnail sits on, with the ink dropped to
+ *  match. A real blur was tried and there is nothing behind it to blur. */
+const COVER_WASH = "rgba(255, 255, 255, 0.45)";
+const COVER_WASH_INK = "rgba(0, 0, 0, 0.55)";
 const COVER_SHADOW = "rgba(0, 0, 0, 0.18)";
-const COUNT_SCALE = 0.34;
+const COUNT_SCALE = 0.14;
 
 export function ArtworkLayer({
   artwork,
@@ -106,7 +99,7 @@ export function ArtworkLayer({
   );
 }
 
-/** The same lift the thumbnails get, cast by the glyph rather than a box. */
+/** A glyph sits straight on the gradient, so it casts its own lift. */
 function emojiShadow(size: number) {
   return {
     textShadowColor: COVER_SHADOW,
@@ -115,7 +108,7 @@ function emojiShadow(size: number) {
   };
 }
 
-/** An empty template is a bare gradient — the cover fills itself in as exercises land. */
+/** An empty template is a bare cover — it fills itself in as exercises land. */
 function ExerciseArtwork({
   art,
   coverHeight,
@@ -125,100 +118,121 @@ function ExerciseArtwork({
 }) {
   if (art.length === 0) return null;
 
-  const overflow = Math.max(art.length - MAX_THUMBS, 0);
-  const cells = Math.min(art.length, MAX_THUMBS + (overflow > 0 ? 1 : 0));
-  const size = coverHeight * EXERCISE_SCALE[cells - 1];
+  // Four exercises fill the four cells; a fifth turns the last cell into the
+  // counter, so it stands for the fourth exercise onwards.
+  const overflow = art.length > MAX_CELLS ? art.length - (MAX_CELLS - 1) : 0;
+  const thumbs = art.slice(0, MAX_CELLS - (overflow > 0 ? 1 : 0));
   const gap = coverHeight * EXERCISE_GAP_SCALE;
+  // Concentric with the cover rather than equal to it, the same rule a card
+  // inset in a sheet follows: the outer arc less the inset the cells sit at.
+  const radius = coverRadius(coverHeight * COVER_ASPECT) - gap;
+  const countSize = coverHeight * COUNT_SCALE;
 
-  const rows = EXERCISE_ROWS[cells - 1];
+  const cells = [
+    ...thumbs.map((entry, index) => (
+      <ThumbCell key={index} art={entry} radius={radius} />
+    )),
+    ...(overflow > 0
+      ? [
+          <OverflowCell
+            key="overflow"
+            count={overflow}
+            radius={radius}
+            fontSize={countSize}
+          />,
+        ]
+      : []),
+  ];
 
+  // Flex rather than a sizing table: the cells divide whatever the cover is,
+  // so the inset, the gaps and the cell size stay in step at any width without
+  // this ever measuring anything.
   return (
-    <View style={[StyleSheet.absoluteFill, styles.column, { gap }]}>
-      {rows.map((count, rowIndex) => {
-        const start = rows
-          .slice(0, rowIndex)
-          .reduce((sum, row) => sum + row, 0);
-        return (
-          <View key={rowIndex} style={[styles.row, { gap }]}>
-            {Array.from({ length: count }, (_, index) => {
-              const slot = start + index;
-              return overflow > 0 && slot === cells - 1 ? (
-                <OverflowCell key={slot} count={overflow} size={size} />
-              ) : (
-                <ThumbCell key={slot} art={art[slot]} size={size} />
-              );
-            })}
+    <View style={[StyleSheet.absoluteFill, { padding: gap, gap }]}>
+      {cells.length === 3 ? (
+        <View style={[styles.spread, styles.rowFlow, { gap }]}>
+          {cells[0]}
+          <View style={[styles.spread, { gap }]}>
+            {cells[1]}
+            {cells[2]}
           </View>
-        );
-      })}
+        </View>
+      ) : cells.length === 4 ? (
+        <>
+          <View style={[styles.spread, styles.rowFlow, { gap }]}>
+            {cells[0]}
+            {cells[1]}
+          </View>
+          <View style={[styles.spread, styles.rowFlow, { gap }]}>
+            {cells[2]}
+            {cells[3]}
+          </View>
+        </>
+      ) : (
+        <View style={[styles.spread, styles.rowFlow, { gap }]}>{cells}</View>
+      )}
     </View>
-  );
-}
-
-/** A custom exercise with no photo of its own stays an empty tile. */
-function ThumbCell({ art, size }: { art: ExerciseArt; size: number }) {
-  const thumb = exerciseThumbnail(art);
-  const ring = size * RING_SCALE;
-
-  return (
-    <Ring size={size}>
-      <View
-        style={[
-          tile(size - ring * 2, size * ART_CORNER_SCALE - ring),
-          styles.disc,
-        ]}
-      >
-        {thumb && (
-          <Image
-            source={thumb}
-            style={StyleSheet.absoluteFill}
-            contentFit="cover"
-            onError={(error) => reportMissingArt(art, error)}
-          />
-        )}
-      </View>
-    </Ring>
-  );
-}
-
-function OverflowCell({ count, size }: { count: number; size: number }) {
-  return (
-    <Ring size={size}>
-      <ThemedText
-        style={{
-          color: COVER_INK,
-          fontSize: size * COUNT_SCALE,
-          lineHeight: size * COUNT_SCALE * 1.2,
-        }}
-      >
-        {`+${count}`}
-      </ThemedText>
-    </Ring>
   );
 }
 
 /**
- * A wider half-transparent disc sitting *under* the thumbnail rather than a
- * border around it: a border draws its own edge against the image, and that
- * seam reads as a gap. The shadow lives out here too, where the clipped disc
- * inside cannot mask it.
+ * A custom exercise with no photo of its own stays an empty tile.
+ *
+ * The poster, not the thumbnail: a thumbnail is 150px for a 48pt list row, and
+ * a cell here is up to a whole card wide, where that reads as a blur. The
+ * poster is 720px and already bundled, so the sharpness costs nothing.
  */
-function Ring({ size, children }: { size: number; children: React.ReactNode }) {
+function ThumbCell({ art, radius }: { art: ExerciseArt; radius: number }) {
+  const poster = exercisePoster(art);
+
   return (
-    <View
-      style={[
-        tile(size, size * ART_CORNER_SCALE),
-        styles.ring,
-        { shadowRadius: size * SHADOW_SCALE },
-      ]}
-    >
-      {children}
+    <Tile radius={radius}>
+      {poster && (
+        <Image
+          source={poster}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          onError={(error) => reportMissingArt(art, error)}
+        />
+      )}
+    </Tile>
+  );
+}
+
+function OverflowCell({
+  count,
+  radius,
+  fontSize,
+}: {
+  count: number;
+  radius: number;
+  fontSize: number;
+}) {
+  return (
+    <View style={[styles.counter, { borderRadius: radius }]}>
+      <ThemedText
+        weight="semibold"
+        style={{ color: COVER_WASH_INK, fontSize, lineHeight: fontSize * 1.2 }}
+      >
+        {`+${count}`}
+      </ThemedText>
     </View>
   );
 }
 
-function tile(size: number, radius: number) {
-  return { width: size, height: size, borderRadius: radius };
+/**
+ * One cell of the grid. It takes its size from its share of the cover rather
+ * than from a fraction of the height, which is why the thumbnail inside is no
+ * longer square: a cell fills the space it is given.
+ */
+function Tile({
+  radius,
+  children,
+}: {
+  radius: number;
+  children: React.ReactNode;
+}) {
+  return <View style={[styles.tile, { borderRadius: radius }]}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
@@ -227,21 +241,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  column: {
+  spread: {
+    flex: 1,
+  },
+  rowFlow: {
+    flexDirection: "row",
+  },
+  counter: {
+    flex: 1,
+    backgroundColor: COVER_WASH,
     alignItems: "center",
     justifyContent: "center",
   },
-  ring: {
-    backgroundColor: COVER_RING,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.18,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 3,
-  },
-  disc: {
+  tile: {
+    flex: 1,
     backgroundColor: COVER_PAPER,
+    alignItems: "center",
+    justifyContent: "center",
     overflow: "hidden",
   },
 });

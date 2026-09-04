@@ -35,6 +35,7 @@ export type Scope =
   | 'purchases'
   | 'paywall'
   | 'pro-gates'
+  | 'achievements'
   | 'support';
 
 type Tags = Record<string, string | number | boolean>;

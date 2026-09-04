@@ -41,7 +41,11 @@ export default function AchievementsScreen() {
 
   return (
     <BadgeSpotlight>
-      <Header showLocked={showLocked} onToggle={() => setShowLocked((current) => !current)} />
+      <Header
+        showLocked={showLocked}
+        canToggle={items.length > 0}
+        onToggle={() => setShowLocked((current) => !current)}
+      />
 
       <ScrollView
         {...SHEET_SCROLL}
@@ -82,7 +86,15 @@ export default function AchievementsScreen() {
  * carries the way out instead of the filter. A close button of our own, drawn
  * in the overlay, would sit under that bar and never see a touch.
  */
-function Header({ showLocked, onToggle }: { showLocked: boolean; onToggle: () => void }) {
+function Header({
+  showLocked,
+  canToggle,
+  onToggle,
+}: {
+  showLocked: boolean;
+  canToggle: boolean;
+  onToggle: () => void;
+}) {
   const spotlight = useBadgeSpotlight();
 
   return (
@@ -91,9 +103,9 @@ function Header({ showLocked, onToggle }: { showLocked: boolean; onToggle: () =>
       right={
         spotlight.lifted != null ? (
           <CloseButton onPress={spotlight.close} />
-        ) : (
+        ) : canToggle ? (
           <HeaderPillButton title={showLocked ? 'Unlocked' : 'Show All'} onPress={onToggle} />
-        )
+        ) : null
       }
     />
   );

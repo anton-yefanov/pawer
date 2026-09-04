@@ -139,7 +139,7 @@
         "expo-media-library",
         {
           "photosPermission": "Allow pawer to show your photos so you can use one as a template cover or an exercise thumbnail.",
-          "savePhotosPermission": false,
+          "savePhotosPermission": "Allow Pawer to save your achievement cards to your photo library.",
           "isAccessMediaLocationEnabled": false,
           "preventAutomaticLimitedAccessAlert": true,
           "granularPermissions": [
@@ -181,7 +181,8 @@
           "project": "react-native",
           "organization": "ant-dream"
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "extra": {
       "revenueCat": {

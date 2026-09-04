@@ -8,38 +8,75 @@ type CardGradient = {
 };
 
 /**
- * Shared by every cover: a 3x3 grid whose middle row and column are pulled off
- * centre, so the blend reads as an organic wash rather than a symmetric cross.
+ * Every cover is the front face of the folder illustration: lit along the top,
+ * a shade deeper at the bottom, and darker again into the left and right edges.
+ * That corner shading is what makes a cover read as a panel rather than a
+ * coloured rectangle, and it is why a template and a folder sitting in one grid
+ * look like the same kind of object.
+ *
+ * The grid is symmetric — a panel is lit evenly, not washed — and the middle
+ * row sits low so the lit face keeps most of the height.
  */
 export const MESH_POINTS: number[][] = [
   [0, 0],
-  [0.62, 0],
+  [0.5, 0],
   [1, 0],
-  [0, 0.38],
-  [0.42, 0.55],
-  [1, 0.45],
+  [0, 0.58],
+  [0.5, 0.58],
+  [1, 0.58],
   [0, 1],
-  [0.35, 1],
+  [0.5, 1],
   [1, 1],
 ];
 
-// Colour reaches every vertex — a corner left on the lightest stop reads as a
-// white patch rather than a wash, which is what the flat covers never did.
-const ramp = (light: string, mid: string, deep: string): string[] => [
-  mid, light, mid,
-  deep, mid, light,
-  deep, deep, mid,
-];
+/**
+ * Sampled off `assets/images/folders/<color>.webp` at the nine vertices above,
+ * so a cover cannot drift from the icon it is drawn beside. Regenerate by
+ * sampling rather than by hand-picking a ramp — the icons are the source.
+ */
+const face = (...colors: string[]): CardGradient => ({ colors, flat: colors[4] });
 
 const GRADIENTS: Record<CardColor, CardGradient> = {
-  grey: { colors: ramp('#F4F4F3', '#DCDDDD', '#B6B8B8'), flat: '#DCDDDD' },
-  orange: { colors: ramp('#FCD8A8', '#F9B150', '#E1870D'), flat: '#F9B150' },
-  red: { colors: ramp('#FDB9B5', '#FB736B', '#D64137'), flat: '#FB736B' },
-  yellow: { colors: ramp('#FDEAA8', '#FBD550', '#C9A319'), flat: '#FBD550' },
-  purple: { colors: ramp('#DDB2EC', '#BB66DA', '#8F46A9'), flat: '#BB66DA' },
-  blue: { colors: ramp('#B7E8FC', '#6FD0F9', '#3997CB'), flat: '#6FD0F9' },
-  green: { colors: ramp('#ACEBCC', '#58D79A', '#16A362'), flat: '#58D79A' },
-  black: { colors: ramp('#5A5A5A', '#434343', '#1E1E1E'), flat: '#434343' },
+  grey: face(
+    '#B1B1B1', '#B9B9B9', '#B0B0B0',
+    '#A1A4A4', '#A9ACAB', '#A2A4A4',
+    '#858789', '#8B8D8F', '#868889',
+  ),
+  orange: face(
+    '#E6A454', '#EFAF5B', '#E7A452',
+    '#EFA445', '#F8B04D', '#F0A445',
+    '#E08A2A', '#E79330', '#E18A2B',
+  ),
+  red: face(
+    '#F06F69', '#F67871', '#F06F66',
+    '#F46860', '#F97269', '#F56860',
+    '#EA4D44', '#EE554C', '#EA4D45',
+  ),
+  yellow: face(
+    '#EBC753', '#F4D15C', '#ECC752',
+    '#F2CA45', '#FBD54F', '#F3CB46',
+    '#E6B52B', '#EBBE31', '#E6B62B',
+  ),
+  purple: face(
+    '#B871D4', '#BF78DA', '#B771D3',
+    '#B25ED1', '#B964D8', '#B25ED1',
+    '#9C43C0', '#A147C5', '#9C43C0',
+  ),
+  blue: face(
+    '#66C8F3', '#6CD0FA', '#65C7F4',
+    '#65C7F1', '#6DD0F7', '#66C7F2',
+    '#57B3E4', '#5DBAE7', '#57B4E4',
+  ),
+  green: face(
+    '#64D49E', '#69DAA5', '#63D39D',
+    '#4FCD91', '#55D599', '#4FCD91',
+    '#33B976', '#38BF7C', '#34BA78',
+  ),
+  black: face(
+    '#484848', '#4E4E4E', '#484848',
+    '#3B3B3B', '#414141', '#3B3B3B',
+    '#272727', '#2A2A2A', '#272727',
+  ),
 };
 
 export function cardGradient(color: CardColor | string | null | undefined): CardGradient {

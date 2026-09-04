@@ -60,6 +60,12 @@ export function photoArtwork(file: string | null | undefined): CardArtwork | nul
   return file ? { kind: 'photo', file } : null;
 }
 
+/** A photo covers the cover outright, so the hue behind it is real but invisible
+ *  and the picker has nothing to change. */
+export function hidesCardColor(artwork: CardArtwork | null): boolean {
+  return artwork?.kind === 'photo';
+}
+
 export function artworkPhotoFile(artwork: CardArtwork | null): string | null {
   return artwork?.kind === 'photo' ? artwork.file : null;
 }

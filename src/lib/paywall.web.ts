@@ -1,7 +1,6 @@
 export type PaywallOutcome = 'purchased' | 'dismissed' | 'error';
 
 export type PaywallSource =
-  | 'first_workout'
   | 'template_limit'
   | 'custom_exercise_limit'
   | 'analytics_period'

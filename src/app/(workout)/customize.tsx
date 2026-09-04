@@ -25,6 +25,7 @@ import {
   type CardArtwork,
   emojiArtwork,
   EXERCISES_ARTWORK,
+  hidesCardColor,
   MAX_EMOJI,
   photoArtwork,
 } from '@/lib/card-artwork';
@@ -200,7 +201,11 @@ export default function CustomizeScreen() {
         {clear}
       </View>
       <View style={styles.colors}>
-        <ColorPicker selected={color} onSelect={setPickedColor} />
+        <ColorPicker
+          selected={color}
+          onSelect={setPickedColor}
+          disabled={hidesCardColor(artwork)}
+        />
       </View>
       {!isFolder && <ArtworkTabs mode={mode} onChange={setPickedMode} />}
     </>

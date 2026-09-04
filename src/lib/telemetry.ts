@@ -73,6 +73,7 @@ type TelemetryEvents = {
   support_message_sent: { sent: boolean; length: number };
   achievements_opened: { unlocked: number; exercises: number };
   achievement_badge_viewed: { tier: AchievementTier['id']; unlocked: boolean };
+  achievement_shared: { tier: AchievementTier['id']; action: 'share' | 'save' };
   review_opened: { source: 'settings' };
   app_error: { scope: string; message: string };
 };

@@ -9,7 +9,6 @@ import {
   TILE_INSET,
 } from "@/components/grouped-list";
 import { IconTile } from "@/components/icon-tile";
-import { ProBanner } from "@/components/settings/pro-banner";
 import { ToggleRow } from "@/components/settings/toggle-row";
 import { BottomTabInset, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
@@ -78,13 +77,6 @@ export default function SettingsScreen() {
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic"
     >
-      {!isPro && (
-        <ProBanner
-          label={`Upgrade to ${PRO_NAME}`}
-          onPress={() => void presentPaywall("settings")}
-        />
-      )}
-
       <Card>
         <DisclosureRow
           label="Dark Theme"
@@ -164,11 +156,19 @@ export default function SettingsScreen() {
             onPress={() => void presentCustomerCenter()}
           />
         ) : (
-          <DisclosureRow
-            label="Restore Purchases"
-            leading={<IconTile name="arrow.clockwise" tint="grey" />}
-            onPress={() => void onRestorePressed()}
-          />
+          <>
+            <DisclosureRow
+              label={`Upgrade to ${PRO_NAME}`}
+              leading={<IconTile name="bolt.fill" tint="purple" />}
+              onPress={() => void presentPaywall("settings")}
+            />
+            <Separator inset={TILE_INSET} />
+            <DisclosureRow
+              label="Restore Purchases"
+              leading={<IconTile name="arrow.clockwise" tint="grey" />}
+              onPress={() => void onRestorePressed()}
+            />
+          </>
         )}
       </Card>
     </ScrollView>

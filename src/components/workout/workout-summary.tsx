@@ -19,8 +19,6 @@ import { achievementSessionsQuery } from '@/lib/achievement-queries';
 import { badgesEarnedAt, buildAchievements } from '@/lib/achievements';
 import * as haptics from '@/lib/haptics';
 import { attempt } from '@/lib/observability';
-import { presentFirstWorkoutPaywall } from '@/lib/pro-gates';
-import { usePro } from '@/lib/purchases';
 import { useLiveRows } from '@/lib/use-live-rows';
 import { useWeightUnit } from '@/lib/weight-unit';
 import { useIncludeWarmup } from '@/lib/warmup-stats';
@@ -41,7 +39,6 @@ export function WorkoutSummary({ id }: { id: string }) {
   const theme = useTheme();
   const unit = useWeightUnit();
   const includeWarmup = useIncludeWarmup();
-  const isPro = usePro();
 
   const workout = useLiveRows(() => workoutQuery(id), id)[0];
   const exercises = useLiveRows(() => workoutExercisesQuery(id), id);
@@ -77,12 +74,7 @@ export function WorkoutSummary({ id }: { id: string }) {
 
   if (!workout) return <View style={{ flex: 1, backgroundColor: theme.background }} />;
 
-  // The paywall is presented over the summary rather than after it: a modal
-  // raised into a dismissing screen is a modal iOS drops on the floor.
-  const done = async () => {
-    await attempt('pro-gates', presentFirstWorkoutPaywall(isPro));
-    router.dismissAll();
-  };
+  const done = () => router.dismissAll();
 
   return (
     <View style={styles.container}>

@@ -16,11 +16,9 @@ export type PaywallOutcome = 'purchased' | 'dismissed' | 'error';
 
 /**
  * Which gate raised the paywall. RevenueCat's own events can't know this, and
- * it is the whole point of measuring the placement at all — §4 of the plan bets
- * on the first-workout one, and this is what tells us whether the bet paid.
+ * it is the whole point of measuring which placements convert.
  */
 export type PaywallSource =
-  | 'first_workout'
   | 'template_limit'
   | 'custom_exercise_limit'
   | 'analytics_period'

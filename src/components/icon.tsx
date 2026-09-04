@@ -2,6 +2,7 @@ import { SymbolView, type SymbolViewProps } from "expo-symbols";
 import type { Icon as PhosphorIcon, IconWeight } from "phosphor-react-native";
 import { ArrowClockwiseIcon } from "phosphor-react-native/src/icons/ArrowClockwise";
 import { ArrowDownRightIcon } from "phosphor-react-native/src/icons/ArrowDownRight";
+import { ArrowLineDownIcon } from "phosphor-react-native/src/icons/ArrowLineDown";
 import { ArrowSquareOutIcon } from "phosphor-react-native/src/icons/ArrowSquareOut";
 import { ArrowUpRightIcon } from "phosphor-react-native/src/icons/ArrowUpRight";
 import { ArrowsClockwiseIcon } from "phosphor-react-native/src/icons/ArrowsClockwise";
@@ -19,6 +20,7 @@ import { CopyIcon } from "phosphor-react-native/src/icons/Copy";
 import { DotsSixVerticalIcon } from "phosphor-react-native/src/icons/DotsSixVertical";
 import { DotsThreeIcon } from "phosphor-react-native/src/icons/DotsThree";
 import { DownloadSimpleIcon } from "phosphor-react-native/src/icons/DownloadSimple";
+import { ExportIcon } from "phosphor-react-native/src/icons/Export";
 import { FilePlusIcon } from "phosphor-react-native/src/icons/FilePlus";
 import { FlameIcon } from "phosphor-react-native/src/icons/Flame";
 import { FolderIcon } from "phosphor-react-native/src/icons/Folder";
@@ -79,6 +81,10 @@ const ICONS = {
   "arrow.down.right": {
     symbol: { ios: "arrow.down.right", android: "south_east" },
     glyph: ArrowDownRightIcon,
+  },
+  "arrow.down.to.line": {
+    symbol: { ios: "arrow.down.to.line", android: "download" },
+    glyph: ArrowLineDownIcon,
   },
   "arrow.clockwise": {
     symbol: { ios: "arrow.clockwise", android: "refresh" },
@@ -271,6 +277,10 @@ const ICONS = {
   "square.and.arrow.down": {
     symbol: { ios: "square.and.arrow.down", android: "download" },
     glyph: DownloadSimpleIcon,
+  },
+  "square.and.arrow.up": {
+    symbol: { ios: "square.and.arrow.up", android: "ios_share" },
+    glyph: ExportIcon,
   },
   "text.badge.minus": {
     symbol: { ios: "text.badge.minus", android: "speaker_notes_off" },
