@@ -36,7 +36,7 @@ export default function AchievementsScreen() {
   useEffect(() => {
     if (reported.current || data == null) return;
     reported.current = true;
-    track('achievements_opened', { unlocked: earned, exercises: items.length });
+    track('achievements_opened', {});
   }, [data, earned, items.length]);
 
   return (

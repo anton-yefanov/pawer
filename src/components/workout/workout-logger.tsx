@@ -5,7 +5,6 @@ import { KeyboardDismissButton } from '@/components/keyboard-dismiss';
 import { KeyboardScrollView } from '@/components/keyboard-scroll-view';
 import { SheetHeader } from '@/components/sheet-header';
 import { SheetOverlay } from '@/components/sheet-overlay';
-import { ThemedText } from '@/components/themed-text';
 import { BigButton } from '@/components/workout/big-button';
 import { ConfirmAlert } from '@/components/workout/confirm-alert';
 import { ConfirmFinish } from '@/components/workout/confirm-finish';
@@ -29,7 +28,6 @@ import { useProgressiveMount } from '@/hooks/use-progressive-mount';
 import { useTheme } from '@/hooks/use-theme';
 import { useLiveRows } from '@/lib/use-live-rows';
 import { useWeightUnit } from '@/lib/weight-unit';
-import { useIncludeWarmup } from '@/lib/warmup-stats';
 import * as haptics from '@/lib/haptics';
 import type { LoggedSet, LoggingActions } from '@/lib/logging-model';
 import { attempt } from '@/lib/observability';
@@ -55,16 +53,8 @@ import {
   setWorkoutExerciseRest,
   updateSetValues,
 } from '@/lib/workout-actions';
-import {
-  finishedWorkoutCount,
-  groupBy,
-  previousSetsQuery,
-  workoutExercisesQuery,
-  workoutPersonalRecordsQuery,
-  workoutQuery,
-  workoutSetsQuery,
-} from '@/lib/workout-queries';
-import { hasIncompleteValidSets, summarise, trackingByExercise } from '@/lib/workout-stats';
+import { groupBy, previousSetsQuery, workoutExercisesQuery, workoutQuery, workoutSetsQuery } from '@/lib/workout-queries';
+import { hasIncompleteValidSets, trackingByExercise } from '@/lib/workout-stats';
 
 /**
  * Module scope keeps the identity stable without a hook. The superset pair is
@@ -123,7 +113,6 @@ export function WorkoutLogger({
 }: Props) {
   const theme = useTheme();
   const unit = useWeightUnit();
-  const includeWarmup = useIncludeWarmup();
   const rest = useRestTimer();
 
   const [confirming, setConfirming] = useState(false);
@@ -233,19 +222,9 @@ export function WorkoutLogger({
 
     onFinished?.();
 
-    // Read the rows the finish just wrote rather than the live query, which
-    // hasn't re-rendered yet.
-    const earned = await workoutPersonalRecordsQuery(id);
-
-    const totals = summarise(workout, exercises, sets, includeWarmup);
-    track('workout_finished', {
-      duration_min: Math.round(totals.durationMs / 60_000),
-      exercise_count: totals.exerciseCount,
-      set_count: totals.completedSets,
-      volume_kg: Math.round(totals.volumeKg),
-      prs_earned: earned.length,
-      workout_index: await finishedWorkoutCount(),
-    });
+    // Analytics records only that a workout finished. Workout totals, sets,
+    // personal records, and exercise counts never leave the device.
+    track('workout_finished', {});
   };
 
   const save = async () => {
@@ -267,7 +246,7 @@ export function WorkoutLogger({
     if (!cancelled) return;
     // Tracked here rather than in `cancelWorkout`, which `deleteWorkout` also
     // calls — deleting a finished session from history is not an abandonment.
-    track('workout_cancelled', { had_sets: sets.some((set) => set.completed) });
+    track('workout_cancelled', {});
     onDone();
   };
 

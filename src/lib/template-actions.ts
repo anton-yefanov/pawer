@@ -108,7 +108,7 @@ export async function createTemplate({
     if (planned.length > 0) await db.insert(templateSets).values(planned);
   }
 
-  track('template_created', { source: 'blank', exercise_count: exercises.length });
+  track('template_created', { source: 'blank' });
   return id;
 }
 
@@ -199,7 +199,7 @@ export async function createTemplateFromWorkout(workoutId: string): Promise<stri
     await db.insert(templateSets).values(planned);
   }
 
-  track('template_created', { source: 'from_workout', exercise_count: rows.length });
+  track('template_created', { source: 'from_workout' });
   return id;
 }
 
@@ -403,7 +403,7 @@ export async function duplicateTemplate(templateId: string): Promise<string> {
     }
   }
 
-  track('template_created', { source: 'duplicate', exercise_count: rows.length });
+  track('template_created', { source: 'duplicate' });
   return id;
 }
 
@@ -525,6 +525,6 @@ export async function startWorkoutFromTemplate(templateId: string): Promise<Star
     .set({ lastUsedAt: startedAt, ...touch() })
     .where(eq(templates.id, templateId));
 
-  track('workout_started', { source: 'template', exercise_count: planned.length });
+  track('workout_started', { source: 'template' });
   return { status: 'started', workoutId };
 }

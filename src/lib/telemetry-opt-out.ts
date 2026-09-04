@@ -2,19 +2,20 @@ import { db } from '@/db/client';
 import { getSetting, setSetting } from '@/db/seed';
 import { setOptedOut } from '@/lib/telemetry';
 
-export const TELEMETRY_OPT_OUT_KEY = 'telemetry_opt_out';
+const TELEMETRY_CONSENT_KEY = 'telemetry_consent';
 
-export async function readTelemetryOptOut(): Promise<boolean> {
-  return (await getSetting(db, TELEMETRY_OPT_OUT_KEY)) === 'true';
+/** `null` means the user has not yet made a choice. */
+export async function readTelemetryConsent(): Promise<boolean | null> {
+  const value = await getSetting(db, TELEMETRY_CONSENT_KEY);
+  if (value === null) return null;
+  return value === 'true';
 }
 
 /**
- * Both, on purpose. The row is what the Settings toggle renders, since the
- * SDK's own flag is only readable once it has finished loading its store; the
- * SDK's flag is what actually suppresses events, and it is the one that is
- * honoured on the next launch before a single lifecycle event fires.
+ * Both values are written deliberately: the database row is the app's source
+ * of truth, and the SDK flag suppresses events before the next lifecycle event.
  */
-export async function writeTelemetryOptOut(next: boolean): Promise<void> {
-  setOptedOut(next);
-  await setSetting(db, TELEMETRY_OPT_OUT_KEY, String(next));
+export async function writeTelemetryConsent(consented: boolean): Promise<void> {
+  setOptedOut(!consented);
+  await setSetting(db, TELEMETRY_CONSENT_KEY, String(consented));
 }

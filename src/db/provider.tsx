@@ -63,7 +63,7 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
     if (!error) return;
     // Otherwise the worst thing that can happen to a local-first app is
     // invisible: the user sees this screen and we never hear about it.
-    track('app_error', { scope, message: error.message });
+    track('app_error', { scope });
     report(scope, error, { seedVersion: SEED_VERSION });
     // `AnimatedSplashOverlay` is the only thing that calls `hideAsync`, and it
     // renders below this provider — which never reaches its children on this

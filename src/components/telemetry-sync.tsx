@@ -1,10 +1,10 @@
 import { usePathname } from 'expo-router';
 import { useEffect } from 'react';
 
-import { setObservabilityTags, setObservabilityUser } from '@/lib/observability';
+import { setObservabilityTags } from '@/lib/observability';
 import { usePro } from '@/lib/purchases';
-import { distinctId, registerContext, screen, setOptedOut } from '@/lib/telemetry';
-import { readTelemetryOptOut } from '@/lib/telemetry-opt-out';
+import { registerContext, screen, setOptedOut } from '@/lib/telemetry';
+import { readTelemetryConsent } from '@/lib/telemetry-opt-out';
 import { useWeightUnit } from '@/lib/weight-unit';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -24,15 +24,8 @@ export function TelemetrySync() {
     setObservabilityTags({ is_pro: isPro, weight_unit: weightUnit });
   }, [isPro, weightUnit]);
 
-  // There are no accounts, so PostHog's anonymous id is the person — sharing it
-  // is what puts a crash and the `paywall_shown` that preceded it on the same
-  // timeline. It is the only identifier Sentry gets; `scrub` drops the rest.
   useEffect(() => {
-    setObservabilityUser(distinctId());
-  }, []);
-
-  useEffect(() => {
-    void readTelemetryOptOut().then(setOptedOut);
+    void readTelemetryConsent().then((consented) => setOptedOut(consented !== true));
   }, []);
 
   useEffect(() => {

@@ -20,7 +20,7 @@ export async function sendSupportMessage(input: SupportMessage): Promise<boolean
   const email = input.email.trim();
 
   const sent = await captureFeedback({ name, email, message });
-  track('support_message_sent', { sent, length: message.length });
+  track('support_message_sent', { sent });
   if (!sent) return false;
 
   // Silent on failure: the message is already away, and nobody needs an alert

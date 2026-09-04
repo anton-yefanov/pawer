@@ -15,6 +15,11 @@ import { useTheme } from "@/hooks/use-theme";
 import { openReview } from "@/lib/app-store-review";
 import { useAutofillWeightPreference } from "@/lib/autofill-weight";
 import {
+  openLegalDocument,
+  PRIVACY_POLICY_URL,
+  TERMS_OF_SERVICE_URL,
+} from "@/lib/legal";
+import {
   FINISH_REMINDER_OPTIONS,
   useFinishReminder,
 } from "@/lib/finish-reminder";
@@ -22,8 +27,8 @@ import { notice } from "@/lib/notice";
 import { presentCustomerCenter, presentPaywall } from "@/lib/paywall";
 import { PRO_NAME, usePurchases } from "@/lib/purchases";
 import {
-  readTelemetryOptOut,
-  writeTelemetryOptOut,
+  readTelemetryConsent,
+  writeTelemetryConsent,
 } from "@/lib/telemetry-opt-out";
 import { THEME_PREFERENCES, useThemePreference } from "@/lib/theme-preference";
 import { useWarmupStatsPreference } from "@/lib/warmup-stats";
@@ -45,14 +50,14 @@ export default function SettingsScreen() {
     useWarmupStatsPreference();
   const { option: finishReminder } = useFinishReminder();
   const { isPro, restore } = usePurchases();
-  const [shareUsage, setShareUsage] = useState(true);
+  const [shareUsage, setShareUsage] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     void attempt(
       "settings",
-      readTelemetryOptOut().then((optedOut) => {
-        if (!cancelled) setShareUsage(!optedOut);
+      readTelemetryConsent().then((consented) => {
+        if (!cancelled) setShareUsage(consented === true);
       }),
     );
     return () => {
@@ -128,13 +133,35 @@ export default function SettingsScreen() {
           value={shareUsage}
           onChange={(next) => {
             setShareUsage(next);
-            void attempt("settings", writeTelemetryOptOut(!next), {
+            void attempt("settings", writeTelemetryConsent(next), {
               title: "Couldn’t save setting",
               message: "Please try again.",
             }).then((written) => {
               if (!written) setShareUsage(!next);
             });
           }}
+        />
+        <Separator inset={TILE_INSET} />
+        <DisclosureRow
+          label="Privacy Policy"
+          leading={<IconTile name="lock.fill" tint="blue" />}
+          onPress={() =>
+            void attempt("settings", openLegalDocument(PRIVACY_POLICY_URL), {
+              title: "Couldn’t open Privacy Policy",
+              message: "Please try again.",
+            })
+          }
+        />
+        <Separator inset={TILE_INSET} />
+        <DisclosureRow
+          label="Terms of Service"
+          leading={<IconTile name="doc.badge.plus" tint="indigo" />}
+          onPress={() =>
+            void attempt("settings", openLegalDocument(TERMS_OF_SERVICE_URL), {
+              title: "Couldn’t open Terms of Service",
+              message: "Please try again.",
+            })
+          }
         />
         <Separator inset={TILE_INSET} />
         <DisclosureRow

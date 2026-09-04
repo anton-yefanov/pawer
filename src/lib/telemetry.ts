@@ -2,13 +2,9 @@ import Constants from 'expo-constants';
 import PostHog from 'posthog-react-native';
 
 import type { AchievementTier } from '@/constants/achievement-tiers';
-import { breadcrumb } from '@/lib/observability';
 import type { PaywallOutcome, PaywallSource } from '@/lib/paywall';
 import type { TrackingType } from '@/lib/tracking-types';
 import type { WeightUnit } from '@/lib/units';
-
-/** Flip to true to send events from a dev build while checking the wiring. */
-const TRACK_IN_DEV = false;
 
 const config = (Constants.expoConfig?.extra?.posthog ?? {}) as {
   apiKey?: string;
@@ -28,7 +24,10 @@ const config = (Constants.expoConfig?.extra?.posthog ?? {}) as {
 const client = config.apiKey
   ? new PostHog(config.apiKey, {
       host: config.host,
-      disabled: __DEV__ && !TRACK_IN_DEV,
+      // Analytics stays off until the user has made an explicit choice during
+      // onboarding. This also suppresses automatic lifecycle events at launch.
+      disabled: true,
+      disableGeoip: true,
       captureAppLifecycleEvents: true,
       enableSessionReplay: false,
       // Everything this SDK can be talked out of asking for, it is: left at
@@ -53,42 +52,28 @@ if (!client) console.warn('[telemetry] no posthog.apiKey in app.json extra; anal
  * failed analytics write must never cost a user their workout.
  */
 type TelemetryEvents = {
-  onboarding_step_viewed: { step: number; name: string };
-  onboarding_completed: { unit: WeightUnit; notifications_granted: boolean };
-  workout_started: { source: 'empty' | 'template' | 'repeat'; exercise_count: number };
-  workout_finished: {
-    duration_min: number;
-    exercise_count: number;
-    set_count: number;
-    volume_kg: number;
-    prs_earned: number;
-    workout_index: number;
-  };
-  workout_cancelled: { had_sets: boolean };
-  template_created: { source: 'blank' | 'from_workout' | 'duplicate'; exercise_count: number };
+  onboarding_step_viewed: { name: string };
+  onboarding_completed: { notifications_granted: boolean };
+  workout_started: { source: 'empty' | 'template' | 'repeat' };
+  workout_finished: Record<never, never>;
+  workout_cancelled: Record<never, never>;
+  template_created: { source: 'blank' | 'from_workout' | 'duplicate' };
   custom_exercise_created: { tracking_type: TrackingType };
   paywall_shown: { source: PaywallSource };
   paywall_result: { source: PaywallSource; outcome: PaywallOutcome };
   pro_restored: { found: boolean };
-  support_message_sent: { sent: boolean; length: number };
-  achievements_opened: { unlocked: number; exercises: number };
-  achievement_badge_viewed: { tier: AchievementTier['id']; unlocked: boolean };
+  support_message_sent: { sent: boolean };
+  achievements_opened: Record<never, never>;
+  achievement_badge_viewed: Record<never, never>;
   achievement_shared: { tier: AchievementTier['id']; action: 'share' | 'save' };
   review_opened: { source: 'settings' };
-  app_error: { scope: string; message: string };
+  app_error: { scope: string };
 };
 
 export function track<K extends keyof TelemetryEvents>(
   event: K,
   properties: TelemetryEvents[K]
 ): void {
-  // Also a Sentry breadcrumb, and unconditionally — the events above are
-  // already the flat enums and counts a crash report wants attached, so a crash
-  // arrives knowing the workout was finished and the paywall was shown rather
-  // than nothing at all. It runs outside the PostHog guard because a missing
-  // analytics key must not cost the diagnostics.
-  breadcrumb('app', event, properties);
-
   if (!client) return;
   try {
     client.capture(event, properties);
@@ -106,7 +91,7 @@ export function screen(name: string): void {
   }
 }
 
-/** Super properties, so every event is filterable by plan and unit. */
+/** Super properties, so every consented event is filterable by plan and unit. */
 export function registerContext(context: { isPro: boolean; weightUnit: WeightUnit }): void {
   if (!client) return;
   try {
@@ -120,8 +105,7 @@ export function registerContext(context: { isPro: boolean; weightUnit: WeightUni
 
 /**
  * The SDK persists this itself and honours it before lifecycle events fire on
- * the next launch, which is what makes the Settings toggle a real opt-out
- * rather than a decoration.
+ * the next launch. `true` means analytics remain disabled.
  */
 export function setOptedOut(next: boolean): void {
   if (!client) return;
@@ -131,21 +115,6 @@ export function setOptedOut(next: boolean): void {
     );
   } catch (error) {
     warn('optOut', error);
-  }
-}
-
-/**
- * There are no accounts, so PostHog's own anonymous id is the person and
- * nothing calls `identify`. This is only here to hand RevenueCat the id it
- * needs to attribute a subscription to the same person.
- */
-export function distinctId(): string | null {
-  if (!client) return null;
-  try {
-    return client.getDistinctId() || null;
-  } catch (error) {
-    warn('getDistinctId', error);
-    return null;
   }
 }
 

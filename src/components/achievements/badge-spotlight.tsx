@@ -123,10 +123,7 @@ export function BadgeSpotlight({ children }: { children: React.ReactNode }) {
         -1,
         false,
       );
-      track('achievement_badge_viewed', {
-        tier: next.tier.id,
-        unlocked: next.unlocked,
-      });
+      track('achievement_badge_viewed', {});
     });
   };
 

@@ -39,7 +39,7 @@ export async function startEmptyWorkout(): Promise<StartWorkoutResult> {
   const id = newId();
   const startedAt = Date.now();
   await db.insert(workouts).values({ id, startedAt, createdAt: startedAt, updatedAt: startedAt });
-  track('workout_started', { source: 'empty', exercise_count: 0 });
+  track('workout_started', { source: 'empty' });
   return { status: 'started', workoutId: id };
 }
 
@@ -421,7 +421,7 @@ export async function repeatWorkout(workoutId: string): Promise<StartWorkoutResu
     );
   }
 
-  track('workout_started', { source: 'repeat', exercise_count: planned.length });
+  track('workout_started', { source: 'repeat' });
   return { status: 'started', workoutId: id };
 }
 
