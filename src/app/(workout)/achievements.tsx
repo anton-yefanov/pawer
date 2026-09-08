@@ -1,12 +1,11 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 
 import { BadgeSpotlight, useBadgeSpotlight } from '@/components/achievements/badge-spotlight';
 import { ExerciseAchievements } from '@/components/achievements/exercise-achievements';
-import { Icon } from '@/components/icon';
+import { EmptyState } from '@/components/empty-state';
 import { SheetHeader } from '@/components/sheet-header';
-import { ThemedText } from '@/components/themed-text';
 import { CloseButton, HeaderPillButton } from '@/components/workout/workout-sheet-header';
 import { SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
@@ -53,14 +52,15 @@ export default function AchievementsScreen() {
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic">
         {visible.length === 0 ? (
-          <View style={styles.empty}>
-            <Icon name="trophy.fill" size={44} tintColor={theme.textSecondary} />
-            <ThemedText type="footnote" themeColor="textSecondary" style={styles.emptyText}>
-              {items.length === 0
-                ? 'Log a workout and the badges you earn on every exercise show up here'
-                : 'Nothing unlocked yet — Show All lists what each exercise you have trained is asking for'}
-            </ThemedText>
-          </View>
+          <EmptyState
+            icon="trophy.fill"
+            style={styles.empty}
+            text={
+              items.length === 0
+                ? 'Log a workout to start earning badges'
+                : 'Nothing unlocked yet — Show All lists what to aim for'
+            }
+          />
         ) : (
           visible.map((item) => (
             <ExerciseAchievements
@@ -118,11 +118,6 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   empty: {
-    alignItems: 'center',
-    gap: Spacing.two,
     paddingVertical: Spacing.six,
-  },
-  emptyText: {
-    textAlign: 'center',
   },
 });

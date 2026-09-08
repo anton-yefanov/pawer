@@ -2,6 +2,10 @@ import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { AreaChart } from "@/components/analytics/area-chart";
+import {
+  CardPlaceholder,
+  placeholderSeries,
+} from "@/components/analytics/placeholder";
 import { ThemedText } from "@/components/themed-text";
 import { Spacing } from "@/constants/theme";
 import { useEasedProgress } from "@/hooks/use-eased-progress";
@@ -20,12 +24,15 @@ export function MetricChart({
   total,
   format,
   period,
+  placeholder,
 }: {
   title: string;
   series: Series;
   total: number;
   format: (value: number) => string;
   period: PeriodId;
+  /** A week of believable values, in this metric's own unit, for the empty card. */
+  placeholder: readonly number[];
 }) {
   const theme = useTheme();
   const [selected, setSelected] = useState<number | null>(null);
@@ -52,6 +59,7 @@ export function MetricChart({
 
   const point = selected === null ? undefined : shown.points[selected];
   const empty = shown.points.length === 0;
+  const preview = useMemo(() => placeholderSeries(placeholder), [placeholder]);
 
   return (
     <View
@@ -65,7 +73,7 @@ export function MetricChart({
     >
       <View style={styles.header}>
         <ThemedText type="headline" numberOfLines={1} style={styles.title}>
-          {title} ({series.label})
+          {empty ? title : `${title} (${series.label})`}
         </ThemedText>
         {!empty && (
           <Pressable
@@ -115,13 +123,27 @@ export function MetricChart({
           />
         </>
       ) : (
-        <ThemedText
-          type="footnote"
-          themeColor="textSecondary"
-          style={styles.empty}
-        >
-          No finished workouts in this period.
-        </ThemedText>
+        <CardPlaceholder text="Log a workout to unlock">
+          <View style={styles.placeholder}>
+            <View style={styles.readout}>
+              <ThemedText type="title1" numeric>
+                {format(placeholder.reduce((sum, value) => sum + value, 0))}
+              </ThemedText>
+              <ThemedText type="footnote" themeColor="textSecondary">
+                {periodLabel(period)}
+              </ThemedText>
+            </View>
+
+            <AreaChart
+              points={preview}
+              bucket="day"
+              selected={null}
+              onSelect={() => {}}
+              formatValue={format}
+              muted
+            />
+          </View>
+        </CardPlaceholder>
       )}
     </View>
   );
@@ -151,7 +173,7 @@ const styles = StyleSheet.create({
   readout: {
     gap: Spacing.half,
   },
-  empty: {
-    paddingBottom: Spacing.one,
+  placeholder: {
+    gap: Spacing.three,
   },
 });

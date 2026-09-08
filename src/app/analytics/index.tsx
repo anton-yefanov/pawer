@@ -42,6 +42,14 @@ import {
 import { useIncludeWarmup } from "@/lib/warmup-stats";
 import { formatHoursMinutes } from "@/lib/workout-stats";
 
+const MINUTE = 60_000;
+
+/** A believable training week, drawn dimmed behind the lock on an empty card. */
+const PLACEHOLDER_TONNAGE_KG = [4200, 5100, 3800, 6200, 5400, 7000, 6100, 7600];
+const PLACEHOLDER_DURATION_MS = [45, 62, 51, 70, 58, 74, 63, 81].map(
+  (minutes) => minutes * MINUTE,
+);
+
 export default function AnalyticsScreen() {
   const theme = useTheme();
   const unit = useWeightUnit();
@@ -277,6 +285,7 @@ export default function AnalyticsScreen() {
         total={totals.volumeKg}
         format={(value) => formatTonnage(value, unit)}
         period={period}
+        placeholder={PLACEHOLDER_TONNAGE_KG}
       />
 
       <MetricChart
@@ -285,6 +294,7 @@ export default function AnalyticsScreen() {
         total={totals.durationMs}
         format={formatHoursMinutes}
         period={period}
+        placeholder={PLACEHOLDER_DURATION_MS}
       />
     </ScrollView>
   );

@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import { StyleSheet, View } from "react-native";
 
+import { CardPlaceholder } from "@/components/analytics/placeholder";
 import { PrChip } from "@/components/pr-chip";
 import { ThemedText } from "@/components/themed-text";
 import { Spacing } from "@/constants/theme";
@@ -11,6 +12,13 @@ import type { WeightUnit } from "@/lib/units";
 
 /** A highlight reel, not a log: a hard quarter can set dozens of records. */
 const VISIBLE = 8;
+
+/** Shape only: an empty card previews its own layout under the "no records" pill. */
+const PLACEHOLDER_ROWS = [
+  { name: "Bench Press", kind: "heaviest_weight", value: 80 },
+  { name: "Back Squat", kind: "best_1rm", value: 120 },
+  { name: "Deadlift", kind: "best_volume", value: 4200 },
+] as const;
 
 export function RecordsCard({
   records,
@@ -45,11 +53,29 @@ export function RecordsCard({
       </View>
 
       {shown.length === 0 ? (
-        <View style={styles.empty}>
-          <ThemedText type="footnote" themeColor="textSecondary">
-            No records this period
-          </ThemedText>
-        </View>
+        <CardPlaceholder text="Log a workout to unlock">
+          {PLACEHOLDER_ROWS.map((row, index) => (
+            <Fragment key={row.name}>
+              {index > 0 && (
+                <View
+                  style={[
+                    styles.divider,
+                    { backgroundColor: theme.backgroundElement },
+                  ]}
+                />
+              )}
+              <View style={styles.row}>
+                <ThemedText numberOfLines={1} style={styles.name}>
+                  {row.name}
+                </ThemedText>
+                <PrChip label={PR_LABELS[row.kind]} />
+                <ThemedText type="headline" numeric style={styles.value}>
+                  {formatPrValue(row.kind, row.value, unit)}
+                </ThemedText>
+              </View>
+            </Fragment>
+          ))}
+        </CardPlaceholder>
       ) : (
         <View>
           {shown.map((record, index) => (
@@ -126,8 +152,5 @@ const styles = StyleSheet.create({
   },
   value: {
     marginLeft: "auto",
-  },
-  empty: {
-    gap: Spacing.one,
   },
 });

@@ -200,7 +200,7 @@ export default function StartWorkoutScreen() {
             folders={folderCards}
             showAdd
             draggable
-            emptyHint="Create templates and folders with the plus button above, or duplicate any from the library below"
+            emptyHint="Add a template with the plus button, or duplicate one below"
           />
 
           <TemplateSection title="Library" templates={builtInCards} collapsible />

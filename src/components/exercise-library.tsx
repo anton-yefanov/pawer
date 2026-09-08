@@ -17,6 +17,7 @@ import { CircleButton } from '@/components/circle-button';
 import { ExerciseThumb } from '@/components/exercise-thumb';
 import { ExerciseSearchBar, SEARCH_BAR_CLEARANCE } from '@/components/exercise-search-bar';
 import { FloatingSurface } from '@/components/floating-surface';
+import { EmptyState } from '@/components/empty-state';
 import { Icon } from '@/components/icon';
 import { KeyboardDismissButton } from '@/components/keyboard-dismiss';
 import { Pressable as PressableButton } from '@/components/pressable';
@@ -256,16 +257,19 @@ export function ExerciseLibrary({
           stay put — a filled content box scrolls. This is the pane itself.
         */}
         {data?.length === 0 && (
-          <View style={[styles.empty, emptyPadding]} pointerEvents="box-none">
-            <ThemedText style={styles.emptyText} themeColor="textSecondary">
-              {isFiltered || group
-                ? 'No exercises match these filters.'
-                : 'No exercises. The library seeds on first launch.'}
-            </ThemedText>
+          <EmptyState
+            icon={isFiltered || group ? 'magnifyingglass' : 'dumbbell'}
+            text={
+              isFiltered || group
+                ? 'No exercises match these filters'
+                : 'No exercises. The library seeds on first launch.'
+            }
+            style={[styles.empty, emptyPadding]}
+            pointerEvents="box-none">
             {(isFiltered || group) && (
               <ClearFiltersButton onPress={() => setFilters(NO_FILTERS)} />
             )}
-          </View>
+          </EmptyState>
         )}
       </Animated.View>
 

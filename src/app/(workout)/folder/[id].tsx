@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { Icon } from '@/components/icon';
+import { EmptyState } from '@/components/empty-state';
 import { SheetHeader } from '@/components/sheet-header';
 import {
   type ConfirmDestructive,
@@ -85,12 +85,7 @@ export default function FolderScreen() {
         contentContainerStyle={styles.list}
         contentInsetAdjustmentBehavior="automatic">
         {list.length === 0 && (
-          <View style={styles.empty}>
-            <Icon name="folder.fill" size={44} tintColor={theme.textSecondary} />
-            <ThemedText type="footnote" themeColor="textSecondary" style={styles.emptyText}>
-              Folder is empty. Drag a template onto this folder to add it
-            </ThemedText>
-          </View>
+          <EmptyState icon="folder.fill" text="Drag a template here to add it" />
         )}
 
         {list.map((template) => (
@@ -135,15 +130,6 @@ export default function FolderScreen() {
 const styles = StyleSheet.create({
   list: {
     paddingVertical: Spacing.two,
-  },
-  empty: {
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.four,
-  },
-  emptyText: {
-    textAlign: 'center',
   },
   row: {
     flexDirection: 'row',

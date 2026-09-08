@@ -1,6 +1,6 @@
-import { DatePicker, HStack, Host, Spacer } from '@expo/ui/swift-ui';
-import { useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { DatePicker, HStack, Host, Spacer } from "@expo/ui/swift-ui";
+import { useState } from "react";
+import { StyleSheet } from "react-native";
 
 /**
  * Compact SwiftUI date picker, trailing-aligned in whatever width the row has
@@ -31,7 +31,7 @@ export function DayPicker({
           key={generation}
           selection={value}
           range={{ start: min, end: max }}
-          displayedComponents={['date']}
+          displayedComponents={["date"]}
           onDateChange={(next) => {
             onChange(next);
             setGeneration((n) => n + 1);

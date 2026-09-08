@@ -7,6 +7,7 @@ import Animated, {
 
 import { GlassCircle } from "@/components/circle-button";
 import { AddMenu } from "@/components/templates/add-menu";
+import { EmptyState } from "@/components/empty-state";
 import { Icon } from "@/components/icon";
 import {
   FolderCard,
@@ -58,7 +59,6 @@ export function TemplateSection({
   draggable?: boolean;
   emptyHint?: string;
 }) {
-  const theme = useTheme();
   const [collapsed, setCollapsed] = useState(false);
   const { width: screenWidth } = useWindowDimensions();
   const cellWidth = (screenWidth - Spacing.three * 2 - GAP) / COLUMNS;
@@ -99,16 +99,11 @@ export function TemplateSection({
       </View>
 
       {isEmpty && emptyHint && (
-        <View style={styles.empty}>
-          <Icon
-            name="rectangle.stack.badge.plus"
-            size={52}
-            tintColor={theme.textSecondary}
-          />
-          <ThemedText style={styles.emptyText} themeColor="textSecondary">
-            {emptyHint}
-          </ThemedText>
-        </View>
+        <EmptyState
+          icon="rectangle.stack.badge.plus"
+          text={emptyHint}
+          style={styles.empty}
+        />
       )}
 
       {isEmpty ? null : (
@@ -305,15 +300,9 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   empty: {
-    alignItems: "center",
-    gap: Spacing.two,
     // Asymmetric so the whitespace reads even: the section's own gap adds
     // Spacing.two above, the screen's gap between sections Spacing.four below.
     paddingTop: Spacing.five,
     paddingBottom: Spacing.three,
-    paddingHorizontal: Spacing.four,
-  },
-  emptyText: {
-    textAlign: "center",
   },
 });

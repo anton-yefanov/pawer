@@ -1,14 +1,18 @@
-import { DatePickerDialog, Host } from '@expo/ui/jetpack-compose';
-import { useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { DatePickerDialog, Host } from "@expo/ui/jetpack-compose";
+import { useState } from "react";
+import { Pressable, StyleSheet } from "react-native";
 
-import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
-import * as haptics from '@/lib/haptics';
+import { ThemedText } from "@/components/themed-text";
+import { Spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
+import * as haptics from "@/lib/haptics";
 
 const formatDay = (date: Date) =>
-  date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  date.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 
 /**
  * Material's date picker is a dialog, not an inline popover, so the row shows
@@ -39,7 +43,8 @@ export function DayPicker({
           haptics.tap();
           setOpen(true);
         }}
-        style={[styles.chip, { backgroundColor: theme.backgroundElement }]}>
+        style={[styles.chip, { backgroundColor: theme.backgroundElement }]}
+      >
         <ThemedText type="footnote">{formatDay(value)}</ThemedText>
       </Pressable>
 
@@ -68,7 +73,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   dialogHost: {
-    position: 'absolute',
+    position: "absolute",
     width: 0,
     height: 0,
   },

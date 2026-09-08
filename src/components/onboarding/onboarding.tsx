@@ -42,6 +42,8 @@ function OnboardingFlow() {
   const [step, setStep] = useState(0);
   const [picked, setPicked] = useState<WeightUnit | null>(null);
   const [notificationsGranted, setNotificationsGranted] = useState(false);
+  // The first step's footer sets where every step's primary button lands.
+  const [footerHeight, setFooterHeight] = useState(BIG_BUTTON_HEIGHT);
   const { width } = useWindowDimensions();
   const offset = useSharedValue(0);
 
@@ -75,21 +77,25 @@ function OnboardingFlow() {
             title="Welcome to Pawer"
             body={[
               'We hope it helps you achieve your fitness goals and makes your workouts easier.',
-              'Pawer collects limited anonymous diagnostics and product-usage data to improve the app and fix errors. Your workouts, sets, weights, notes, photos, and exercise names stay on your device.',
               'If you have any questions, suggestions or found a bug, please use Support form in Settings.',
-            ]}
-            choices={
+            ]}>
+            <BigButton title="Get Started" onPress={next} />
+            <View
+              style={styles.footer}
+              onLayout={(event) => setFooterHeight(event.nativeEvent.layout.height)}>
+              <ThemedText type="footnote" themeColor="textTertiary" style={styles.note}>
+                Your data stays on your device. Pawer only collects anonymous diagnostics and usage
+                data.
+              </ThemedText>
               <Pressable onPress={() => void openLegalDocument(PRIVACY_POLICY_URL)}>
-                <ThemedText type="footnote" weight="semibold" themeColor="accent">
-                  Read Privacy Policy
+                <ThemedText
+                  type="footnote"
+                  weight="semibold"
+                  themeColor="textTertiary"
+                  style={styles.note}>
+                  Privacy Policy
                 </ThemedText>
               </Pressable>
-            }>
-            <BigButton title="Get Started" onPress={next} />
-            <View style={styles.secondSlot}>
-              <ThemedText type="footnote" themeColor="textTertiary" style={styles.note}>
-                Your data is stored locally on your device
-              </ThemedText>
             </View>
           </Step>
         </View>
@@ -125,7 +131,7 @@ function OnboardingFlow() {
                 next();
               }}
             />
-            <View style={styles.secondSlot} />
+            <View style={{ height: footerHeight }} />
           </Step>
         </View>
 
@@ -136,19 +142,19 @@ function OnboardingFlow() {
             icon="bell.badge.fill"
             title="Know when rest is over"
             body="Pawer can send a notification the moment your rest timer ends, so you can put your phone down between sets.">
-            <View style={styles.actions}>
-              <BigButton
-                title="Allow Notifications"
-                onPress={() => {
-                  void ensureNotificationPermission().then(
-                    (granted) => {
-                      setNotificationsGranted(granted);
-                      void finish();
-                    },
-                    () => void finish()
-                  );
-                }}
-              />
+            <BigButton
+              title="Allow Notifications"
+              onPress={() => {
+                void ensureNotificationPermission().then(
+                  (granted) => {
+                    setNotificationsGranted(granted);
+                    void finish();
+                  },
+                  () => void finish()
+                );
+              }}
+            />
+            <View style={{ height: footerHeight }}>
               <BigButton
                 title="Not Now"
                 variant="tinted"
@@ -204,8 +210,8 @@ function UnitCard({
 const styles = StyleSheet.create({
   overlay: { ...StyleSheet.absoluteFill, zIndex: 500, overflow: 'hidden' },
   track: { position: 'absolute', top: 0, bottom: 0, left: 0, flexDirection: 'row' },
-  actions: { gap: Spacing.two },
-  secondSlot: { height: BIG_BUTTON_HEIGHT, justifyContent: 'center' },
+  footer: { minHeight: BIG_BUTTON_HEIGHT, justifyContent: 'center', gap: Spacing.two },
+
   note: { textAlign: 'center' },
   units: { flexDirection: 'row', gap: Spacing.three },
   unit: {

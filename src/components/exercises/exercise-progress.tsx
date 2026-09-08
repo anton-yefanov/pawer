@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { AreaChart } from "@/components/analytics/area-chart";
+import { PLACEHOLDER_POINTS } from "@/components/analytics/placeholder";
 import { ExerciseSection } from "@/components/exercises/exercise-section";
 import { Icon } from "@/components/icon";
 import { ThemedText } from "@/components/themed-text";
@@ -18,19 +19,6 @@ import type { WeightUnit } from "@/lib/units";
 
 /** Past this the bars are thinner than the gaps between them. */
 const VISIBLE_SESSIONS = 30;
-
-/**
- * The shape shown wherever real progress isn't: nothing logged yet, or logged
- * but locked. It is decorative — drawn without axis labels so no one reads a
- * number off it — and only its rise and fall have to look like training.
- */
-const PLACEHOLDER_POINTS = [2, 3.4, 2.6, 3.1, 4.4, 3.6, 4, 5.4].map(
-  (value, index) => ({
-    start: index,
-    end: index + 1,
-    value,
-  }),
-);
 
 export function ExerciseProgress({
   sessions,
@@ -154,7 +142,7 @@ export function ExerciseProgress({
             <Pressable
               onPress={() => {
                 haptics.tap();
-                void presentPaywall('exercise_progress');
+                void presentPaywall("exercise_progress");
               }}
               style={({ pressed }) => [
                 styles.lock,
@@ -168,7 +156,11 @@ export function ExerciseProgress({
                 ]}
               >
                 <Icon name="lock.fill" size={14} tintColor={theme.accent} />
-                <ThemedText type="subhead" weight="semibold" themeColor="accent">
+                <ThemedText
+                  type="subhead"
+                  weight="semibold"
+                  themeColor="accent"
+                >
                   Unlock progress charts
                 </ThemedText>
               </View>

@@ -71,7 +71,7 @@ export function AreaChart({
   const theme = useTheme();
   const [width, setWidth] = useState(0);
 
-  const color = muted ? theme.backgroundSelected : theme.accent;
+  const color = muted ? theme.accentMuted : theme.accent;
   const data = smooth
     ? smoothed(points.map((point) => point.value))
     : points.map((point, index) => ({ x: index, y: point.value }));

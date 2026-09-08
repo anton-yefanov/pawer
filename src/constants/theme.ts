@@ -3,9 +3,9 @@
  * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
  */
 
-import '@/global.css';
+import "@/global.css";
 
-import { Platform } from 'react-native';
+import { Platform } from "react-native";
 
 /**
  * Every screen is a grey `background` page carrying white `surface` cards.
@@ -14,50 +14,52 @@ import { Platform } from 'react-native';
  */
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#F2F2F7',
-    surface: '#FFFFFF',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-    textTertiary: '#8B8D98',
-    accent: '#007AFF',
-    accentContent: '#FFFFFF',
-    success: '#34C759',
-    successMuted: '#DFF5E4',
-    successElement: '#C6E9CF',
-    danger: '#FF3B30',
-    dangerMuted: '#FFEDEC',
-    dangerHighlight: '#FFB3AE',
-    gold: '#8A6100',
-    goldMuted: '#FBEFD0',
-    warmup: '#B85C00',
-    drop: '#7A3EBF',
-    shadow: '#000000',
-    scrim: 'rgba(0, 0, 0, 0.4)',
+    text: "#000000",
+    background: "#F2F2F7",
+    surface: "#FFFFFF",
+    backgroundElement: "#F0F0F3",
+    backgroundSelected: "#E0E1E6",
+    textSecondary: "#60646C",
+    textTertiary: "#8B8D98",
+    accent: "#007AFF",
+    accentMuted: "#B7DAFF",
+    accentContent: "#FFFFFF",
+    success: "#34C759",
+    successMuted: "#DFF5E4",
+    successElement: "#C6E9CF",
+    danger: "#FF3B30",
+    dangerMuted: "#FFEDEC",
+    dangerHighlight: "#FFB3AE",
+    gold: "#8A6100",
+    goldMuted: "#FBEFD0",
+    warmup: "#B85C00",
+    drop: "#7A3EBF",
+    shadow: "#000000",
+    scrim: "rgba(0, 0, 0, 0.4)",
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    surface: '#1C1C1E',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
-    textTertiary: '#7C8085',
-    accent: '#0A84FF',
-    accentContent: '#FFFFFF',
-    success: '#30D158',
-    successMuted: '#12351C',
-    successElement: '#1E4D2C',
-    danger: '#FF453A',
-    dangerMuted: '#3A1614',
-    dangerHighlight: '#6E2721',
-    gold: '#F5C542',
-    goldMuted: '#3A2E10',
-    warmup: '#FF9F0A',
-    drop: '#BF5AF2',
-    shadow: '#000000',
-    scrim: 'rgba(0, 0, 0, 0.4)',
+    text: "#ffffff",
+    background: "#000000",
+    surface: "#1C1C1E",
+    backgroundElement: "#212225",
+    backgroundSelected: "#2E3135",
+    textSecondary: "#B0B4BA",
+    textTertiary: "#7C8085",
+    accent: "#0A84FF",
+    accentMuted: "#1B4F7D",
+    accentContent: "#FFFFFF",
+    success: "#30D158",
+    successMuted: "#12351C",
+    successElement: "#1E4D2C",
+    danger: "#FF453A",
+    dangerMuted: "#3A1614",
+    dangerHighlight: "#6E2721",
+    gold: "#F5C542",
+    goldMuted: "#3A2E10",
+    warmup: "#FF9F0A",
+    drop: "#BF5AF2",
+    shadow: "#000000",
+    scrim: "rgba(0, 0, 0, 0.4)",
   },
 } as const;
 
@@ -69,36 +71,36 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
  * config in `app.json` — change them together.
  */
 export const Brand = {
-  splash: '#208AEF',
-  splashGradientStart: '#3C9FFE',
-  splashGradientEnd: '#0274DF',
+  splash: "#208AEF",
+  splashGradientStart: "#3C9FFE",
+  splashGradientEnd: "#0274DF",
 } as const;
 
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
+    sans: "system-ui",
     /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
+    serif: "ui-serif",
     /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
+    rounded: "ui-rounded",
     /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
+    mono: "ui-monospace",
   },
   default: {
     /** Bundled per-weight by the `expo-font` plugin in `app.json`, which is what
      *  lets `fontWeight` resolve against it; the system face is Roboto. */
-    sans: 'Nunito',
-    serif: 'serif',
+    sans: "Nunito",
+    serif: "serif",
     /** Android ships no rounded face, so the same bundled family stands in. */
-    rounded: 'Nunito',
-    mono: 'monospace',
+    rounded: "Nunito",
+    mono: "monospace",
   },
   web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
+    sans: "var(--font-display)",
+    serif: "var(--font-serif)",
+    rounded: "var(--font-rounded)",
+    mono: "var(--font-mono)",
   },
 });
 
@@ -157,13 +159,13 @@ export const Spacing = {
  * `surface` lighter than the `background` is already the whole affordance.
  */
 export const Raised = {
-  light: { boxShadow: '0 4px 14px rgba(0, 0, 0, 0.1)' },
+  light: { boxShadow: "0 4px 14px rgba(0, 0, 0, 0.1)" },
   dark: {},
 } as const;
 
 /** The much shallower lift under a template or folder cover, which sits on the page rather than over it. */
 export const CardRaised = {
-  light: { boxShadow: '0 2px 6px rgba(0, 0, 0, 0.12)' },
+  light: { boxShadow: "0 2px 6px rgba(0, 0, 0, 0.12)" },
   dark: {},
 } as const;
 
@@ -174,7 +176,7 @@ export const CardRaised = {
  */
 export const CardRaisedShape = {
   light: {
-    shadowColor: '#000000',
+    shadowColor: "#000000",
     shadowOpacity: 0.12,
     shadowRadius: 3,
     shadowOffset: { width: 0, height: 2 },

@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 
+import { EmptyState } from '@/components/empty-state';
 import { Card, Separator } from '@/components/grouped-list';
 import { WorkoutLogRow } from '@/components/history/workout-log-row';
 import { ThemedText } from '@/components/themed-text';
@@ -57,9 +58,11 @@ export default function HistoryScreen() {
         />
       )}
       ListEmptyComponent={
-        <ThemedText style={styles.empty} themeColor="textSecondary">
-          No finished workouts yet.
-        </ThemedText>
+        <EmptyState
+          icon="clock.arrow.circlepath"
+          text="No finished workouts yet"
+          style={styles.empty}
+        />
       }
     />
   );
@@ -115,7 +118,6 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.two,
   },
   empty: {
-    textAlign: 'center',
-    padding: Spacing.six,
+    paddingVertical: Spacing.six,
   },
 });
