@@ -6,7 +6,7 @@ import { isPeriodLocked, type PeriodId } from '@/lib/analytics-period';
 import { presentPaywall } from '@/lib/paywall';
 
 /**
- * Where the free tier stops (IMPLEMENTATION_PLAN.md §4). Logging and a user's
+ * Where the free tier stops. Logging and a user's
  * own history are never gated — only what they can build on top of it.
  */
 export const FREE_TEMPLATE_LIMIT = 3;

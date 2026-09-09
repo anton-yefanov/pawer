@@ -1,7 +1,6 @@
 /**
- * The database stores kilograms and metres and nothing else
- * (IMPLEMENTATION_PLAN.md §3.3). Pounds and miles exist only between these
- * functions and the user's eyeballs.
+ * The database stores kilograms and metres and nothing else. Pounds and miles
+ * exist only between these functions and the user's eyeballs.
  */
 
 export type WeightUnit = 'kg' | 'lb';

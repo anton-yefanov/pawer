@@ -8,7 +8,7 @@ import { attempt } from '@/lib/observability';
  * Set inputs write through to SQLite as the user types, but every write wakes
  * every live query on the screen. Debouncing keeps that to a couple per second;
  * flushing on blur and on unmount is what stops a half-typed weight from being
- * lost when the user gets a text mid-set (IMPLEMENTATION_PLAN §3.2).
+ * lost when the user gets a text mid-set.
  */
 export function useDebouncedWrite<T>(
   write: (value: T) => void | Promise<unknown>,

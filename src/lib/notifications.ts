@@ -97,7 +97,7 @@ export async function ensureNotificationPermission(): Promise<boolean> {
 /**
  * Scheduled against an absolute date, not an interval. iOS suspends JS within
  * seconds of backgrounding, so the notification is the only thing that can fire
- * on time (IMPLEMENTATION_PLAN §3.1).
+ * on time.
  */
 export async function scheduleNotification(input: {
   title: string;

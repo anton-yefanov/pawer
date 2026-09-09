@@ -4,7 +4,7 @@ import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-or
 import type { CardColor } from '../constants/card-colors';
 
 /**
- * Conventions, per IMPLEMENTATION_PLAN.md §1:
+ * Conventions:
  *
  * - Primary keys are UUID strings, never autoincrement integers.
  * - Every row carries `createdAt` / `updatedAt` (epoch ms) and a nullable
@@ -12,8 +12,8 @@ import type { CardColor } from '../constants/card-colors';
  * - All weights are stored in KILOGRAMS. Conversion happens at the display
  *   layer only — nothing below this line ever sees pounds.
  *
- * None of this is used by v1, but retrofitting it once sync exists is painful
- * and it costs nothing now.
+ * Retrofitting any of it onto a shipped database is painful; holding it costs
+ * nothing now.
  */
 
 const now = sql`(unixepoch() * 1000)`;

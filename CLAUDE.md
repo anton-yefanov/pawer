@@ -10,7 +10,7 @@ Write code that explains itself; don't narrate it.
 
 - No comments that restate the code, label sections, or describe what a function obviously does. Comment only a non-obvious *why* — a workaround, an invariant, a gotcha that would otherwise get "fixed".
 - No JSDoc/TSDoc blocks on internal code. Types are the documentation.
-- Don't create new markdown files (READMEs, summaries, migration notes, plans) unless asked. Existing docs — this file, AGENTS.md, IMPLEMENTATION_PLAN.md — get updated only when a change makes them wrong.
+- Don't create new markdown files (READMEs, summaries, migration notes, plans) unless asked. Existing docs — this file and AGENTS.md — get updated only when a change makes them wrong.
 - In chat, report what changed in a few lines. No recaps of code that's already visible in the diff.
 
 ## Commands
@@ -41,7 +41,36 @@ There is no test runner in this project. Verification is `npm run typecheck && n
 
 Expo SDK 57 / React Native 0.86 / expo-router with `typedRoutes` and the React Compiler enabled. iOS-first. Local-first: nothing is fetched at runtime. The library, the exercise clips, logging, history and analytics all work with the network off.
 
-**IMPLEMENTATION_PLAN.md is the spec.** It sets scope, the paid/free split, and several non-negotiable technical decisions. Read the relevant section before building a feature, and don't build things listed under "Explicitly out of v1".
+### The app is live
+
+**Pawer is shipped on the App Store** (`app.json` `version`, currently 1.0.x). There are
+installed copies with months of real workouts in them, and a SQLite file on someone's phone
+is the only copy — there is no cloud sync, no account, no server-side backup to restore from.
+A destructive change reaches users as a build and cannot be recalled.
+
+So the default posture for anything touching `src/db/` changed the day 1.0 shipped:
+
+- **A committed `drizzle/*.sql` file is frozen.** Installed apps have already applied it and
+  Drizzle tracks it by hash — editing one either breaks the journal or silently skips on
+  devices that ran the old text. Fix a schema mistake with a *new* migration.
+- **Migrations are additive.** Add tables and add nullable columns. Never `DROP`, never
+  `DELETE FROM` a table holding user rows, never rename a column out from under existing data.
+  `drizzle/0017_wipe_seeded_exercises.sql` wipes the seeded library and the history hanging off
+  it — that was acceptable pre-launch and would now delete strangers' training logs. Nothing
+  like it ships again.
+- A migration that throws leaves `DatabaseProvider` unable to render, so the app is a blank
+  screen with no way back. Migrations run before any screen; they get no second chance.
+- **Soft-delete, always** (`deletedAt`), for user rows and for app-shipped ones alike.
+- **Bumping `SEED_VERSION` re-seeds every installed app.** The upsert is keyed on `sourceId`
+  and deliberately refreshes only library-owned columns, so it must keep leaving user-owned
+  ones alone. Removing an exercise from `seed/exercises.json` does not remove it from a
+  device that already has it — and must not, because logged sets point at it.
+- Preferences and settings are user data too: never clear the `settings` table or storage
+  wholesale to "reset" something.
+- **Verify upgrades, not fresh installs.** A new simulator build proves nothing about the path
+  that matters. Install the shipped build, log a workout, then run the branch over it.
+- Don't retroactively lock something the shipped free tier already gave away. Where the free
+  tier stops lives in `src/lib/pro-gates.ts`; logging and a user's own history are never gated.
 
 ### Data layer
 
