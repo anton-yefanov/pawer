@@ -7,6 +7,7 @@ import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { DurationCell } from '@/components/workout/duration-cell';
 import { NoteInput } from '@/components/workout/note-input';
+import { focusKey, useSetFocus } from '@/components/workout/set-focus';
 import { SET_TYPE_CELL, SetTypeMenu } from '@/components/workout/set-type-menu';
 import { Spacing } from '@/constants/theme';
 import { useDebouncedWrite } from '@/hooks/use-debounced-write';
@@ -137,6 +138,7 @@ export function SetRow({ set, label, previous, unit, trackingType, actions, onCo
         return (
           <NumericCell
             key={field}
+            focusKey={focusKey(set.id, field)}
             width={fieldWidth(fields.length)}
             value={cell.display(set, unit)}
             placeholder={previous ? cell.display(previous, unit) : ''}
@@ -365,6 +367,7 @@ function NumericCell({
   width,
   highlighted,
   completed,
+  focusKey: key,
   onEdit,
   onCommit,
   ...rest
@@ -374,6 +377,7 @@ function NumericCell({
   width: number;
   highlighted: boolean;
   completed: boolean;
+  focusKey: string;
   onEdit: (text: string) => void;
   onCommit: (text: string) => void;
 } & React.ComponentProps<typeof TextInput>) {
@@ -383,6 +387,16 @@ function NumericCell({
   const focused = useRef(false);
   const input = useRef<TextInput>(null);
   const write = useDebouncedWrite(onCommit);
+  const setFocus = useSetFocus();
+
+  // The registry holds this across renders, so the handle has to read the
+  // current debounce rather than close over the one it was built with.
+  const cell = useRef({ focus: () => input.current?.focus(), flush: () => {} });
+  useEffect(() => {
+    cell.current.flush = write.flush;
+  });
+
+  useEffect(() => setFocus.register(key, cell.current), [setFocus, key]);
 
   useEffect(() => {
     if (!focused.current) setText(value);
@@ -400,11 +414,13 @@ function NumericCell({
       onFocus={() => {
         focused.current = true;
         setEditing(true);
+        setFocus.focused(key);
       }}
       onEndEditing={() => {
         focused.current = false;
         setEditing(false);
         write.flush();
+        setFocus.blurred(key);
       }}
       // Android's EditText draws the caret at the end of the *hint* when the
       // field is empty and centred, which parks it against the right edge of

@@ -10,9 +10,9 @@ const PREFERENCE_KEY = 'theme_preference';
 export type ThemePreference = 'system' | 'dark' | 'light';
 
 export const THEME_PREFERENCES: { id: ThemePreference; label: string; short: string }[] = [
-  { id: 'system', label: 'Follow Phone Night Mode', short: 'System' },
-  { id: 'dark', label: 'On', short: 'On' },
-  { id: 'light', label: 'Off', short: 'Off' },
+  { id: 'system', label: 'System', short: 'System' },
+  { id: 'light', label: 'Light', short: 'Light' },
+  { id: 'dark', label: 'Dark', short: 'Dark' },
 ];
 
 type ThemePreferenceValue = {

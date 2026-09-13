@@ -11,6 +11,7 @@
       "icon": "./assets/pawer.icon",
       "bundleIdentifier": "com.antonyefanov.pawer",
       "appleTeamId": "CDG4MY328T",
+      "buildNumber": "2",
       "privacyManifests": {
         "NSPrivacyTracking": false,
         "NSPrivacyCollectedDataTypes": [

@@ -7,6 +7,9 @@ import type { CardAction } from '@/components/templates/card-actions';
 import { useTheme } from '@/hooks/use-theme';
 import * as haptics from '@/lib/haptics';
 
+/** The corner menu on a card in a folder sheet. */
+export const CARD_MENU_SIZE = 28;
+
 /**
  * Same Host-sizing rules as ExerciseMenu: the Host is explicitly sized or it
  * shrinks to the glyph, and the tap target is grown *inside* the label, because
@@ -34,10 +37,16 @@ export function CardMenu({
           modifiers={[buttonStyle('plain')]}
           label={
             <ZStack
-              modifiers={[frame({ width: size, height: size }), contentShape(shapes.rectangle())]}>
-              <Image systemName="ellipsis" color={theme.text} />
+              modifiers={[frame({ width: size, height: size }), contentShape(shapes.rectangle())]}
+            >
+              <Image
+                systemName="ellipsis"
+                color={theme.text}
+                size={size <= CARD_MENU_SIZE ? 13 : undefined}
+              />
             </ZStack>
-          }>
+          }
+        >
           {actions.flatMap((action) => [
             ...(action.separated ? [<Divider key={`${action.label}-divider`} />] : []),
             <Button

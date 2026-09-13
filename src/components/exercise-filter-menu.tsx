@@ -1,5 +1,5 @@
 import { Host, Image, Menu, Picker, Section, Text, ZStack } from '@expo/ui/swift-ui';
-import { buttonStyle, contentShape, frame, shapes, tag } from '@expo/ui/swift-ui/modifiers';
+import { buttonStyle, contentShape, font, frame, shapes, tag } from '@expo/ui/swift-ui/modifiers';
 import { View } from 'react-native';
 
 import { sfSymbol, type IconName } from '@/components/icon';
@@ -29,6 +29,8 @@ type Props = {
   /** Side of the square tap target, in points. Should match the capsule this
    *  sits in — the whole capsule is the button, not just the glyph. */
   size: number;
+  glyphSize: number;
+  glyphWeight: 'regular' | 'medium' | 'semibold';
 };
 
 /**
@@ -58,6 +60,8 @@ export function ExerciseFacetMenu({
   restingTint,
   onOpenChange,
   size,
+  glyphSize,
+  glyphWeight,
 }: Props) {
   const theme = useTheme();
 
@@ -98,6 +102,7 @@ export function ExerciseFacetMenu({
               ]}>
               <Image
                 systemName={sfSymbol(systemName)}
+                modifiers={[font({ size: glyphSize, weight: glyphWeight })]}
                 color={value !== ANY ? theme.accent : restingTint}
               />
             </ZStack>

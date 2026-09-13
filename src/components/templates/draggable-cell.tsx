@@ -1,8 +1,8 @@
-import { StyleSheet, type StyleProp, type View, type ViewStyle } from 'react-native';
+import { StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useSharedValue, type AnimatedStyle } from 'react-native-reanimated';
 
-import { cardSlot } from '@/components/templates/grid-card';
+import { cardSlot, LIFT_DELAY } from '@/components/templates/grid-card';
 import {
   useCellMotion,
   useTemplateDrag,
@@ -10,15 +10,12 @@ import {
 } from '@/components/templates/template-drag';
 import { useTheme } from '@/hooks/use-theme';
 
-/** Long enough that a tap opens the card and a scroll flick doesn't lift it. */
-const LIFT_DELAY = 250;
 
 export function DraggableCell({
   id,
   index,
   kind,
   width,
-  cellRef,
   highlight,
   children,
 }: {
@@ -26,8 +23,6 @@ export function DraggableCell({
   index: number;
   kind: DragKind;
   width: number;
-  /** Folders hand this in so the drop test can measure the slot. */
-  cellRef?: React.RefObject<View | null>;
   /** Merged last, so a folder can paint the reserved border while receiving. */
   highlight?: StyleProp<AnimatedStyle<ViewStyle>>;
   children: React.ReactNode;
@@ -41,21 +36,20 @@ export function DraggableCell({
 
   const pan = Gesture.Pan()
     .activateAfterLongPress(LIFT_DELAY)
-    .onBegin(() => {
-      runOnJS(drag.captureLayout)();
-    })
-    .onStart(() => {
-      drag.beginDrag(id, index);
+    .onStart((event) => {
+      // Translation counts from touch-down, and the finger may have crept
+      // during the long press, so subtract it to recover the original point.
+      drag.beginDrag(id, index, event.x - event.translationX, event.y - event.translationY);
       runOnJS(drag.setDragging)(true);
     })
     .onUpdate((event) => {
-      drag.moveDrag(event.translationX, event.translationY, event.absoluteX, event.absoluteY, kind);
+      drag.moveDrag(event.translationX, event.translationY, kind);
     })
     .onEnd(() => {
       const folderId = drag.hoveredFolderId.value;
       const to = drag.dropIndex.value;
-      if (kind === 'template' && folderId !== '') {
-        runOnJS(drag.drop)(id, folderId);
+      if (folderId !== '') {
+        runOnJS(drag.drop)(kind, id, folderId);
         committed.value = true;
       } else if (to >= 0 && to !== index) {
         runOnJS(drag.reorder)(kind, index, to);
@@ -71,7 +65,6 @@ export function DraggableCell({
   return (
     <GestureDetector gesture={pan}>
       <Animated.View
-        ref={cellRef}
         style={[
           cardSlot,
           styles.lift,

@@ -1,7 +1,10 @@
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 
 import { PrChip } from '@/components/pr-chip';
 import { ThemedText } from '@/components/themed-text';
+import { SHEET_INNER_RADIUS } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { isPrKind, PR_LABELS } from '@/lib/personal-records';
@@ -17,14 +20,77 @@ import {
 } from '@/lib/workout-queries';
 import { formatElapsed, type WorkoutSummary } from '@/lib/workout-stats';
 
-export function SummaryStats({ summary, unit }: { summary: WorkoutSummary; unit: WeightUnit }) {
-  const theme = useTheme();
+/** The climb itself, and the wait for the card to have landed before it starts. */
+const TALLY_MS = 720;
+const TALLY_DELAY_MS = 180;
 
+/**
+ * Ramps 0 -> 1 on the JS thread, deliberately, so every figure can go up through
+ * the ordinary formatters: `formatElapsed` and `formatWeight` own what a
+ * duration and a weight look like, and a worklet copy of either would be a
+ * second answer to that question living on the UI thread. The cost is a few
+ * hundred milliseconds of text updates on a screen that is otherwise still.
+ */
+function useTally(enabled: boolean): number {
+  const reduced = useReducedMotion();
+  const [progress, setProgress] = useState(enabled && !reduced ? 0 : 1);
+
+  useEffect(() => {
+    // Already 1 from the initializer in the ordinary case; this only matters
+    // when Reduce Motion comes on mid-climb, and it is scheduled rather than
+    // called here because a synchronous setState in an effect cascades renders.
+    if (!enabled || reduced) {
+      const settle = requestAnimationFrame(() => setProgress(1));
+      return () => cancelAnimationFrame(settle);
+    }
+
+    let frame: number | null = null;
+    let started: number | null = null;
+    const step = (now: number) => {
+      started ??= now;
+      const t = Math.min(1, (now - started) / TALLY_MS);
+      // The same ease-out the blocks above settle on, so the figures decelerate
+      // into place rather than stopping dead on their real values.
+      setProgress(1 - (1 - t) ** 3);
+      if (t < 1) frame = requestAnimationFrame(step);
+    };
+
+    const timer = setTimeout(() => {
+      frame = requestAnimationFrame(step);
+    }, TALLY_DELAY_MS);
+
+    return () => {
+      clearTimeout(timer);
+      if (frame != null) cancelAnimationFrame(frame);
+    };
+  }, [enabled, reduced]);
+
+  return progress;
+}
+
+/**
+ * `tally` counts the figures up as the recap arrives. Off everywhere else: a
+ * session reopened from History is a record being read, not one being finished.
+ */
+export function SummaryStats({
+  summary,
+  unit,
+  tally = false,
+}: {
+  summary: WorkoutSummary;
+  unit: WeightUnit;
+  tally?: boolean;
+}) {
+  const theme = useTheme();
+  const progress = useTally(tally);
+
+  // At rest `progress` is exactly 1, so every figure is the same call it always
+  // was — the climb can never leave a stat reading something the workout isn't.
   const stats = [
-    ['Duration', formatElapsed(summary.durationMs)],
-    ['Volume', formatWeight(summary.volumeKg, unit)],
-    ['Sets', String(summary.completedSets)],
-    ['Exercises', String(summary.exerciseCount)],
+    ['Duration', formatElapsed(summary.durationMs * progress)],
+    ['Volume', formatWeight(summary.volumeKg * progress, unit)],
+    ['Sets', String(Math.round(summary.completedSets * progress))],
+    ['Exercises', String(Math.round(summary.exerciseCount * progress))],
   ] as const;
 
   return (
@@ -129,7 +195,8 @@ export function ExerciseBreakdown({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 14,
+    borderRadius: SHEET_INNER_RADIUS,
+    borderCurve: 'continuous',
     paddingHorizontal: Spacing.three,
   },
   stat: {

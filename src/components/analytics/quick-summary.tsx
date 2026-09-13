@@ -1,7 +1,7 @@
 import { StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
-import { Spacing } from "@/constants/theme";
+import { CardRadius, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import type { QuickSummary as Summary } from "@/lib/analytics-insights";
 
@@ -47,7 +47,8 @@ export function QuickSummary({ summary }: { summary: Summary }) {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 14,
+    borderRadius: CardRadius,
+    borderCurve: "continuous",
     borderWidth: 1,
     padding: Spacing.three,
     gap: Spacing.two,

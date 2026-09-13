@@ -3,6 +3,7 @@ import { StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { StartTimePicker } from '@/components/workout/start-time-picker';
+import { SHEET_INNER_RADIUS } from '@/constants/sheet';
 import { Spacing, Type, Weights } from '@/constants/theme';
 import { useDebouncedWrite } from '@/hooks/use-debounced-write';
 import { ThemedTextInput } from '@/components/themed-text-input';
@@ -98,7 +99,8 @@ function WriteThroughField({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 14,
+    borderRadius: SHEET_INNER_RADIUS,
+    borderCurve: 'continuous',
     paddingHorizontal: Spacing.three,
   },
   divider: {

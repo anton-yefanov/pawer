@@ -22,6 +22,7 @@ import { NoteInput } from '@/components/workout/note-input';
 import { RestCountdownRow } from '@/components/workout/rest-countdown-row';
 import { fieldWidth, SET_COLUMNS, SetRow } from '@/components/workout/set-row';
 import { SupersetBadge } from '@/components/workout/superset-badge';
+import { SHEET_INNER_RADIUS } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import * as haptics from '@/lib/haptics';
@@ -307,7 +308,8 @@ const styles = StyleSheet.create({
   },
   card: {
     marginTop: Spacing.one,
-    borderRadius: 14,
+    borderRadius: SHEET_INNER_RADIUS,
+    borderCurve: 'continuous',
     paddingVertical: Spacing.two,
     overflow: 'hidden',
   },

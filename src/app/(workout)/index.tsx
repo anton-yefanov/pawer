@@ -5,42 +5,28 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AchievementsButton } from '@/components/achievements/achievements-button';
-import { type FolderCardData } from '@/components/templates/folder-card';
-import { type TemplateCardData } from '@/components/templates/template-card';
-import {
-  TemplateDragProvider,
-  type DragKind,
-  type Settle,
-} from '@/components/templates/template-drag';
+import { TemplateDragProvider } from '@/components/templates/template-drag';
 import { TemplateSection } from '@/components/templates/template-section';
+import { useGridDrop } from '@/components/templates/use-grid-drop';
 import { ThemedText } from '@/components/themed-text';
 import { ActiveWorkoutPrompt } from '@/components/workout/active-workout-prompt';
 import { BigButton } from '@/components/workout/big-button';
 import { ElapsedTime } from '@/components/workout/elapsed-time';
-import { BottomTabInset, Spacing } from '@/constants/theme';
-import { type Template } from '@/db/schema';
+import { BottomTabInset, CardRadius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { asCardArtwork } from '@/lib/card-artwork';
-import { moveTemplateToFolder, reorderFolders } from '@/lib/folder-actions';
 import * as haptics from '@/lib/haptics';
-import { move, sortBy } from '@/lib/order';
-import { reorderTemplates } from '@/lib/template-actions';
+import { toFolderCard, toTemplateCard } from '@/lib/template-cards';
 import {
   foldersQuery,
   templateCardExercisesQuery,
   templatesQuery,
-  type TemplateCardExercise,
 } from '@/lib/template-queries';
 import { startEmptyWorkout } from '@/lib/workout-actions';
 import { activeWorkoutQuery, groupBy } from '@/lib/workout-queries';
 import { formatStartTime } from '@/lib/workout-stats';
 
-import { attempt, guard } from '@/lib/observability';
+import { guard } from '@/lib/observability';
 
-const MOVE_FAILED = {
-  title: 'Couldn’t save',
-  message: 'That change wasn’t saved. Please try again.',
-};
 
 export default function StartWorkoutScreen() {
   const theme = useTheme();
@@ -71,79 +57,13 @@ export default function StartWorkoutScreen() {
   const [blockedBy, setBlockedBy] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
 
-  /**
-   * The order a drag just produced, applied on top of the live rows so the grid
-   * re-renders with the card in its new slot on release rather than a DB
-   * round-trip later — the delay is long enough to read as the card snapping
-   * home and then jumping. It never needs clearing: once the write lands, the
-   * live rows already match it and re-sorting is a no-op.
-   */
-  const [order, setOrder] = useState<{
-    folders: string[];
-    templates: string[];
-  }>({
-    folders: [],
-    templates: [],
-  });
-
-  const folderCards = sortBy(
-    (folders ?? []).map((folder): FolderCardData => ({
-      id: folder.id,
-      name: folder.name,
-      color: folder.color,
-      artwork: asCardArtwork(folder.artwork),
-      templateNames: (byFolder.get(folder.id) ?? []).map((template) => template.name),
-    })),
-    order.folders,
+  const { folderCards, templateCards: myCards, onDrop, onReorder } = useGridDrop(
+    (folders ?? [])
+      .filter((folder) => folder.parentId === null)
+      .map((folder) => toFolderCard(folder, byFolder.get(folder.id) ?? [])),
+    loose.map((t) => toTemplateCard(t, byTemplate.get(t.id) ?? [])),
   );
-
-  const myCards = sortBy(
-    loose.map((t) => toCard(t, byTemplate.get(t.id) ?? [])),
-    order.templates,
-  );
-  const builtInCards = (builtIn ?? []).map((t) => toCard(t, byTemplate.get(t.id) ?? []));
-
-  const fileTemplate = (templateId: string, folderId: string, settle: Settle) => {
-    settle();
-    void attempt('templates', moveTemplateToFolder(templateId, folderId), MOVE_FAILED);
-  };
-
-  /*
-    `settle` runs in the same tick as `setOrder`, so the offsets clear and the
-    grid re-renders together. Clearing earlier — on the UI thread as the finger
-    lifts — leaves a frame where the cards are back in their old slots.
-
-    Indices are grid-wide with folders first, so a template's index is offset by
-    the folder count before it maps back into its own list.
-  */
-  const reorder = (kind: DragKind, from: number, to: number, settle: Settle) => {
-    if (kind === 'folder') {
-      const ids = move(
-        folderCards.map((folder) => folder.id),
-        from,
-        to,
-      );
-      setOrder((current) => ({ ...current, folders: ids }));
-      settle();
-      // The grid already shows the new arrangement, so a failed write would
-      // otherwise leave it disagreeing with the database until the next launch.
-      void attempt('folders', reorderFolders(ids), MOVE_FAILED).then((written) => {
-        if (!written) setOrder((current) => ({ ...current, folders: [] }));
-      });
-    } else {
-      const offset = folderCards.length;
-      const ids = move(
-        myCards.map((card) => card.id),
-        from - offset,
-        to - offset,
-      );
-      setOrder((current) => ({ ...current, templates: ids }));
-      settle();
-      void attempt('templates', reorderTemplates(ids), MOVE_FAILED).then((written) => {
-        if (!written) setOrder((current) => ({ ...current, templates: [] }));
-      });
-    }
-  };
+  const builtInCards = (builtIn ?? []).map((t) => toTemplateCard(t, byTemplate.get(t.id) ?? []));
 
   const open = (id: string) => router.push({ pathname: '/active', params: { id } });
 
@@ -162,7 +82,7 @@ export default function StartWorkoutScreen() {
   };
 
   return (
-    <TemplateDragProvider onDrop={fileTemplate} onReorder={reorder} onDraggingChange={setDragging}>
+    <TemplateDragProvider onDrop={onDrop} onReorder={onReorder} onDraggingChange={setDragging}>
       <View style={styles.screen}>
         <ScrollView
           style={{ backgroundColor: theme.background }}
@@ -220,19 +140,6 @@ export default function StartWorkoutScreen() {
   );
 }
 
-function toCard(template: Template, rows: readonly TemplateCardExercise[]): TemplateCardData {
-  return {
-    id: template.id,
-    name: template.name,
-    isBuiltIn: template.isBuiltIn,
-    folderId: template.folderId,
-    color: template.color,
-    artwork: asCardArtwork(template.artwork),
-    exerciseNames: rows.map((row) => row.name),
-    exerciseArt: rows.map(({ sourceId, imageFile }) => ({ sourceId, imageFile })),
-  };
-}
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -251,7 +158,8 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   card: {
-    borderRadius: 14,
+    borderRadius: CardRadius,
+    borderCurve: 'continuous',
     padding: Spacing.three,
     flexDirection: 'row',
     alignItems: 'center',

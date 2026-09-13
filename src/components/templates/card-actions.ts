@@ -4,7 +4,8 @@ import { type IconName } from '@/components/icon';
 import {
   createFolder,
   deleteFolder,
-  moveTemplateToFolder,
+  removeFolderFromFolder,
+  removeTemplateFromFolder,
   renameFolder,
 } from '@/lib/folder-actions';
 import { prompt } from '@/lib/text-prompt';
@@ -87,7 +88,7 @@ export function templateActions(
     actions.push({
       label: 'Remove from Folder',
       icon: 'folder.badge.minus',
-      onPress: () => void attempt('templates', moveTemplateToFolder(template.id, null), FAILED),
+      onPress: () => void attempt('templates', removeTemplateFromFolder(template.id), FAILED),
     });
   }
 
@@ -108,10 +109,20 @@ export function templateActions(
 }
 
 export function folderActions(
-  folder: { id: string; name: string },
-  { confirm }: { confirm: ConfirmDestructive },
+  folder: { id: string; name: string; parentId: string | null },
+  { confirm, canAddFolder = false }: { confirm: ConfirmDestructive; canAddFolder?: boolean },
 ): CardAction[] {
-  return [
+  const actions: CardAction[] = [];
+
+  if (canAddFolder) {
+    actions.push({
+      label: 'New Folder',
+      icon: 'folder.badge.plus',
+      onPress: () => promptNewFolder(folder.id),
+    });
+  }
+
+  actions.push(
     {
       label: 'Rename',
       icon: 'pencil',
@@ -126,39 +137,52 @@ export function folderActions(
           params: { id: folder.id, kind: 'folder' },
         }),
     },
-    {
-      label: 'Delete',
-      icon: 'trash',
-      destructive: true,
-      separated: true,
-      onPress: () =>
-        confirm({
-          title: `Delete “${folder.name}”?`,
-          body: 'The templates inside are kept.',
-          onConfirm: () => void attempt('folders', deleteFolder(folder.id), FAILED),
-        }),
-    },
-  ];
+  );
+
+  if (folder.parentId) {
+    actions.push({
+      label: 'Remove from Folder',
+      icon: 'folder.badge.minus',
+      onPress: () => void attempt('folders', removeFolderFromFolder(folder.id), FAILED),
+    });
+  }
+
+  actions.push({
+    label: 'Delete',
+    icon: 'trash',
+    destructive: true,
+    separated: true,
+    onPress: () =>
+      confirm({
+        title: `Delete “${folder.name}”?`,
+        body: 'Everything inside is kept and moves up a level.',
+        onConfirm: () => void attempt('folders', deleteFolder(folder.id), FAILED),
+      }),
+  });
+
+  return actions;
 }
 
 export function promptRenameFolder(folder: { id: string; name: string }): void {
   void attempt(
     'folders',
-    prompt({ title: 'Rename Folder', confirmLabel: 'Rename', initialValue: folder.name }).then(
-      (value) => {
-        const name = value.trim();
-        if (name) return attempt('folders', renameFolder(folder.id, name), FAILED);
-      },
-    ),
+    prompt({
+      title: 'Rename Folder',
+      confirmLabel: 'Rename',
+      initialValue: folder.name,
+    }).then((value) => {
+      const name = value.trim();
+      if (name) return attempt('folders', renameFolder(folder.id, name), FAILED);
+    }),
   );
 }
 
-export function promptNewFolder(): void {
+export function promptNewFolder(parentId: string | null = null): void {
   void attempt(
     'folders',
     prompt({ title: 'New Folder', confirmLabel: 'Create' }).then((value) => {
       const name = value.trim();
-      if (name) return attempt('folders', createFolder(name), FAILED);
+      if (name) return attempt('folders', createFolder(name, parentId), FAILED);
     }),
   );
 }

@@ -1,11 +1,11 @@
 import { router } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { View } from 'react-native';
 import { useAnimatedStyle } from 'react-native-reanimated';
 
 import { DraggableCell } from '@/components/templates/draggable-cell';
 import { FolderArt } from '@/components/templates/folder-art';
-import { CARD_BORDER, COVER_SCALE, GridCard } from '@/components/templates/grid-card';
+import { CARD_BORDER, cardSlot, COVER_SCALE, GridCard } from '@/components/templates/grid-card';
 import { useTemplateDrag } from '@/components/templates/template-drag';
 import { type CardColor } from '@/constants/card-colors';
 import { useTheme } from '@/hooks/use-theme';
@@ -19,22 +19,39 @@ export type FolderCardData = {
   templateNames: readonly string[];
 };
 
-/** A folder both receives templates and reorders among the other folders. */
-export function FolderCard({
-  folder,
-  width,
-  index,
-}: {
+type Props = {
   folder: FolderCardData;
   width: number;
   index: number;
-}) {
+  draggable?: boolean;
+  menu?: React.ReactNode;
+};
+
+// Two components rather than a conditional hook, as in TemplateCard: the
+// draggable one needs the drag provider, which a folder sheet doesn't have.
+export function FolderCard({ draggable = true, ...props }: Props) {
+  if (draggable) return <DraggableFolderCard {...props} />;
+
+  const cardWidth = props.width - CARD_BORDER * 2;
+  return (
+    <View style={[cardSlot, { width: props.width }]}>
+      <FolderGridCard
+        folder={props.folder}
+        cardWidth={cardWidth}
+        menu={props.menu}
+        liftable={false}
+      />
+    </View>
+  );
+}
+
+/** A folder both receives cards and reorders among the other folders. */
+function DraggableFolderCard({ folder, width, index, menu }: Omit<Props, 'draggable'>) {
   const theme = useTheme();
   const drag = useTemplateDrag();
-  const ref = useRef<View>(null);
   const cardWidth = width - CARD_BORDER * 2;
 
-  useEffect(() => drag.registerFolder(folder.id, ref), [drag, folder.id]);
+  useEffect(() => drag.registerFolder(folder.id, index), [drag, folder.id, index]);
 
   // Paints the border the slot already reserves, so receiving shifts nothing.
   const highlight = useAnimatedStyle(() => ({
@@ -42,32 +59,40 @@ export function FolderCard({
   }));
 
   return (
-    <DraggableCell
-      id={folder.id}
-      index={index}
-      kind="folder"
-      width={width}
-      cellRef={ref}
-      highlight={highlight}>
-      <GridCard
-        width={cardWidth}
-        title={folder.name}
-        color={folder.color}
-        showCover={false}
-        onPress={() =>
-          router.push({
-            pathname: '/folder/[id]',
-            params: { id: folder.id },
-          })
-        }
-        cover={
-          <FolderArt
-            color={folder.color}
-            artwork={folder.artwork}
-            width={cardWidth * COVER_SCALE}
-          />
-        }
-      />
+    <DraggableCell id={folder.id} index={index} kind="folder" width={width} highlight={highlight}>
+      <FolderGridCard folder={folder} cardWidth={cardWidth} menu={menu} liftable />
     </DraggableCell>
+  );
+}
+
+function FolderGridCard({
+  folder,
+  cardWidth,
+  menu,
+  liftable,
+}: {
+  folder: FolderCardData;
+  cardWidth: number;
+  menu?: React.ReactNode;
+  liftable: boolean;
+}) {
+  return (
+    <GridCard
+      width={cardWidth}
+      title={folder.name}
+      color={folder.color}
+      showCover={false}
+      menu={menu}
+      liftable={liftable}
+      onPress={() =>
+        router.push({
+          pathname: '/folder/[id]',
+          params: { id: folder.id },
+        })
+      }
+      cover={
+        <FolderArt color={folder.color} artwork={folder.artwork} width={cardWidth * COVER_SCALE} />
+      }
+    />
   );
 }

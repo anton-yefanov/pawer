@@ -87,7 +87,11 @@ type Candidate = { exerciseId: string; kind: PrKind; value: number; setId: strin
  * unfinished sets and then finishes again, and a second pass must replace its
  * own rows rather than double them.
  */
-export async function recordPersonalRecords(workoutId: string, exec: Executor = db): Promise<void> {
+export async function recordPersonalRecords(
+  workoutId: string,
+  exec: Executor = db,
+  achievedAt = Date.now()
+): Promise<void> {
   const now = Date.now();
 
   await exec
@@ -166,7 +170,7 @@ export async function recordPersonalRecords(workoutId: string, exec: Executor = 
       kind: candidate.kind,
       value: candidate.value,
       setId: candidate.setId,
-      achievedAt: now,
+      achievedAt,
       createdAt: now,
       updatedAt: now,
     }))

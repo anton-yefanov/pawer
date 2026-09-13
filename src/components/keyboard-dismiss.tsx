@@ -4,8 +4,9 @@ import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { CIRCLE_BUTTON_SIZE, CircleButton } from '@/components/circle-button';
 import { Spacing } from '@/constants/theme';
 
-/** Far enough below the window's bottom edge to be off screen entirely. */
-const PARKED = CIRCLE_BUTTON_SIZE + Spacing.two * 2;
+/** Far enough below the window's bottom edge to be off screen entirely. Shared
+ *  with `set-focus-arrows.tsx`, which parks on the same row. */
+export const PARKED = CIRCLE_BUTTON_SIZE + Spacing.two * 2;
 
 /**
  * The way out of a keyboard that has no return key — the weight, reps and

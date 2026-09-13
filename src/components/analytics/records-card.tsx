@@ -4,7 +4,7 @@ import { StyleSheet, View } from "react-native";
 import { CardPlaceholder } from "@/components/analytics/placeholder";
 import { PrChip } from "@/components/pr-chip";
 import { ThemedText } from "@/components/themed-text";
-import { Spacing } from "@/constants/theme";
+import { CardRadius, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import type { PeriodRecordRow } from "@/lib/analytics-queries";
 import { formatPrValue, isPrKind, PR_LABELS } from "@/lib/personal-records";
@@ -127,7 +127,8 @@ export function RecordsCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 14,
+    borderRadius: CardRadius,
+    borderCurve: "continuous",
     borderWidth: 1,
     padding: Spacing.three,
     gap: Spacing.two,

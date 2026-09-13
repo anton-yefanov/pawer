@@ -2,7 +2,7 @@ import { and, asc, eq, isNull } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 
 import { EmptyState } from '@/components/empty-state';
 import { SheetHeader } from '@/components/sheet-header';
@@ -12,8 +12,10 @@ import {
   folderActions,
   templateActions,
 } from '@/components/templates/card-actions';
-import { CardMenu } from '@/components/templates/card-menu';
-import { ThemedText } from '@/components/themed-text';
+import { CARD_MENU_SIZE, CardMenu } from '@/components/templates/card-menu';
+import { TemplateDragProvider } from '@/components/templates/template-drag';
+import { CardGrid, type Cell } from '@/components/templates/template-section';
+import { useGridDrop } from '@/components/templates/use-grid-drop';
 import { ConfirmAlert } from '@/components/workout/confirm-alert';
 import { HEADER_CIRCLE_SIZE } from '@/components/workout/workout-sheet-header';
 import { SHEET_SCROLL } from '@/constants/sheet';
@@ -21,8 +23,8 @@ import { Spacing } from '@/constants/theme';
 import { db } from '@/db/client';
 import { templates } from '@/db/schema';
 import { useTheme } from '@/hooks/use-theme';
-import * as haptics from '@/lib/haptics';
-import { folderQuery, templateCardExercisesQuery } from '@/lib/template-queries';
+import { toFolderCard, toTemplateCard } from '@/lib/template-cards';
+import { folderQuery, foldersQuery, templateCardExercisesQuery } from '@/lib/template-queries';
 import { groupBy } from '@/lib/workout-queries';
 
 export default function FolderScreen() {
@@ -30,6 +32,7 @@ export default function FolderScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const { data: folderRows } = useLiveQuery(folderQuery(id), [id]);
+  const { data: allFolders } = useLiveQuery(foldersQuery(), []);
   const { data: rows } = useLiveQuery(
     db
       .select()
@@ -46,12 +49,18 @@ export default function FolderScreen() {
   );
 
   const [pending, setPending] = useState<ConfirmRequest | null>(null);
+  const [dragging, setDragging] = useState(false);
 
   const folder = folderRows?.[0];
-  const list = rows ?? [];
+  const subfolderRows = (allFolders ?? []).filter((row) => row.parentId === id);
+  const templateRows = rows ?? [];
+  const { folderCards, templateCards, onDrop, onReorder } = useGridDrop(
+    subfolderRows.map((row) => toFolderCard(row, [])),
+    templateRows.map((row) => toTemplateCard(row, byTemplate.get(row.id) ?? [])),
+  );
 
   // Deleting the folder this sheet is showing takes the sheet with it; deleting
-  // a template inside it only takes the row.
+  // a card inside it only takes the card.
   const confirmFolderDelete: ConfirmDestructive = ({ onConfirm, ...options }) =>
     setPending({
       ...options,
@@ -63,16 +72,34 @@ export default function FolderScreen() {
 
   const confirm: ConfirmDestructive = (options) => setPending(options);
 
+  const menuFor = (cell: Cell) => {
+    const row =
+      cell.kind === 'folder'
+        ? subfolderRows.find((sub) => sub.id === cell.folder.id)
+        : templateRows.find((template) => template.id === cell.template.id);
+    if (!row) return null;
+    return (
+      <CardMenu
+        accessibilityLabel={`${row.name} options`}
+        actions={
+          'isBuiltIn' in row ? templateActions(row, confirm) : folderActions(row, { confirm })
+        }
+        size={CARD_MENU_SIZE}
+      />
+    );
+  };
+
   return (
-    <>
+    <TemplateDragProvider onDrop={onDrop} onReorder={onReorder} onDraggingChange={setDragging}>
       <SheetHeader
         title={folder?.name ?? ''}
-        options={{ contentStyle: { backgroundColor: theme.surface } }}
+        // Dismissing mid-drag would unmount the lifted card under the finger.
+        options={{ contentStyle: { backgroundColor: theme.background }, gestureEnabled: !dragging }}
         right={
           folder ? (
             <CardMenu
               accessibilityLabel={`${folder.name} options`}
-              actions={folderActions(folder, { confirm: confirmFolderDelete })}
+              actions={folderActions(folder, { confirm: confirmFolderDelete, canAddFolder: true })}
               size={HEADER_CIRCLE_SIZE}
             />
           ) : null
@@ -81,35 +108,15 @@ export default function FolderScreen() {
 
       <ScrollView
         {...SHEET_SCROLL}
-        style={{ backgroundColor: theme.surface }}
-        contentContainerStyle={styles.list}
-        contentInsetAdjustmentBehavior="automatic">
-        {list.length === 0 && (
-          <EmptyState icon="folder.fill" text="Drag a template here to add it" />
+        style={{ backgroundColor: theme.background }}
+        contentContainerStyle={styles.content}
+        contentInsetAdjustmentBehavior="automatic"
+        scrollEnabled={!dragging}>
+        {folderCards.length === 0 && templateCards.length === 0 ? (
+          <EmptyState icon="folder.fill" text="Drag a template here, or add a folder" />
+        ) : (
+          <CardGrid folders={folderCards} templates={templateCards} draggable menuFor={menuFor} />
         )}
-
-        {list.map((template) => (
-          <View key={template.id} style={styles.row}>
-            <Pressable
-              style={({ pressed }) => [styles.rowText, pressed && styles.pressed]}
-              onPress={() => {
-                haptics.tap();
-                router.push({
-                  pathname: '/template/[id]',
-                  params: { id: template.id },
-                });
-              }}>
-              <ThemedText numberOfLines={1}>{template.name}</ThemedText>
-              <ThemedText type="footnote" themeColor="textSecondary" numberOfLines={1}>
-                {(byTemplate.get(template.id) ?? []).map((row) => row.name).join(', ')}
-              </ThemedText>
-            </Pressable>
-            <CardMenu
-              accessibilityLabel={`${template.name} options`}
-              actions={templateActions(template, confirm)}
-            />
-          </View>
-        ))}
       </ScrollView>
 
       <ConfirmAlert
@@ -123,26 +130,12 @@ export default function FolderScreen() {
         }}
         onDismiss={() => setPending(null)}
       />
-    </>
+    </TemplateDragProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  list: {
-    paddingVertical: Spacing.two,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-  },
-  rowText: {
-    flex: 1,
-    gap: Spacing.half,
-  },
-  pressed: {
-    opacity: 0.7,
+  content: {
+    padding: Spacing.three,
   },
 });

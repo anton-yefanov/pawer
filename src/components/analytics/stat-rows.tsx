@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 
 import { Icon } from "@/components/icon";
 import { ThemedText } from "@/components/themed-text";
-import { Spacing, type TypeRole } from "@/constants/theme";
+import { CardRadius, Spacing, type TypeRole } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { formatDelta, type Delta } from "@/lib/analytics-compare";
 
@@ -184,7 +184,8 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   card: {
-    borderRadius: 20,
+    borderRadius: CardRadius,
+    borderCurve: "continuous",
     borderWidth: 1,
     padding: Spacing.three,
   },

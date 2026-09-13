@@ -8,6 +8,9 @@ import type { CardAction } from '@/components/templates/card-actions';
 import { useTheme } from '@/hooks/use-theme';
 import * as haptics from '@/lib/haptics';
 
+/** The corner menu on a card in a folder sheet. */
+export const CARD_MENU_SIZE = 28;
+
 export function CardMenu({
   actions,
   accessibilityLabel,
@@ -37,12 +40,14 @@ export function CardMenu({
             haptics.tap();
             action.onPress();
           },
-        }))}>
+        }))}
+      >
         <Pressable
           accessibilityRole="button"
           onPress={() => setOpen(true)}
-          style={[styles.trigger, { width: size, height: size }]}>
-          <Icon name="ellipsis" size={22} tintColor={theme.text} />
+          style={[styles.trigger, { width: size, height: size }]}
+        >
+          <Icon name="ellipsis" size={size <= CARD_MENU_SIZE ? 16 : 22} tintColor={theme.text} />
         </Pressable>
       </Menu>
     </GlassCircle>

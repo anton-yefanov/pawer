@@ -7,9 +7,9 @@ import { attempt } from '@/lib/observability';
 
 export const WEIGHT_UNIT_KEY = 'weight_unit';
 
-export const WEIGHT_UNITS: { id: WeightUnit; label: string }[] = [
-  { id: 'kg', label: 'Kilograms (kg)' },
-  { id: 'lb', label: 'Pounds (lb)' },
+export const WEIGHT_UNITS: { id: WeightUnit; label: string; short: string }[] = [
+  { id: 'kg', label: 'Kilograms (kg)', short: 'kg' },
+  { id: 'lb', label: 'Pounds (lb)', short: 'lb' },
 ];
 
 type WeightUnitValue = {

@@ -9,7 +9,7 @@ import { buildSearchText } from '@/lib/exercise-search';
 import { track } from '@/lib/telemetry';
 import type { TrackingType } from '@/lib/tracking-types';
 
-type ExerciseForm = {
+export type ExerciseForm = {
   name: string;
   /** An `EXERCISE_GROUPS` id — the vocabulary the library browses by. */
   group: string | null;
@@ -45,14 +45,17 @@ const derived = ({ name, group, trackingType, imageFile }: ExerciseForm) => {
  * under the unique index — and a re-seed can never match, let alone overwrite,
  * one of them.
  */
-export async function createCustomExercise(form: ExerciseForm): Promise<string> {
-  const id = newId();
-  const row = { id, sourceId: null, ...derived(form), isCustom: true };
+export function customExerciseRow(form: ExerciseForm) {
+  const row = { id: newId(), sourceId: null, ...derived(form), isCustom: true };
+  return { ...row, searchText: buildSearchText(row) };
+}
 
-  await db.insert(exercises).values({ ...row, searchText: buildSearchText(row) });
+export async function createCustomExercise(form: ExerciseForm): Promise<string> {
+  const row = customExerciseRow(form);
+  await db.insert(exercises).values(row);
 
   track('custom_exercise_created', { tracking_type: form.trackingType });
-  return id;
+  return row.id;
 }
 
 export async function updateCustomExercise(id: string, form: ExerciseForm) {

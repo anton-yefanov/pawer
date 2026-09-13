@@ -24,15 +24,18 @@ type Props = {
   width: number;
   index: number;
   draggable?: boolean;
+  menu?: React.ReactNode;
 };
 
-export function TemplateCard({ template, width, index, draggable = false }: Props) {
+export function TemplateCard({ template, width, index, draggable = false, menu }: Props) {
   const cardWidth = width - CARD_BORDER * 2;
   const card = (
     <GridCard
       width={cardWidth}
       title={template.name}
       color={template.color}
+      liftable={draggable}
+      menu={menu}
       onPress={() =>
         router.push({ pathname: '/template/[id]', params: { id: template.id } })
       }

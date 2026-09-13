@@ -1,15 +1,21 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { router } from 'expo-router';
 import { useEffect, useMemo, useRef } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import Animated, {
+  Easing,
+  ReduceMotion,
+  withDelay,
+  withTiming,
+  type EntryExitAnimationFunction,
+} from 'react-native-reanimated';
 
 import { EarnedBadges } from '@/components/achievements/earned-badges';
 import { SheetFooter } from '@/components/sheet-footer';
 import { SHEET_FOOTER_HEIGHT } from '@/components/sheet-footer.types';
 import { SheetGrabber } from '@/components/sheet-grabber';
+import { SheetHeader } from '@/components/sheet-header';
 import { ThemedText } from '@/components/themed-text';
 import { BigButton } from '@/components/workout/big-button';
-import { CONFETTI_DELAY_MS, WorkoutConfetti } from '@/components/workout/confetti';
 import { ExerciseBreakdown, SummaryStats } from '@/components/workout/workout-recap';
 import { SHEET_SCROLL, SHEET_TOP_INSET } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
@@ -30,12 +36,62 @@ import {
 } from '@/lib/workout-queries';
 import { summarise } from '@/lib/workout-stats';
 
+/** How long the recap takes to arrive, so the buzz lands with it rather than early. */
+const ARRIVAL_MS = 200;
+
+const CONTENT = {
+  duration: 340,
+  easing: Easing.out(Easing.cubic),
+  reduceMotion: ReduceMotion.System,
+};
+
+/** The gap between one block settling and the next starting to move. */
+const STAGGER_MS = 55;
+const LIFT = 14;
+
 /**
- * The recap of a session that has just been finished. It is a sheet of its own,
- * raised over the tab root once the logger's sheet has gone — the finish is a
- * change of place, not a screen that swaps its contents underneath one sheet.
+ * The recap assembles rather than appearing: the surface wipes up over the
+ * session (see `WorkoutStage`), then each block lifts into place a beat after
+ * the one above it. A single block arriving all at once is what read as flat.
  */
-export function WorkoutSummary({ id }: { id: string }) {
+const settle = (index: number): EntryExitAnimationFunction =>
+  () => {
+    'worklet';
+    const delay = index * STAGGER_MS;
+    return {
+      initialValues: { opacity: 0, transform: [{ translateY: LIFT }] },
+      animations: {
+        opacity: withDelay(delay, withTiming(1, CONTENT)),
+        transform: [{ translateY: withDelay(delay, withTiming(0, CONTENT)) }],
+      },
+    };
+  };
+
+/**
+ * Done is `FloatingSurface`, so it cannot fade — an animated opacity flattens
+ * its glass (see `WorkoutStage`). It rises from below the sheet's edge instead,
+ * which hides it until its turn without touching opacity at all, and lands last
+ * so the recap has finished assembling before there is anything to press.
+ */
+const DONE_DROP = 120;
+
+const raiseDone: EntryExitAnimationFunction = () => {
+  'worklet';
+  return {
+    initialValues: { transform: [{ translateY: DONE_DROP }] },
+    animations: {
+      transform: [{ translateY: withDelay(5 * STAGGER_MS, withTiming(0, CONTENT)) }],
+    },
+  };
+};
+
+/**
+ * The recap of a session that has just been finished. It shares the logger's
+ * sheet rather than being raised as a second one: presenting a sheet over a
+ * dismissing sheet is what stranded the stack, and no arrangement of the timing
+ * between the two made it safe. See `WorkoutStage`.
+ */
+export function WorkoutSummary({ id, onDone }: { id: string; onDone: () => void }) {
   const theme = useTheme();
   const unit = useWeightUnit();
   const includeWarmup = useIncludeWarmup();
@@ -61,52 +117,68 @@ export function WorkoutSummary({ id }: { id: string }) {
     void attempt('settings', markEarned(badges.map((badge) => badge.key)));
   }, [badges]);
 
-  // The buzz belongs to the sheet arriving, not to the Finish tap several
-  // hundred milliseconds earlier, and it lands with the burst rather than
-  // beside it.
+  // The buzz belongs to the recap arriving, not to the Finish tap a moment
+  // earlier.
   useEffect(() => {
     const timer = setTimeout(
       () => (earnedRecord ? haptics.reward() : haptics.complete()),
-      CONFETTI_DELAY_MS,
+      ARRIVAL_MS,
     );
     return () => clearTimeout(timer);
   }, [earnedRecord]);
 
   if (!workout) return <View style={{ flex: 1, backgroundColor: theme.background }} />;
 
-  const done = () => router.dismissAll();
-
   return (
     <View style={styles.container}>
+      {/* The logger drove the nav bar; the recap draws its own title in the
+          content and wants the bar gone. Going through `SheetHeader` is what
+          clears the running clock the logger left in `headerTitle`. */}
+      <SheetHeader options={{ headerShown: false }} />
       <SheetGrabber />
 
       <ScrollView {...SHEET_SCROLL} style={styles.scroll} contentContainerStyle={styles.content}>
-        <ThemedText type="title2" style={styles.title}>
-          Nice work!
-        </ThemedText>
-        <ThemedText themeColor="textSecondary" style={styles.title}>
-          {badges.length > 0
-            ? `You have earned ${badges.length} new achievement${badges.length === 1 ? '' : 's'}`
-            : workout.name?.trim() || 'Workout'}
-        </ThemedText>
+        <Animated.View entering={settle(0)}>
+          <ThemedText type="title2" style={styles.title}>
+            Nice work!
+          </ThemedText>
+        </Animated.View>
 
-        <EarnedBadges badges={badges} />
+        <Animated.View entering={settle(1)}>
+          <ThemedText themeColor="textSecondary" style={styles.title}>
+            {badges.length > 0
+              ? `You have earned ${badges.length} new achievement${badges.length === 1 ? '' : 's'}`
+              : workout.name?.trim() || 'Workout'}
+          </ThemedText>
+        </Animated.View>
 
-        <SummaryStats summary={summarise(workout, exercises, sets, includeWarmup)} unit={unit} />
+        <Animated.View entering={settle(2)}>
+          <EarnedBadges badges={badges} />
+        </Animated.View>
 
-        <ExerciseBreakdown
-          exercises={exercises}
-          sets={sets}
-          personalRecords={records}
-          unit={unit}
-        />
+        <Animated.View entering={settle(3)}>
+          <SummaryStats
+            summary={summarise(workout, exercises, sets, includeWarmup)}
+            unit={unit}
+            tally
+          />
+        </Animated.View>
+
+        <Animated.View entering={settle(4)}>
+          <ExerciseBreakdown
+            exercises={exercises}
+            sets={sets}
+            personalRecords={records}
+            unit={unit}
+          />
+        </Animated.View>
       </ScrollView>
 
       <SheetFooter>
-        <BigButton title="Done" onPress={() => void done()} />
+        <Animated.View entering={raiseDone}>
+          <BigButton title="Done" onPress={onDone} />
+        </Animated.View>
       </SheetFooter>
-
-      <WorkoutConfetti />
     </View>
   );
 }

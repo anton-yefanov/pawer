@@ -32,7 +32,7 @@ export function ExerciseThumbnailField({
   const theme = useTheme();
 
   return (
-    <Card>
+    <Card radius={SHEET_INNER_RADIUS}>
       <View style={styles.frame}>
         {file ? (
           <>

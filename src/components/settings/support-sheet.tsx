@@ -8,7 +8,7 @@ import { KeyboardScrollView } from '@/components/keyboard-scroll-view';
 import { SheetHeader } from '@/components/sheet-header';
 import { ThemedTextInput } from '@/components/themed-text-input';
 import { CloseButton, HeaderConfirmButton } from '@/components/workout/workout-sheet-header';
-import { SHEET_BOTTOM_INSET, SHEET_SCROLL } from '@/constants/sheet';
+import { SHEET_BOTTOM_INSET, SHEET_INNER_RADIUS, SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useSheetAutoFocus } from '@/hooks/use-sheet-autofocus';
 import { useTheme } from '@/hooks/use-theme';
@@ -91,7 +91,7 @@ export function SupportSheet() {
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag">
-        <Card>
+        <Card radius={SHEET_INNER_RADIUS}>
           <View style={groupedStyles.row}>
             <ThemedTextInput
               ref={nameRef}
@@ -124,7 +124,7 @@ export function SupportSheet() {
         </Card>
 
         <View style={styles.message}>
-          <Card>
+          <Card radius={SHEET_INNER_RADIUS}>
             <View style={groupedStyles.row}>
               <ThemedTextInput
                 value={message}

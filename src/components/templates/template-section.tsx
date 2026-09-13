@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -24,24 +24,18 @@ import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import * as haptics from "@/lib/haptics";
 
-const COLUMNS = 2;
-const GAP = Spacing.two;
+export const COLUMNS = 2;
+export const GAP = Spacing.two;
 /**
  * Room for a card's shadow inside the collapsible's clip box. Cancelled by an
  * equal negative margin, so the grid sits exactly where it did without it.
  */
 const BLEED = 12;
 
-type Cell =
+export type Cell =
   | { kind: "folder"; key: string; folder: FolderCardData }
   | { kind: "template"; key: string; template: TemplateCardData };
 
-/**
- * A lattice of absolutely-positioned cells rather than rows of flexed views:
- * reordering slides a card from one slot to another, which needs every slot at
- * a position arithmetic can predict from its index. Folders come first, so a
- * folder's index is always below every template's.
- */
 export function TemplateSection({
   title,
   templates,
@@ -60,26 +54,9 @@ export function TemplateSection({
   emptyHint?: string;
 }) {
   const [collapsed, setCollapsed] = useState(false);
-  const { width: screenWidth } = useWindowDimensions();
-  const cellWidth = (screenWidth - Spacing.three * 2 - GAP) / COLUMNS;
-  const cellHeight = slotHeight(cellWidth);
-
-  const cells: Cell[] = [
-    ...folders.map((folder): Cell => ({
-      kind: "folder",
-      key: `f-${folder.id}`,
-      folder,
-    })),
-    ...templates.map((template): Cell => ({
-      kind: "template",
-      key: `t-${template.id}`,
-      template,
-    })),
-  ];
-
-  const isEmpty = cells.length === 0;
-  const rows = Math.ceil(cells.length / COLUMNS);
-  const gridHeight = rows === 0 ? 0 : rows * cellHeight + (rows - 1) * GAP;
+  const count = folders.length + templates.length;
+  const { gridHeight } = useGridMetrics(count);
+  const isEmpty = count === 0;
 
   return (
     <View style={styles.section}>
@@ -108,34 +85,7 @@ export function TemplateSection({
 
       {isEmpty ? null : (
         <Collapsible collapsed={collapsed} height={gridHeight}>
-          {draggable ? (
-            <DraggableGrid
-              cells={cells}
-              cellWidth={cellWidth}
-              cellHeight={cellHeight}
-              gridHeight={gridHeight}
-              folderCount={folders.length}
-            />
-          ) : (
-            <View style={{ height: gridHeight }}>
-              {cells.map((cell, index) => (
-                <View
-                  key={cell.key}
-                  style={[
-                    styles.cell,
-                    slotOffset(index, cellWidth, cellHeight),
-                  ]}
-                >
-                  <Placed
-                    cell={cell}
-                    index={index}
-                    width={cellWidth}
-                    draggable={false}
-                  />
-                </View>
-              ))}
-            </View>
-          )}
+          <CardGrid folders={folders} templates={templates} draggable={draggable} />
         </Collapsible>
       )}
     </View>
@@ -201,26 +151,96 @@ function CollapseToggle({
   );
 }
 
+/**
+ * A lattice of absolutely-positioned cells rather than rows of flexed views:
+ * reordering slides a card from one slot to another, which needs every slot at
+ * a position arithmetic can predict from its index. Folders come first, so a
+ * folder's index is always below every template's.
+ */
+export function CardGrid({
+  folders = [],
+  templates,
+  draggable = false,
+  menuFor,
+}: {
+  folders?: readonly FolderCardData[];
+  templates: readonly TemplateCardData[];
+  draggable?: boolean;
+  /** A card's corner menu; none when omitted. */
+  menuFor?: (cell: Cell) => React.ReactNode;
+}) {
+  const cells: Cell[] = [
+    ...folders.map((folder): Cell => ({
+      kind: "folder",
+      key: `f-${folder.id}`,
+      folder,
+    })),
+    ...templates.map((template): Cell => ({
+      kind: "template",
+      key: `t-${template.id}`,
+      template,
+    })),
+  ];
+  const { cellWidth, cellHeight, gridHeight } = useGridMetrics(cells.length);
+
+  return draggable ? (
+    <DraggableGrid
+      cells={cells}
+      cellWidth={cellWidth}
+      cellHeight={cellHeight}
+      gridHeight={gridHeight}
+      folderCount={folders.length}
+      menuFor={menuFor}
+    />
+  ) : (
+    <View style={{ height: gridHeight }}>
+      {cells.map((cell, index) => (
+        <View
+          key={cell.key}
+          style={[styles.cell, slotOffset(index, cellWidth, cellHeight)]}
+        >
+          <Placed
+            cell={cell}
+            index={index}
+            width={cellWidth}
+            draggable={false}
+            menu={menuFor?.(cell)}
+          />
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function useGridMetrics(count: number) {
+  const { width: screenWidth } = useWindowDimensions();
+  const cellWidth = cardCellWidth(screenWidth);
+  const cellHeight = slotHeight(cellWidth);
+  const rows = Math.ceil(count / COLUMNS);
+  const gridHeight = rows === 0 ? 0 : rows * cellHeight + (rows - 1) * GAP;
+  return { cellWidth, cellHeight, gridHeight };
+}
+
 function DraggableGrid({
   cells,
   cellWidth,
   cellHeight,
   gridHeight,
   folderCount,
+  menuFor,
 }: {
   cells: readonly Cell[];
   cellWidth: number;
   cellHeight: number;
   gridHeight: number;
   folderCount: number;
+  menuFor?: (cell: Cell) => React.ReactNode;
 }) {
   const drag = useTemplateDrag();
-  const ref = useRef<View>(null);
 
-  // Re-registered whenever the lattice changes shape. The frame itself is
-  // measured at the start of each drag, since scrolling moves it.
+  // Re-registered whenever the lattice changes shape.
   useEffect(() => {
-    drag.registerGrid(ref, {
+    drag.registerGrid({
       cellWidth,
       cellHeight,
       gap: GAP,
@@ -231,13 +251,19 @@ function DraggableGrid({
   }, [cellHeight, cellWidth, cells.length, drag, folderCount]);
 
   return (
-    <View ref={ref} style={{ height: gridHeight }}>
+    <View style={{ height: gridHeight }}>
       {cells.map((cell, index) => (
         <View
           key={cell.key}
           style={[styles.cell, slotOffset(index, cellWidth, cellHeight)]}
         >
-          <Placed cell={cell} index={index} width={cellWidth} draggable />
+          <Placed
+            cell={cell}
+            index={index}
+            width={cellWidth}
+            draggable
+            menu={menuFor?.(cell)}
+          />
         </View>
       ))}
     </View>
@@ -249,22 +275,36 @@ function Placed({
   index,
   width,
   draggable,
+  menu,
 }: {
   cell: Cell;
   index: number;
   width: number;
   draggable: boolean;
+  menu: React.ReactNode;
 }) {
   return cell.kind === "folder" ? (
-    <FolderCard folder={cell.folder} width={width} index={index} />
+    <FolderCard
+      folder={cell.folder}
+      width={width}
+      index={index}
+      draggable={draggable}
+      menu={menu}
+    />
   ) : (
     <TemplateCard
       template={cell.template}
       width={width}
       index={index}
       draggable={draggable}
+      menu={menu}
     />
   );
+}
+
+/** A grid cell's width on a screen with the standard side gutter. */
+export function cardCellWidth(screenWidth: number): number {
+  return (screenWidth - Spacing.three * 2 - GAP) / COLUMNS;
 }
 
 function slotOffset(index: number, cellWidth: number, cellHeight: number) {

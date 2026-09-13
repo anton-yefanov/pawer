@@ -21,7 +21,7 @@ import {
   CloseButton,
   HeaderConfirmButton,
 } from '@/components/workout/workout-sheet-header';
-import { SHEET_BOTTOM_INSET, SHEET_SCROLL } from '@/constants/sheet';
+import { SHEET_BOTTOM_INSET, SHEET_INNER_RADIUS, SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import type { Exercise } from '@/db/schema';
 import { useSheetAutoFocus } from '@/hooks/use-sheet-autofocus';
@@ -168,7 +168,7 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
               />
             </View>
 
-            <Card>
+            <Card radius={SHEET_INNER_RADIUS}>
               <View style={groupedStyles.row}>
                 <ThemedTextInput
                   ref={nameRef}
@@ -198,7 +198,7 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
             )}
 
             <SectionTitle>Exercise Type</SectionTitle>
-            <Card>
+            <Card radius={SHEET_INNER_RADIUS}>
               <DisclosureRow
                 label={TRACKING_LABELS[trackingType].title}
                 chevron={!locked}
@@ -217,7 +217,7 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
         )}
 
         {step === 'category' && (
-          <Card>
+          <Card radius={SHEET_INNER_RADIUS}>
             {EXERCISE_GROUPS.map((option, index) => (
               <View key={option.id}>
                 {index > 0 && <Separator />}
@@ -239,7 +239,7 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
           TRACKING_SECTIONS.map((section) => (
             <View key={section.title}>
               <SectionTitle>{section.title}</SectionTitle>
-              <Card>
+              <Card radius={SHEET_INNER_RADIUS}>
                 {section.types.map((type, index) => (
                   <View key={type}>
                     {index > 0 && <Separator />}

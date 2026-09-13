@@ -21,6 +21,8 @@ export const Colors = {
     backgroundSelected: "#E0E1E6",
     textSecondary: "#60646C",
     textTertiary: "#8B8D98",
+    /** UIKit's tertiaryLabel, which is what a disclosure chevron is drawn in. */
+    chevron: "#C4C4C7",
     accent: "#007AFF",
     accentMuted: "#B7DAFF",
     accentContent: "#FFFFFF",
@@ -45,6 +47,7 @@ export const Colors = {
     backgroundSelected: "#2E3135",
     textSecondary: "#B0B4BA",
     textTertiary: "#7C8085",
+    chevron: "#5A5A5F",
     accent: "#0A84FF",
     accentMuted: "#1B4F7D",
     accentContent: "#FFFFFF",
@@ -150,6 +153,8 @@ export const Spacing = {
   five: 32,
   six: 64,
 } as const;
+
+export const CardRadius = 26;
 
 /**
  * What lifts a floating control off the page where there is no glass to refract

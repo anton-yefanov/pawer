@@ -2,6 +2,7 @@ import Constants from 'expo-constants';
 import PostHog from 'posthog-react-native';
 
 import type { AchievementTier } from '@/constants/achievement-tiers';
+import type { ImportSource } from '@/lib/import/types';
 import type { PaywallOutcome, PaywallSource } from '@/lib/paywall';
 import type { TrackingType } from '@/lib/tracking-types';
 import type { WeightUnit } from '@/lib/units';
@@ -67,6 +68,9 @@ type TelemetryEvents = {
   achievement_badge_viewed: Record<never, never>;
   achievement_shared: { tier: AchievementTier['id']; action: 'share' | 'save' };
   review_opened: { source: 'settings' };
+  import_previewed: { source: ImportSource; workouts: number; exercises: number; unmatched: number };
+  import_completed: { source: ImportSource; workouts: number; skipped: number; exercises_created: number };
+  data_exported: { workouts: number; sets: number };
   app_error: { scope: string };
 };
 

@@ -29,16 +29,22 @@ export function AddMenu() {
               modifiers={[
                 frame({ width: CIRCLE_BUTTON_SIZE, height: CIRCLE_BUTTON_SIZE }),
                 contentShape(shapes.rectangle()),
-              ]}>
+              ]}
+            >
               <Image systemName="plus" color={theme.text} />
             </ZStack>
-          }>
+          }
+        >
           <Button
             label="New Template"
             systemImage="doc.badge.plus"
             onPress={() => void newTemplate()}
           />
-          <Button label="New Folder" systemImage="folder.badge.plus" onPress={promptNewFolder} />
+          <Button
+            label="New Folder"
+            systemImage="folder.badge.plus"
+            onPress={() => promptNewFolder()}
+          />
         </Menu>
       </Host>
     </GlassCircle>

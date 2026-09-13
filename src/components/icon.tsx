@@ -12,8 +12,10 @@ import { CalendarBlankIcon } from "phosphor-react-native/src/icons/CalendarBlank
 import { CaretDownIcon } from "phosphor-react-native/src/icons/CaretDown";
 import { CaretLeftIcon } from "phosphor-react-native/src/icons/CaretLeft";
 import { CaretRightIcon } from "phosphor-react-native/src/icons/CaretRight";
+import { CaretUpDownIcon } from "phosphor-react-native/src/icons/CaretUpDown";
 import { ChartBarIcon } from "phosphor-react-native/src/icons/ChartBar";
 import { CheckIcon } from "phosphor-react-native/src/icons/Check";
+import { CircleHalfIcon } from "phosphor-react-native/src/icons/CircleHalf";
 import { ClockIcon } from "phosphor-react-native/src/icons/Clock";
 import { ClockCounterClockwiseIcon } from "phosphor-react-native/src/icons/ClockCounterClockwise";
 import { CopyIcon } from "phosphor-react-native/src/icons/Copy";
@@ -45,10 +47,12 @@ import { PencilSimpleIcon } from "phosphor-react-native/src/icons/PencilSimple";
 import { PersonArmsSpreadIcon } from "phosphor-react-native/src/icons/PersonArmsSpread";
 import { QuestionIcon } from "phosphor-react-native/src/icons/Question";
 import { PlusIcon } from "phosphor-react-native/src/icons/Plus";
+import { RowsIcon } from "phosphor-react-native/src/icons/Rows";
 import { ScalesIcon } from "phosphor-react-native/src/icons/Scales";
 import { PlusCircleIcon } from "phosphor-react-native/src/icons/PlusCircle";
 import { SlidersHorizontalIcon } from "phosphor-react-native/src/icons/SlidersHorizontal";
 import { SmileyIcon } from "phosphor-react-native/src/icons/Smiley";
+import { SquaresFourIcon } from "phosphor-react-native/src/icons/SquaresFour";
 import { StarIcon } from "phosphor-react-native/src/icons/Star";
 import { StackPlusIcon } from "phosphor-react-native/src/icons/StackPlus";
 import { TimerIcon } from "phosphor-react-native/src/icons/Timer";
@@ -135,6 +139,14 @@ const ICONS = {
     symbol: { ios: "chevron.right", android: "chevron_right" },
     glyph: CaretRightIcon,
   },
+  "chevron.up.chevron.down": {
+    symbol: { ios: "chevron.up.chevron.down", android: "unfold_more" },
+    glyph: CaretUpDownIcon,
+  },
+  "circle.lefthalf.filled": {
+    symbol: { ios: "circle.lefthalf.filled", android: "contrast" },
+    glyph: CircleHalfIcon,
+  },
   clock: { symbol: { ios: "clock", android: "access_time" }, glyph: ClockIcon },
   "clock.fill": {
     symbol: { ios: "clock.fill", android: "access_time_filled" },
@@ -200,6 +212,10 @@ const ICONS = {
     glyph: BellRingingIcon,
     weight: "fill",
   },
+  flame: {
+    symbol: { ios: "flame", android: "local_fire_department" },
+    glyph: FlameIcon,
+  },
   "hand.wave.fill": {
     symbol: { ios: "hand.wave.fill", android: "waving_hand" },
     glyph: HandWavingIcon,
@@ -230,6 +246,7 @@ const ICONS = {
     glyph: LightningIcon,
     weight: "fill",
   },
+  bolt: { symbol: { ios: "bolt", android: "bolt" }, glyph: LightningIcon },
   "lock.fill": {
     symbol: { ios: "lock.fill", android: "lock" },
     glyph: LockSimpleIcon,
@@ -274,6 +291,14 @@ const ICONS = {
     symbol: { ios: "rectangle.stack.badge.plus", android: "library_add" },
     glyph: StackPlusIcon,
   },
+  "rectangle.grid.1x2": {
+    symbol: { ios: "rectangle.grid.1x2", android: "view_agenda" },
+    glyph: RowsIcon,
+  },
+  "square.grid.2x2": {
+    symbol: { ios: "square.grid.2x2", android: "grid_view" },
+    glyph: SquaresFourIcon,
+  },
   "square.and.arrow.down": {
     symbol: { ios: "square.and.arrow.down", android: "download" },
     glyph: DownloadSimpleIcon,
@@ -298,11 +323,16 @@ const ICONS = {
     glyph: MoonIcon,
     weight: "fill",
   },
+  "questionmark.circle": {
+    symbol: { ios: "questionmark.circle", android: "help" },
+    glyph: QuestionIcon,
+  },
   "questionmark.circle.fill": {
     symbol: { ios: "questionmark.circle.fill", android: "help" },
     glyph: QuestionIcon,
     weight: "bold",
   },
+  star: { symbol: { ios: "star", android: "star_outline" }, glyph: StarIcon },
   "star.fill": {
     symbol: { ios: "star.fill", android: "star" },
     glyph: StarIcon,
@@ -319,12 +349,12 @@ export type IconName = keyof typeof ICONS;
 
 type Props = Pick<
   SymbolViewProps,
-  "size" | "tintColor" | "resizeMode" | "style"
+  "size" | "tintColor" | "resizeMode" | "style" | "weight"
 > & {
   name: IconName;
 };
 
-export function Icon({ name, ...props }: Props) {
+export function Icon({ name, weight, ...props }: Props) {
   const entry: IconEntry = ICONS[name];
 
   if (Platform.OS === "android") {
@@ -340,7 +370,7 @@ export function Icon({ name, ...props }: Props) {
     );
   }
 
-  return <SymbolView name={entry.symbol} {...props} />;
+  return <SymbolView name={entry.symbol} weight={weight} {...props} />;
 }
 
 /**

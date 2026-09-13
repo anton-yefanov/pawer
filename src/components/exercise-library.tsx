@@ -1,5 +1,6 @@
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
+import { Image } from 'expo-image';
 import { Link, router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -37,8 +38,10 @@ import {
   NO_FILTERS,
   type ExerciseFilters,
 } from '@/lib/exercise-filters';
+import { exercisePoster, reportMissingArt } from '@/lib/exercise-media';
 import { EXERCISE_GROUPS, exerciseGroup, type ExerciseGroup } from '@/lib/exercise-groups';
 import * as haptics from '@/lib/haptics';
+import { useLibraryLayout } from '@/lib/library-layout';
 import { claimCustomExercise } from '@/lib/new-exercise-handoff';
 import { attempt } from '@/lib/observability';
 
@@ -92,9 +95,12 @@ export function ExerciseLibrary({
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const [filters, setFilters] = useState<ExerciseFilters>(NO_FILTERS);
+  const [listKey, setListKey] = useState(0);
   const [searchFocused, setSearchFocused] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [customOpen, setCustomOpen] = useState(false);
+  const { layout, setLayout } = useLibraryLayout();
+  const grid = layout === 'grid';
 
   const { data } = useLiveQuery(
     db
@@ -163,6 +169,17 @@ export function ExerciseLibrary({
     paddingBottom: bottomInset + (Platform.OS === 'ios' ? insets.bottom : 0),
   };
 
+  // The panes never unmount, so a list left mid-scroll would come back where it
+  // was when the next group opens. Remounting it starts it at the top without
+  // having to name that offset — on iOS the resting one is negative, because
+  // `contentInsetAdjustmentBehavior` holds the content down by the safe area.
+  // The key turns over as the pane is asked for, while it still sits off to the
+  // right, so neither the rebuild nor the jump is ever on screen.
+  const applyFilters = (next: ExerciseFilters) => {
+    if (isBrowsing(filters) && !isBrowsing(next)) setListKey((key) => key + 1);
+    setFilters(next);
+  };
+
   const isFiltered = filters.search.trim() !== '' || activeFilterCount(filters) > 0;
   const browsing = isBrowsing(filters);
   const group = filters.group === ANY ? undefined : exerciseGroup(filters.group);
@@ -187,15 +204,16 @@ export function ExerciseLibrary({
       <ExerciseSearchBar
         filters={filters}
         equipment={EQUIPMENT_MENU}
-        onChange={setFilters}
+        onChange={applyFilters}
         onFocusChange={setSearchFocused}
         onFilterOpenChange={setFilterOpen}
         focused={searchFocused}
         showBack={!browsing}
         onBack={() => setFilters(NO_FILTERS)}
-        placeholder={group ? `Search ${group.title.toLowerCase()}` : 'Search'}
         newExerciseHref={newExerciseHref}
         topInset={topInset}
+        grid={grid}
+        onGridChange={(next) => void attempt('settings', setLayout(next ? 'grid' : 'list'))}
       />
 
       <Animated.View style={[styles.pane, { backgroundColor: theme.surface }, groupsStyle]}>
@@ -219,7 +237,7 @@ export function ExerciseLibrary({
             ) : null
           }
           renderItem={({ item }) => (
-            <GroupRow group={item} onPress={() => setFilters({ ...NO_FILTERS, group: item.id })} />
+            <GroupRow group={item} onPress={() => applyFilters({ ...NO_FILTERS, group: item.id })} />
           )}
           ItemSeparatorComponent={() => (
             <View style={[styles.separator, { backgroundColor: theme.backgroundElement }]} />
@@ -230,26 +248,47 @@ export function ExerciseLibrary({
       <Animated.View style={[styles.pane, { backgroundColor: theme.surface }, listStyle]}>
         <FlatList
           {...SHEET_SCROLL}
+          // FlatList can't change `numColumns` on a mounted list.
+          key={`${listKey}-${layout}`}
           data={data}
+          numColumns={grid ? 2 : 1}
           keyExtractor={(item) => item.id}
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
           contentInsetAdjustmentBehavior="always"
           automaticallyAdjustContentInsets={false}
-          contentContainerStyle={listPadding}
+          contentContainerStyle={
+            grid ? { ...listPadding, paddingTop: listPadding.paddingTop + Spacing.two } : listPadding
+          }
+          columnWrapperStyle={grid ? styles.gridRow : undefined}
           extraData={selectedIds}
-          renderItem={({ item }) => (
-            <ExerciseRow
-              exercise={item}
-              onSelect={onSelect}
-              detailHref={detailHref}
-              selected={selectedIds?.has(item.id) ?? false}
-            />
-          )}
-          ItemSeparatorComponent={() => (
-            <View style={[styles.separator, { backgroundColor: theme.backgroundElement }]} />
-          )}
+          renderItem={({ item }) =>
+            grid ? (
+              <ExerciseTile
+                exercise={item}
+                onSelect={onSelect}
+                detailHref={detailHref}
+                selected={selectedIds?.has(item.id) ?? false}
+                width={(width - GRID_GAP * 3) / 2}
+              />
+            ) : (
+              <ExerciseRow
+                exercise={item}
+                onSelect={onSelect}
+                detailHref={detailHref}
+                selected={selectedIds?.has(item.id) ?? false}
+              />
+            )
+          }
+          ItemSeparatorComponent={() =>
+            grid ? (
+              <View style={styles.gridGap} />
+            ) : (
+              <View style={[styles.separator, { backgroundColor: theme.backgroundElement }]} />
+            )
+          }
         />
+
 
         {/*
           Not `ListEmptyComponent`: that sits inside the content, under the
@@ -466,6 +505,97 @@ function ExerciseRow({
   );
 }
 
+function ExerciseTile({
+  exercise,
+  onSelect,
+  detailHref,
+  selected,
+  width,
+}: {
+  exercise: Exercise;
+  onSelect?: (exercise: Exercise) => void;
+  detailHref?: (exercise: Exercise) => Href;
+  selected: boolean;
+  /** Set rather than flexed, so an odd last tile keeps its column's width. */
+  width: number;
+}) {
+  const theme = useTheme();
+  const poster = exercisePoster(exercise);
+  const detail = [exercise.equipment, exercise.primaryMuscles[0]].filter(Boolean).join(' · ');
+
+  const body = ({ pressed }: { pressed: boolean }) => (
+    <View>
+      <View
+        style={[
+          styles.tileImage,
+          { width, height: width / POSTER_ASPECT, backgroundColor: theme.backgroundElement },
+        ]}>
+        {poster && (
+          <Image
+            source={poster}
+            style={[styles.image, pressed && styles.tilePressed]}
+            contentFit="cover"
+            onError={(error) => reportMissingArt(exercise, error)}
+          />
+        )}
+        {selected && (
+          <View style={[styles.tileCheck, { backgroundColor: theme.accent }]}>
+            <Icon name="checkmark" size={16} tintColor={theme.accentContent} />
+          </View>
+        )}
+        {onSelect && detailHref && (
+          <View style={styles.tileInfo}>
+            <CircleButton
+              symbol="info"
+              size={TILE_BUTTON_SIZE}
+              symbolSize={16}
+              label={`About ${exercise.name}`}
+              onPress={() => router.push(detailHref(exercise))}
+            />
+          </View>
+        )}
+      </View>
+      <ThemedText type="subhead" weight="medium" numberOfLines={2}>
+        {exercise.name}
+      </ThemedText>
+      {detail !== '' && (
+        <ThemedText type="caption1" themeColor="textSecondary" numberOfLines={1}>
+          {detail}
+        </ThemedText>
+      )}
+    </View>
+  );
+
+  if (onSelect)
+    return (
+      <Pressable
+        style={{ width }}
+        onPress={() => {
+          haptics.select();
+          onSelect(exercise);
+        }}>
+        {body}
+      </Pressable>
+    );
+
+  return (
+    <View style={{ width }}>
+      <Link href={{ pathname: '/exercises/[id]', params: { id: exercise.id } }} asChild>
+        <Pressable onPress={haptics.tap}>{body}</Pressable>
+      </Link>
+    </View>
+  );
+}
+
+const TILE_BUTTON_SIZE = 32;
+const TILE_BUTTON_INSET = Spacing.one;
+
+/** Every gap in the grid — edges, gutter, rows and under the search row — matches the screen margin. */
+const GRID_GAP = Spacing.three;
+
+/** The bundled posters are the clip's first frame, 720×402. */
+const POSTER_ASPECT = 720 / 402;
+
 const styles = StyleSheet.create({
   pane: {
     position: 'absolute',
@@ -515,6 +645,42 @@ const styles = StyleSheet.create({
   },
   clearPressed: {
     opacity: 0.6,
+  },
+  gridRow: {
+    gap: GRID_GAP,
+    paddingHorizontal: GRID_GAP,
+  },
+  gridGap: {
+    height: GRID_GAP,
+  },
+  // Sized outright from the tile width: left to `aspectRatio`, the poster came
+  // out narrower than its column and the gutter and right margin doubled.
+  tileImage: {
+    // Concentric with the corner buttons: their inset plus their radius.
+    borderRadius: TILE_BUTTON_INSET + TILE_BUTTON_SIZE / 2,
+    overflow: 'hidden',
+    marginBottom: Spacing.two,
+  },
+  image: {
+    flex: 1,
+  },
+  tilePressed: {
+    opacity: 0.7,
+  },
+  tileCheck: {
+    position: 'absolute',
+    top: TILE_BUTTON_INSET,
+    right: TILE_BUTTON_INSET,
+    width: TILE_BUTTON_SIZE,
+    height: TILE_BUTTON_SIZE,
+    borderRadius: TILE_BUTTON_SIZE / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tileInfo: {
+    position: 'absolute',
+    right: TILE_BUTTON_INSET,
+    bottom: TILE_BUTTON_INSET,
   },
   scrim: {
     position: 'absolute',

@@ -16,6 +16,8 @@ export function GridCard({
   onPress,
   width,
   showCover = true,
+  menu,
+  liftable = false,
 }: {
   cover: React.ReactNode;
   color: CardColor | null;
@@ -24,6 +26,10 @@ export function GridCard({
   width: number;
   /** Off when the artwork is the whole card, as a folder's is. */
   showCover?: boolean;
+  /** Pinned to the cover's top-right corner, outside the card's own press target. */
+  menu?: React.ReactNode;
+  /** Set when a long press lifts the card for dragging. */
+  liftable?: boolean;
 }) {
   const raised = CardRaised[useColorScheme()];
 
@@ -34,6 +40,10 @@ export function GridCard({
           haptics.tap();
           onPress();
         }}
+        // A long press is a drag lift, and RN skips onPress once onLongPress has
+        // fired, so releasing a dragged card over itself doesn't open it.
+        onLongPress={liftable ? () => {} : undefined}
+        delayLongPress={LIFT_DELAY}
         style={({ pressed }) => [pressed && styles.pressed]}>
         <View style={[styles.slot, { height: coverBoxHeight(width) }]}>
           {showCover ? (
@@ -51,9 +61,13 @@ export function GridCard({
           </ThemedText>
         </View>
       </Pressable>
+      {menu && <View style={[styles.menu, menuOffset(width)]}>{menu}</View>}
     </View>
   );
 }
+
+/** Long enough that a tap opens the card and a scroll flick doesn't lift it. */
+export const LIFT_DELAY = 250;
 
 /**
  * Every card slot reserves its drop-highlight border up front, transparent
@@ -106,6 +120,20 @@ function coverBoxHeight(cardWidth: number): number {
   return (cardWidth * COVER_SCALE) / FOLDER_ICON_ASPECT;
 }
 
+const MENU_INSET = Spacing.one;
+
+/**
+ * A template cover and a folder's back panel share one rectangle — the same
+ * width, and a top edge at the panel's line — so one corner serves both kinds.
+ */
+function menuOffset(cardWidth: number) {
+  const box = coverBoxHeight(cardWidth);
+  return {
+    top: box * FOLDER_PANEL_TOP + MENU_INSET,
+    right: (cardWidth * (1 - COVER_SCALE)) / 2 + MENU_INSET,
+  };
+}
+
 /** Height of a whole slot, border included, for a given slot width. */
 export function slotHeight(width: number): number {
   const card = width - CARD_BORDER * 2;
@@ -127,6 +155,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+  },
+  menu: {
+    position: 'absolute',
   },
   body: {
     paddingTop: Spacing.one,

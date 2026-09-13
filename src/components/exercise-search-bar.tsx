@@ -32,6 +32,11 @@ const SEARCH_BAR_HEIGHT = 48;
 const TOP_GAP = Spacing.one;
 const GAP = Spacing.two;
 
+// One size and weight for every glyph in the row. The equipment menu's is drawn
+// by SwiftUI, which otherwise falls back to body-font metrics and reads heavier.
+const GLYPH_SIZE = 20;
+const GLYPH_WEIGHT = 'medium' as const;
+
 /**
  * Deliberately timing, not spring. A spring overshoots past both ends, and
  * every value here drives a *width* — overshoot means negative widths on one
@@ -90,9 +95,10 @@ export function ExerciseSearchBar({
   focused,
   showBack,
   onBack,
-  placeholder,
   newExerciseHref,
   topInset,
+  grid,
+  onGridChange,
 }: {
   filters: ExerciseFilters;
   equipment: FacetMenu;
@@ -104,15 +110,16 @@ export function ExerciseSearchBar({
    *  leading slot and clears every filter on the way out. */
   showBack: boolean;
   onBack: () => void;
-  /** Names what a query would search — the group being browsed, where there is
-   *  one. The only thing on screen that says which group that is. */
-  placeholder: string;
   /** Where "+" leads. Each stack registers its own copy of the sheet, so the
    *  route differs per host screen. */
   newExerciseHref: Href;
   /** Overrides the safe-area inset. A sheet already starts below the notch, so
    *  the window inset would push the row a long way down inside it. */
   topInset?: number;
+  /** Whether the exercises show as a grid. The toggle sits beside `showBack`,
+   *  since the groups screen has no exercises to lay out. */
+  grid: boolean;
+  onGridChange: (grid: boolean) => void;
 }) {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
@@ -156,6 +163,16 @@ export function ExerciseSearchBar({
     };
   });
 
+  const layoutStyle = useAnimatedStyle(() => {
+    const out = interpolate(progress.value, [0, MIDPOINT], [1, 0], Extrapolation.CLAMP);
+    return {
+      width: SEARCH_BAR_HEIGHT * out,
+      marginLeft: -GAP * (1 - out),
+      opacity: out,
+      pointerEvents: out < 1 ? 'none' : 'auto',
+    };
+  });
+
   const equipmentStyle = useAnimatedStyle(() => {
     const out = interpolate(progress.value, [0, MIDPOINT], [1, 0], Extrapolation.CLAMP);
     return {
@@ -193,7 +210,7 @@ export function ExerciseSearchBar({
                 }}
                 accessibilityRole="button"
                 accessibilityLabel="Back to muscle groups">
-                <Icon name="chevron.left" size={20} tintColor={theme.text} />
+                <Icon name="chevron.left" size={GLYPH_SIZE} weight={GLYPH_WEIGHT} tintColor={theme.text} />
               </Pressable>
             </View>
           </AnimatedFloatingSurface>
@@ -204,14 +221,19 @@ export function ExerciseSearchBar({
             style={styles.fieldContent}
             onPress={() => input.current?.focus()}
             accessibilityRole="search">
-            <Icon name="magnifyingglass" size={20} tintColor={theme.textSecondary} />
+            <Icon
+              name="magnifyingglass"
+              size={GLYPH_SIZE}
+              weight={GLYPH_WEIGHT}
+              tintColor={theme.textSecondary}
+            />
             <ThemedTextInput
               ref={input}
               value={filters.search}
               onChangeText={(search) => onChange({ ...filters, search })}
               onFocus={() => onFocusChange(true)}
               onBlur={() => onFocusChange(false)}
-              placeholder={placeholder}
+              placeholder="Search"
               style={styles.input}
               returnKeyType="search"
               clearButtonMode="while-editing"
@@ -220,6 +242,28 @@ export function ExerciseSearchBar({
             />
           </Pressable>
         </FloatingSurface>
+
+        {showBack && (
+          <AnimatedFloatingSurface style={[styles.capsule, layoutStyle]}>
+            <View style={styles.clip}>
+              <Pressable
+                style={styles.capsuleContent}
+                onPress={() => {
+                  haptics.tap();
+                  onGridChange(!grid);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={grid ? 'Show as list' : 'Show as grid'}>
+                <Icon
+                  name={grid ? 'rectangle.grid.1x2' : 'square.grid.2x2'}
+                  size={GLYPH_SIZE}
+                  weight={GLYPH_WEIGHT}
+                  tintColor={theme.text}
+                />
+              </Pressable>
+            </View>
+          </AnimatedFloatingSurface>
+        )}
 
         <AnimatedFloatingSurface style={[styles.capsule, equipmentStyle]}>
           <View style={styles.clip}>
@@ -234,6 +278,8 @@ export function ExerciseSearchBar({
                 onOpenChange={onFilterOpenChange}
                 restingTint={theme.text}
                 size={SEARCH_BAR_HEIGHT}
+                glyphSize={GLYPH_SIZE}
+                glyphWeight={GLYPH_WEIGHT}
               />
             </View>
           </View>
@@ -251,7 +297,12 @@ export function ExerciseSearchBar({
               }}
               accessibilityRole="button"
               accessibilityLabel="New exercise">
-              <Icon name="plus" size={22} tintColor={action.contentColor} />
+              <Icon
+                name="plus"
+                size={GLYPH_SIZE}
+                weight={GLYPH_WEIGHT}
+                tintColor={action.contentColor}
+              />
             </Pressable>
           </View>
         </AnimatedFloatingSurface>

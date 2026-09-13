@@ -7,7 +7,7 @@ import {
   placeholderSeries,
 } from "@/components/analytics/placeholder";
 import { ThemedText } from "@/components/themed-text";
-import { Spacing } from "@/constants/theme";
+import { CardRadius, Spacing } from "@/constants/theme";
 import { useEasedProgress } from "@/hooks/use-eased-progress";
 import { useTheme } from "@/hooks/use-theme";
 import { periodLabel, type PeriodId } from "@/lib/analytics-period";
@@ -151,7 +151,8 @@ export function MetricChart({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 14,
+    borderRadius: CardRadius,
+    borderCurve: "continuous",
     borderWidth: 1,
     padding: Spacing.three,
     gap: Spacing.three,

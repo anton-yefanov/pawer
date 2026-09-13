@@ -21,6 +21,9 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   /** Side of the square tap target, in points. */
   size: number;
+  glyphSize: number;
+  /** SF Symbols only; Phosphor draws one weight. */
+  glyphWeight: 'regular' | 'medium' | 'semibold';
 };
 
 /**
@@ -38,6 +41,7 @@ export function ExerciseFacetMenu({
   restingTint,
   onOpenChange,
   size,
+  glyphSize,
 }: Props) {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
@@ -80,7 +84,7 @@ export function ExerciseFacetMenu({
         accessibilityLabel={title}
         onPress={() => present(true)}
         style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-        <Icon name={systemName} size={22} tintColor={value !== ANY ? theme.accent : restingTint} />
+        <Icon name={systemName} size={glyphSize} tintColor={value !== ANY ? theme.accent : restingTint} />
       </Pressable>
     </Menu>
   );

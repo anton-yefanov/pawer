@@ -1,5 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef, type RefObject } from 'react';
-import { type View } from 'react-native';
+import { createContext, useContext, useEffect, useMemo, useRef } from 'react';
 import {
   runOnJS,
   useAnimatedStyle,
@@ -11,7 +10,7 @@ import {
 import * as haptics from '@/lib/haptics';
 
 /**
- * Drag a template onto a folder to file it, or past its neighbours to reorder.
+ * Drag a card onto a folder to file it, or past its neighbours to reorder.
  *
  * The lifted card is not copied into an overlay — it stays in the grid and
  * moves by the gesture's *translation*, so it tracks the finger without any
@@ -19,6 +18,12 @@ import * as haptics from '@/lib/haptics';
  * uniform lattice: an index maps to a slot by arithmetic, so the drop index is
  * read straight off the finger position and the displaced neighbours slide to
  * the slot their new index implies.
+ *
+ * Every position is in the grid's own coordinates, and nothing is measured.
+ * The finger is its touch-down point inside the card, plus that card's slot,
+ * plus the translation; a folder's frame is its slot. Window coordinates were
+ * the earlier approach and broke inside a sheet below full height, where
+ * `measureInWindow` and the gesture's `absoluteY` disagree by the sheet's offset.
  *
  * One flat index space holds both kinds, folders first. A drag is clamped to
  * its own kind's span, which is what keeps folders pinned above the templates
@@ -49,9 +54,6 @@ type Frame = {
 };
 
 type Grid = {
-  /** Window coordinates of the grid's top-left corner. */
-  x: number;
-  y: number;
   cellWidth: number;
   cellHeight: number;
   gap: number;
@@ -61,8 +63,6 @@ type Grid = {
 };
 
 const NO_GRID: Grid = {
-  x: 0,
-  y: 0,
   cellWidth: 0,
   cellHeight: 0,
   gap: 0,
@@ -71,12 +71,11 @@ const NO_GRID: Grid = {
   itemCount: 0,
 };
 
-export type GridMeta = Omit<Grid, 'x' | 'y'>;
+export type GridMeta = Grid;
 
 type DragContextValue = {
-  registerFolder: (id: string, ref: RefObject<View | null>) => () => void;
-  registerGrid: (ref: RefObject<View | null>, meta: GridMeta) => void;
-  captureLayout: () => void;
+  registerFolder: (id: string, index: number) => () => void;
+  registerGrid: (meta: GridMeta) => void;
   hoveredFolderId: SharedValue<string>;
   draggingId: SharedValue<string>;
   fromIndex: SharedValue<number>;
@@ -85,11 +84,12 @@ type DragContextValue = {
   translateY: SharedValue<number>;
   settling: SharedValue<number>;
   grid: SharedValue<Grid>;
-  beginDrag: (templateId: string, index: number) => void;
-  moveDrag: (x: number, y: number, absoluteX: number, absoluteY: number, kind: DragKind) => void;
+  /** `touchX`/`touchY` are where the finger went down, inside the card. */
+  beginDrag: (id: string, index: number, touchX: number, touchY: number) => void;
+  moveDrag: (x: number, y: number, kind: DragKind) => void;
   endDrag: (committed: boolean) => void;
   settle: () => void;
-  drop: (templateId: string, folderId: string) => void;
+  drop: (kind: DragKind, id: string, folderId: string) => void;
   reorder: (kind: DragKind, from: number, to: number) => void;
   setDragging: (dragging: boolean) => void;
 };
@@ -112,16 +112,12 @@ export function TemplateDragProvider({
   onDraggingChange,
   children,
 }: {
-  onDrop: (templateId: string, folderId: string, settle: Settle) => void;
+  onDrop: (kind: DragKind, id: string, folderId: string, settle: Settle) => void;
   onReorder: (kind: DragKind, from: number, to: number, settle: Settle) => void;
   onDraggingChange: (dragging: boolean) => void;
   children: React.ReactNode;
 }) {
-  const folders = useRef(new Map<string, RefObject<View | null>>()).current;
-  const gridRef = useRef<{
-    ref: RefObject<View | null>;
-    meta: GridMeta;
-  } | null>(null);
+  const folders = useRef(new Map<string, number>()).current;
 
   const frames = useSharedValue<Frame[]>([]);
   const grid = useSharedValue<Grid>(NO_GRID);
@@ -131,6 +127,8 @@ export function TemplateDragProvider({
   const dropIndex = useSharedValue(IDLE);
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
+  const originX = useSharedValue(0);
+  const originY = useSharedValue(0);
   const settling = useSharedValue(0);
   // Mirrors exercise-reorder: the tick only fires when the target actually
   // changes, not on every frame of the pan.
@@ -166,48 +164,25 @@ export function TemplateDragProvider({
       grid,
       settle,
 
-      registerFolder: (id, ref) => {
-        folders.set(id, ref);
+      registerFolder: (id, index) => {
+        folders.set(id, index);
+        frames.value = folderFrames(folders, grid.value);
         return () => {
           folders.delete(id);
+          frames.value = folderFrames(folders, grid.value);
         };
       },
-      registerGrid: (ref, meta) => {
-        gridRef.current = { ref, meta };
+      registerGrid: (meta) => {
+        grid.value = meta;
+        frames.value = folderFrames(folders, meta);
       },
 
-      captureLayout: () => {
-        const registered = gridRef.current;
-        registered?.ref.current?.measureInWindow((x, y) => {
-          grid.value = { ...registered.meta, x, y };
-        });
-
-        const measured: Frame[] = [];
-        let pending = folders.size;
-        if (pending === 0) {
-          frames.value = [];
-          return;
-        }
-        const settle = () => {
-          pending -= 1;
-          if (pending === 0) frames.value = measured;
-        };
-        folders.forEach((ref, id) => {
-          const node = ref.current;
-          if (!node) {
-            settle();
-            return;
-          }
-          node.measureInWindow((x, y, width, height) => {
-            measured.push({ id, x, y, width, height });
-            settle();
-          });
-        });
-      },
-
-      beginDrag: (templateId, index) => {
+      beginDrag: (id, index, touchX, touchY) => {
         'worklet';
-        draggingId.value = templateId;
+        const { cellWidth, cellHeight, gap, columns } = grid.value;
+        originX.value = (index % columns) * (cellWidth + gap) + touchX;
+        originY.value = Math.floor(index / columns) * (cellHeight + gap) + touchY;
+        draggingId.value = id;
         fromIndex.value = index;
         dropIndex.value = IDLE;
         translateX.value = 0;
@@ -218,16 +193,22 @@ export function TemplateDragProvider({
         runOnJS(haptics.press)();
       },
 
-      moveDrag: (x, y, absoluteX, absoluteY, kind) => {
+      moveDrag: (x, y, kind) => {
         'worklet';
         translateX.value = x;
         translateY.value = y;
+        const fingerX = originX.value + x;
+        const fingerY = originY.value + y;
 
-        // Filing into a folder wins over reordering: a template held over a
-        // folder is going in, not going next to it.
-        const overFolder = kind === 'template' ? frameAt(frames.value, absoluteX, absoluteY) : '';
+        // Filing into a folder wins over reordering: a card held over a folder
+        // is going in, not going next to it. A folder's slots *are* the other
+        // folders, so it only files from their centre and reorders from the rest.
+        const overFolder =
+          kind === 'template'
+            ? frameAt(frames.value, fingerX, fingerY, '', 0)
+            : frameAt(frames.value, fingerX, fingerY, draggingId.value, FOLDER_DROP_INSET);
         hoveredFolderId.value = overFolder;
-        const slot = overFolder === '' ? slotAt(grid.value, absoluteX, absoluteY, kind) : IDLE;
+        const slot = overFolder === '' ? slotAt(grid.value, fingerX, fingerY, kind) : IDLE;
 
         // Crossing into a folder is its own event, so it ticks even though the
         // slot went idle in the same move.
@@ -265,9 +246,9 @@ export function TemplateDragProvider({
         });
       },
 
-      drop: (templateId, folderId) => {
+      drop: (kind, id, folderId) => {
         haptics.complete();
-        callbacks.current.onDrop(templateId, folderId, settle);
+        callbacks.current.onDrop(kind, id, folderId, settle);
       },
       reorder: (kind, from, to) => {
         haptics.complete();
@@ -357,9 +338,9 @@ function slotAt(grid: Grid, x: number, y: number, kind: DragKind): number {
   'worklet';
   if (grid.itemCount === 0 || grid.cellHeight === 0) return IDLE;
 
-  const rawColumn = Math.floor((x - grid.x) / (grid.cellWidth + grid.gap));
+  const rawColumn = Math.floor(x / (grid.cellWidth + grid.gap));
   const column = Math.min(Math.max(rawColumn, 0), grid.columns - 1);
-  const row = Math.max(0, Math.floor((y - grid.y) / (grid.cellHeight + grid.gap)));
+  const row = Math.max(0, Math.floor(y / (grid.cellHeight + grid.gap)));
   const index = row * grid.columns + column;
 
   const low = kind === 'folder' ? 0 : grid.folderCount;
@@ -368,10 +349,31 @@ function slotAt(grid: Grid, x: number, y: number, kind: DragKind): number {
   return Math.min(Math.max(index, low), high);
 }
 
-function frameAt(frames: Frame[], x: number, y: number): string {
+function folderFrames(folders: ReadonlyMap<string, number>, grid: Grid): Frame[] {
+  return [...folders].map(([id, index]) => ({
+    id,
+    x: (index % grid.columns) * (grid.cellWidth + grid.gap),
+    y: Math.floor(index / grid.columns) * (grid.cellHeight + grid.gap),
+    width: grid.cellWidth,
+    height: grid.cellHeight,
+  }));
+}
+
+/** The share of a folder's frame, on each side, that a dragged folder ignores. */
+const FOLDER_DROP_INSET = 0.25;
+
+function frameAt(frames: Frame[], x: number, y: number, skip: string, inset: number): string {
   'worklet';
   for (const frame of frames) {
-    if (x >= frame.x && x <= frame.x + frame.width && y >= frame.y && y <= frame.y + frame.height) {
+    if (frame.id === skip) continue;
+    const dx = frame.width * inset;
+    const dy = frame.height * inset;
+    if (
+      x >= frame.x + dx &&
+      x <= frame.x + frame.width - dx &&
+      y >= frame.y + dy &&
+      y <= frame.y + frame.height - dy
+    ) {
       return frame.id;
     }
   }

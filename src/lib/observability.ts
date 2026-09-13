@@ -36,7 +36,9 @@ export type Scope =
   | 'paywall'
   | 'pro-gates'
   | 'achievements'
-  | 'support';
+  | 'support'
+  | 'import'
+  | 'export';
 
 type Tags = Record<string, string | number | boolean>;
 

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Keyboard, ScrollView, StyleSheet, View } from 'react-native';
 
 import { KeyboardDismissButton } from '@/components/keyboard-dismiss';
 import { KeyboardScrollView } from '@/components/keyboard-scroll-view';
@@ -16,6 +16,8 @@ import {
   type Settle,
 } from '@/components/workout/exercise-reorder';
 import { RestTimerButton } from '@/components/workout/rest-timer-button';
+import { focusKey, SetFocusProvider } from '@/components/workout/set-focus';
+import { SetFocusArrows } from '@/components/workout/set-focus-arrows';
 import {
   CloseButton,
   FinishButton,
@@ -53,6 +55,7 @@ import {
   setWorkoutExerciseRest,
   updateSetValues,
 } from '@/lib/workout-actions';
+import { TRACKING, trackingTypeOf } from '@/lib/tracking-types';
 import { groupBy, previousSetsQuery, workoutExercisesQuery, workoutQuery, workoutSetsQuery } from '@/lib/workout-queries';
 import { hasIncompleteValidSets, trackingByExercise } from '@/lib/workout-stats';
 
@@ -99,18 +102,9 @@ type Props = {
   onOpenExercise: (exerciseId: string) => void;
   onAddExercise: () => void;
   onDone: () => void;
-  /** Only ever called in `active` mode: the recap is a sheet of its own. */
-  onFinished?: () => void;
 };
 
-export function WorkoutLogger({
-  id,
-  mode,
-  onOpenExercise,
-  onAddExercise,
-  onDone,
-  onFinished,
-}: Props) {
+export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone }: Props) {
   const theme = useTheme();
   const unit = useWeightUnit();
   const rest = useRestTimer();
@@ -145,6 +139,19 @@ export function WorkoutLogger({
   const previousByExercise = groupBy(previous, (row) => row.exerciseId);
   const ordered = sortBy(exercises, order);
   const groups = supersetGroups(ordered);
+
+  /**
+   * Every exercise, not just the mounted ones: a card the progressive mount
+   * hasn't reached yet is still somewhere the arrows have to be able to walk to.
+   * Time is picked rather than typed, so it has no place in a keyboard walk.
+   */
+  const focusOrder = ordered.flatMap((workoutExercise) =>
+    (setsByExercise.get(workoutExercise.id) ?? []).flatMap((set) =>
+      TRACKING[trackingTypeOf(workoutExercise.trackingType)].fields
+        .filter((field) => field !== 'duration')
+        .map((field) => focusKey(set.id, field)),
+    ),
+  );
 
   const actions: LoggingActions = {
     ...WORKOUT_ACTIONS,
@@ -213,6 +220,12 @@ export function WorkoutLogger({
   };
 
   const finish = async () => {
+    // A set field can still hold focus here, and the recap has nothing to type
+    // into. Letting the keyboard fall on its own means it animates away while
+    // the recap animates in, over a sheet that is mid-transition — the
+    // arrangement this screen used to get wrong.
+    Keyboard.dismiss();
+
     await attempt('rest-timer', rest.cancel());
     const finished = await attempt('workout', finishWorkout(id), {
       title: 'Couldn’t finish workout',
@@ -220,7 +233,8 @@ export function WorkoutLogger({
     });
     if (!finished) return;
 
-    onFinished?.();
+    // Nothing navigates from here: `finishedAt` is now set, and the live query
+    // is what brings the recap up. See `WorkoutStage`.
 
     // Analytics records only that a workout finished. Workout totals, sets,
     // personal records, and exercise counts never leave the device.
@@ -266,7 +280,7 @@ export function WorkoutLogger({
   };
 
   return (
-    <>
+    <SetFocusProvider order={focusOrder}>
       <SheetHeader
         title={
           mode === 'edit' ? (
@@ -297,6 +311,12 @@ export function WorkoutLogger({
         onReorderingChange={setReordering}>
         <KeyboardScrollView
           {...SHEET_SCROLL}
+          // "always", not the default: the automatic behaviour only insets a
+          // scroll view that is the screen's own first one, and this screen
+          // holds the logger inside a layer so the recap can cross-fade over it
+          // (see `WorkoutStage`). Left automatic, the first card is drawn under
+          // the running clock.
+          contentInsetAdjustmentBehavior="always"
           scrollRef={scrollRef}
           onLayout={(event) => {
             viewportHeight.current = event.nativeEvent.layout.height;
@@ -349,6 +369,7 @@ export function WorkoutLogger({
       </ExerciseReorderProvider>
 
       <SheetOverlay>
+        <SetFocusArrows />
         <KeyboardDismissButton />
 
         <ConfirmAlert
@@ -389,7 +410,7 @@ export function WorkoutLogger({
           onDismiss={() => setConfirming(false)}
         />
       </SheetOverlay>
-    </>
+    </SetFocusProvider>
   );
 }
 

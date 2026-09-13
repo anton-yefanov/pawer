@@ -9,7 +9,7 @@ import { RecordsCard } from "@/components/analytics/records-card";
 import { StatRows, type StatRow } from "@/components/analytics/stat-rows";
 import { PeriodMenu } from "@/components/exercises/period-menu";
 import { ThemedText } from "@/components/themed-text";
-import { BottomTabInset, Spacing } from "@/constants/theme";
+import { BottomTabInset, CardRadius, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { useWeightUnit } from "@/lib/weight-unit";
 import {
@@ -307,7 +307,8 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   card: {
-    borderRadius: 14,
+    borderRadius: CardRadius,
+    borderCurve: "continuous",
     borderWidth: 1,
     paddingHorizontal: Spacing.three,
   },

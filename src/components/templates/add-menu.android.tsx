@@ -35,7 +35,7 @@ export function AddMenu() {
           {
             key: 'folder',
             label: 'New Folder',
-            onPress: promptNewFolder,
+            onPress: () => promptNewFolder(),
           },
         ]}>
         <Pressable accessibilityRole="button" onPress={() => setOpen(true)} style={styles.trigger}>

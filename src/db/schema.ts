@@ -1,5 +1,13 @@
 import { sql } from 'drizzle-orm';
-import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import {
+  type AnySQLiteColumn,
+  index,
+  integer,
+  real,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from 'drizzle-orm/sqlite-core';
 
 import type { CardColor } from '../constants/card-colors';
 
@@ -163,16 +171,23 @@ export const sets = sqliteTable(
 );
 
 /** Groups personal templates. App-shipped templates are never filed. */
-export const folders = sqliteTable('folders', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  position: integer('position').notNull().default(0),
-  color: text('color').$type<CardColor>(),
+export const folders = sqliteTable(
+  'folders',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    position: integer('position').notNull().default(0),
+    color: text('color').$type<CardColor>(),
 
-  /** Cover artwork as JSON; null is the bare gradient. See src/lib/card-artwork.ts. */
-  artwork: text('artwork'),
-  ...timestamps,
-});
+    /** Cover artwork as JSON; null is the bare gradient. See src/lib/card-artwork.ts. */
+    artwork: text('artwork'),
+
+    /** The folder this one is filed in; null is the top level of My Templates. */
+    parentId: text('parent_id').references((): AnySQLiteColumn => folders.id),
+    ...timestamps,
+  },
+  (t) => [index('folders_parent_idx').on(t.parentId)]
+);
 
 /** Saved workout template. Free tier caps user-created ones at 3. */
 export const templates = sqliteTable(

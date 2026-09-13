@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { BadgeStrip } from '@/components/achievements/badge-strip';
 import { ThemedText } from '@/components/themed-text';
 import { TIER_COUNT } from '@/constants/achievement-tiers';
+import { SHEET_INNER_RADIUS } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
@@ -90,7 +91,8 @@ export function ExerciseAchievements({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 14,
+    borderRadius: SHEET_INNER_RADIUS,
+    borderCurve: 'continuous',
     padding: Spacing.three,
     gap: Spacing.three,
   },

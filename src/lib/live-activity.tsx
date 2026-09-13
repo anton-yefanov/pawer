@@ -1,11 +1,10 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { after } from 'expo-widgets';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Platform } from 'react-native';
 
 import { Colors } from '@/constants/theme';
 import { workoutActivity, type WorkoutActivityProps } from '@/lib/live-activity-layout';
-import { breadcrumb, guard, guardSync, report } from '@/lib/observability';
+import { breadcrumb, guardSync, report } from '@/lib/observability';
 import { useRestTimer } from '@/lib/rest-timer';
 import { isWorkSet } from '@/lib/set-types';
 import { formatTonnage } from '@/lib/units';
@@ -14,7 +13,6 @@ import { useWeightUnit } from '@/lib/weight-unit';
 import {
   activeWorkoutQuery,
   workoutExercisesQuery,
-  workoutQuery,
   workoutSetsQuery,
 } from '@/lib/workout-queries';
 import { currentPosition, totalVolumeKg, trackingByExercise } from '@/lib/workout-stats';
@@ -72,7 +70,7 @@ function useWorkoutActivity() {
       // a second pass would grab the same instance and end it twice.
       if (!stopping.current) {
         stopping.current = true;
-        void stop(startedId.current, previous.current).finally(() => {
+        void stop().finally(() => {
           stopping.current = false;
         });
       }
@@ -153,47 +151,20 @@ function idle(exerciseCount: number): string {
   return exerciseCount === 0 ? 'No exercises yet' : 'All sets done';
 }
 
-/** How long a finished workout's summary stays on the Lock Screen. */
-const LINGER_MS = 60_000;
-
 /**
- * A finished workout gets its summary held on screen for a moment; a cancelled
- * one is gone and shouldn't linger on the Lock Screen at all. Both leave
- * `activeWorkoutQuery` the same way, so the row itself has to say which it was.
+ * The workout is over — finished or cancelled — so the activity goes with it.
+ * A finished one used to hold a "Finished" summary on the Lock Screen for a
+ * minute, which read as an activity that would not go away.
  *
- * The linger is an explicit `after` date: ActivityKit's `default` policy is not
- * "a moment" but up to four hours, which reads as an activity that never went
- * away. The final payload is what stops the elapsed clock — SwiftUI keeps
- * ticking it after the activity ends, so the last content has to cap its range.
- *
- * A null id is an activity this launch never started — left over from a session
- * that was killed — and there's nothing to hold on screen for.
+ * `immediate` is load-bearing: ActivityKit's `default` policy keeps a finished
+ * activity around for up to four hours.
  */
-async function stop(workoutId: string | null, last: WorkoutActivityProps | null) {
+async function stop() {
   const [instance] = workoutActivity?.getInstances() ?? [];
   if (!instance) return;
 
-  const workout =
-    workoutId == null ? null : (await guard('live-activity', workoutQuery(workoutId)))?.[0];
-  const finishedAt = workout?.finishedAt ?? null;
-
-  const final: WorkoutActivityProps | undefined =
-    finishedAt == null || last == null
-      ? undefined
-      : {
-          ...last,
-          headline: 'Finished',
-          subline: null,
-          endedAt: finishedAt,
-          restStartedAt: null,
-          restEndsAt: null,
-        };
-
   try {
-    await instance.end(
-      finishedAt == null ? 'immediate' : after(new Date(Date.now() + LINGER_MS)),
-      final
-    );
+    await instance.end('immediate');
   } catch {
     // The user can dismiss the activity from the Lock Screen, which leaves a
     // handle here that ActivityKit no longer knows about.

@@ -32,6 +32,8 @@ export default function WorkoutLayout() {
           bar-button item above an expanded large title, never inside its row. */}
       <Stack.Screen name="index" options={{ title: "Home", headerShown: false }} />
       <Stack.Screen name="achievements" options={{ ...FULL_SHEET, title: "Achievements" }} />
+      {/* The logger and the recap of the session it finishes, in this one
+          sheet. See `WorkoutStage` for why they are not two. */}
       <Stack.Screen name="active" options={{ ...FULL_SHEET, title: "" }} />
       {/*
         Both pickers render their own floating search row, so they want no nav
@@ -45,18 +47,6 @@ export default function WorkoutLayout() {
           ...FULL_SHEET,
           headerShown: false,
           ...surfacePageOptions(theme),
-        }}
-      />
-      {/* The recap of a session that has just been finished. It is presented
-          over the tab root rather than over the logger — the logger's sheet is
-          dismissed first (see `presentWorkoutSummary`) — and its detents match a
-          template's sheet: it opens at 60% and expands. */}
-      <Stack.Screen
-        name="summary"
-        options={{
-          ...DETAIL_SHEET,
-          sheetCornerRadius: PINNED_CORNER_RADIUS,
-          headerShown: false,
         }}
       />
       <Stack.Screen name="new-exercise" options={FULL_SHEET} />

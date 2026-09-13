@@ -12,6 +12,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AutofillWeightProvider } from '@/lib/autofill-weight';
 import { FinishReminderProvider } from '@/lib/finish-reminder';
 import { KeyboardProvider } from '@/lib/keyboard-provider';
+import { LibraryLayoutProvider } from '@/lib/library-layout';
 import { WorkoutActivityProvider } from '@/lib/live-activity';
 import { NoticeHost } from '@/lib/notice';
 import { initObservability } from '@/lib/observability';
@@ -43,7 +44,9 @@ function TabLayout() {
                   <AutofillWeightProvider>
                     <WarmupStatsProvider>
                       <FinishReminderProvider>
-                        <ThemedApp />
+                        <LibraryLayoutProvider>
+                          <ThemedApp />
+                        </LibraryLayoutProvider>
                       </FinishReminderProvider>
                     </WarmupStatsProvider>
                   </AutofillWeightProvider>
