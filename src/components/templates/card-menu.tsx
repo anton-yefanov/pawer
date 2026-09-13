@@ -4,20 +4,26 @@ import { buttonStyle, contentShape, frame, shapes } from '@expo/ui/swift-ui/modi
 import { CIRCLE_BUTTON_SIZE, GlassCircle } from '@/components/circle-button';
 import { sfSymbol } from '@/components/icon';
 import type { CardAction } from '@/components/templates/card-actions';
+import {
+  CARD_MENU_INK,
+  CARD_MENU_SIZE,
+  CardMenuDisc,
+} from '@/components/templates/card-menu-disc';
 import { useTheme } from '@/hooks/use-theme';
 import * as haptics from '@/lib/haptics';
 
-/** The corner menu on a card in a folder sheet. */
-export const CARD_MENU_SIZE = 28;
+export { CARD_MENU_SIZE };
 
 /**
  * Same Host-sizing rules as ExerciseMenu: the Host is explicitly sized or it
  * shrinks to the glyph, and the tap target is grown *inside* the label, because
  * a Menu's button is exactly its label.
  *
- * The glass disc is drawn here rather than left to iOS 26's shared header
- * background, which stays flat and grey until something interacts with it —
- * see `headerItem`.
+ * The disc is drawn here rather than left to iOS 26's shared header background,
+ * which stays flat and grey until something interacts with it — see
+ * `headerItem`. In a header that disc is glass; on a card corner it is the flat
+ * wash `CardMenuDisc` paints, which belongs to the artwork rather than floating
+ * over it.
  */
 export function CardMenu({
   actions,
@@ -29,9 +35,11 @@ export function CardMenu({
   size?: number;
 }) {
   const theme = useTheme();
+  const onCover = size <= CARD_MENU_SIZE;
+  const Disc = onCover ? CardMenuDisc : GlassCircle;
 
   return (
-    <GlassCircle size={size} accessibilityLabel={accessibilityLabel}>
+    <Disc size={size} accessibilityLabel={accessibilityLabel}>
       <Host style={{ width: size, height: size }} ignoreSafeArea="all">
         <Menu
           modifiers={[buttonStyle('plain')]}
@@ -41,8 +49,8 @@ export function CardMenu({
             >
               <Image
                 systemName="ellipsis"
-                color={theme.text}
-                size={size <= CARD_MENU_SIZE ? 13 : undefined}
+                color={onCover ? CARD_MENU_INK : theme.text}
+                size={onCover ? 13 : undefined}
               />
             </ZStack>
           }
@@ -64,6 +72,6 @@ export function CardMenu({
           ])}
         </Menu>
       </Host>
-    </GlassCircle>
+    </Disc>
   );
 }

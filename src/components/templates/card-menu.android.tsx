@@ -5,11 +5,15 @@ import { Menu } from '@/components/android/menu';
 import { CIRCLE_BUTTON_SIZE, GlassCircle } from '@/components/circle-button';
 import { Icon } from '@/components/icon';
 import type { CardAction } from '@/components/templates/card-actions';
+import {
+  CARD_MENU_INK,
+  CARD_MENU_SIZE,
+  CardMenuDisc,
+} from '@/components/templates/card-menu-disc';
 import { useTheme } from '@/hooks/use-theme';
 import * as haptics from '@/lib/haptics';
 
-/** The corner menu on a card in a folder sheet. */
-export const CARD_MENU_SIZE = 28;
+export { CARD_MENU_SIZE };
 
 export function CardMenu({
   actions,
@@ -22,9 +26,11 @@ export function CardMenu({
 }) {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
+  const onCover = size <= CARD_MENU_SIZE;
+  const Disc = onCover ? CardMenuDisc : GlassCircle;
 
   return (
-    <GlassCircle size={size} accessibilityLabel={accessibilityLabel}>
+    <Disc size={size} accessibilityLabel={accessibilityLabel}>
       <Menu
         open={open}
         onClose={() => setOpen(false)}
@@ -47,10 +53,14 @@ export function CardMenu({
           onPress={() => setOpen(true)}
           style={[styles.trigger, { width: size, height: size }]}
         >
-          <Icon name="ellipsis" size={size <= CARD_MENU_SIZE ? 16 : 22} tintColor={theme.text} />
+          <Icon
+            name="ellipsis"
+            size={onCover ? 16 : 22}
+            tintColor={onCover ? CARD_MENU_INK : theme.text}
+          />
         </Pressable>
       </Menu>
-    </GlassCircle>
+    </Disc>
   );
 }
 

@@ -15,6 +15,7 @@ import { workoutActions } from '@/components/workout/workout-menu-actions';
 import { SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { usePro } from '@/lib/purchases';
 import { useWeightUnit } from '@/lib/weight-unit';
 import { useIncludeWarmup } from '@/lib/warmup-stats';
 import {
@@ -37,6 +38,7 @@ export function WorkoutDetails({
   onDeleted: () => void;
 }) {
   const theme = useTheme();
+  const isPro = usePro();
   const unit = useWeightUnit();
   const includeWarmup = useIncludeWarmup();
 
@@ -53,6 +55,7 @@ export function WorkoutDetails({
   const confirm: ConfirmDestructive = (options) => setPending(options);
 
   const actions = workoutActions(workout, {
+    isPro,
     onEdit,
     onRepeat: (result) => {
       if (result.status === 'blocked') setBlockedBy(result.workoutId);

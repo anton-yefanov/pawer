@@ -1,5 +1,6 @@
 import { type CardAction, type ConfirmDestructive } from '@/components/templates/card-actions';
 import { attempt, guard } from '@/lib/observability';
+import { allowNewTemplate } from '@/lib/pro-gates';
 import { createTemplateFromWorkout } from '@/lib/template-actions';
 import { deleteWorkout, repeatWorkout, type StartWorkoutResult } from '@/lib/workout-actions';
 
@@ -12,9 +13,10 @@ export function workoutActions(
     onRepeat: (result: StartWorkoutResult) => void;
     onDeleted?: () => void;
     confirm: ConfirmDestructive;
+    isPro: boolean;
   }
 ): CardAction[] {
-  const { onEdit, onRepeat, onDeleted, confirm } = handlers;
+  const { onEdit, onRepeat, onDeleted, confirm, isPro } = handlers;
   const name = workout.name?.trim() || 'Workout';
 
   return [
@@ -23,10 +25,14 @@ export function workoutActions(
       label: 'Save as Template',
       icon: 'square.and.arrow.down',
       onPress: () =>
-        void attempt('templates', createTemplateFromWorkout(workout.id), {
-          title: 'Couldn’t save template',
-          message: 'Please try again.',
-        }),
+        void guard('pro-gates', allowNewTemplate(isPro)).then(
+          (allowed) =>
+            allowed &&
+            attempt('templates', createTemplateFromWorkout(workout.id), {
+              title: 'Couldn’t save template',
+              message: 'Please try again.',
+            })
+        ),
     },
     {
       label: 'Perform Again',

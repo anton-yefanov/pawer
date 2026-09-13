@@ -8,10 +8,11 @@ import {
   removeTemplateFromFolder,
   renameFolder,
 } from '@/lib/folder-actions';
+import { allowNewTemplate } from '@/lib/pro-gates';
 import { prompt } from '@/lib/text-prompt';
 import { deleteTemplate, duplicateTemplate } from '@/lib/template-actions';
 
-import { attempt } from '@/lib/observability';
+import { attempt, guard } from '@/lib/observability';
 
 const FAILED = {
   title: 'Couldn’t save',
@@ -50,17 +51,26 @@ export type TemplateMenuTarget = {
   folderId: string | null;
 };
 
+/**
+ * Every copy lands in My Templates, so a Library save is a new template and
+ * counts against the free tier exactly like a blank one.
+ */
+export async function saveTemplateCopy(templateId: string, isPro: boolean): Promise<boolean> {
+  if (!(await guard('pro-gates', allowNewTemplate(isPro)))) return false;
+  return attempt('templates', duplicateTemplate(templateId), FAILED);
+}
+
 export function templateActions(
   template: TemplateMenuTarget,
-  confirm: ConfirmDestructive,
+  { confirm, isPro }: { confirm: ConfirmDestructive; isPro: boolean },
 ): CardAction[] {
-  const duplicate: CardAction = {
-    label: 'Duplicate',
+  const save: CardAction = {
+    label: 'Save',
     icon: 'plus.square.on.square',
-    onPress: () => void attempt('templates', duplicateTemplate(template.id), FAILED),
+    onPress: () => void saveTemplateCopy(template.id, isPro),
   };
 
-  if (template.isBuiltIn) return [duplicate];
+  if (template.isBuiltIn) return [save];
 
   const actions: CardAction[] = [
     {
@@ -81,7 +91,7 @@ export function templateActions(
           params: { id: template.id, kind: 'template' },
         }),
     },
-    duplicate,
+    save,
   ];
 
   if (template.folderId) {

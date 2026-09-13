@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import {
   type ConfirmDestructive,
   type ConfirmRequest,
+  saveTemplateCopy,
   templateActions,
 } from '@/components/templates/card-actions';
 import { ExerciseThumb } from '@/components/exercise-thumb';
@@ -22,6 +23,7 @@ import { SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import * as haptics from '@/lib/haptics';
+import { usePro } from '@/lib/purchases';
 import { startWorkoutFromTemplate } from '@/lib/template-actions';
 import { templateExercisesQuery, templateQuery } from '@/lib/template-queries';
 import { useLiveRows } from '@/lib/use-live-rows';
@@ -29,6 +31,7 @@ import { guard } from '@/lib/observability';
 
 export function TemplatePreview({ id }: { id: string }) {
   const theme = useTheme();
+  const isPro = usePro();
   const templateRows = useLiveRows(() => templateQuery(id), id);
   const exercises = useLiveRows(() => templateExercisesQuery(id), id);
   const template = templateRows[0];
@@ -56,16 +59,20 @@ export function TemplatePreview({ id }: { id: string }) {
     open(result.workoutId);
   };
 
+  const save = async () => {
+    if (await saveTemplateCopy(id, isPro)) router.back();
+  };
+
   return (
     <>
       <SheetHeader
         title={template?.name ?? ''}
         options={{ contentStyle: { backgroundColor: theme.surface } }}
         right={
-          template ? (
+          template && !template.isBuiltIn ? (
             <CardMenu
               accessibilityLabel={`${template.name} options`}
-              actions={templateActions(template, confirm)}
+              actions={templateActions(template, { confirm, isPro })}
               size={HEADER_CIRCLE_SIZE}
             />
           ) : null
@@ -108,8 +115,12 @@ export function TemplatePreview({ id }: { id: string }) {
       </ScrollView>
 
       <SheetOverlay>
-        <SheetFooter>
-          <BigButton title="Start Workout" onPress={() => void start()} />
+        <SheetFooter style={styles.footer}>
+          {template?.isBuiltIn ? (
+            <BigButton title="Save" onPress={() => void save()} />
+          ) : (
+            <BigButton title="Start Workout" onPress={() => void start()} />
+          )}
         </SheetFooter>
 
         {/* Deleting the template this sheet is showing takes the sheet with it. */}
@@ -144,6 +155,9 @@ const styles = StyleSheet.create({
   list: {
     paddingVertical: Spacing.two,
     paddingBottom: SHEET_FOOTER_HEIGHT + Spacing.three,
+  },
+  footer: {
+    gap: Spacing.two,
   },
   row: {
     flexDirection: 'row',

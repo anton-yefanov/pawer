@@ -23,12 +23,14 @@ import { Spacing } from '@/constants/theme';
 import { db } from '@/db/client';
 import { templates } from '@/db/schema';
 import { useTheme } from '@/hooks/use-theme';
+import { usePro } from '@/lib/purchases';
 import { toFolderCard, toTemplateCard } from '@/lib/template-cards';
 import { folderQuery, foldersQuery, templateCardExercisesQuery } from '@/lib/template-queries';
 import { groupBy } from '@/lib/workout-queries';
 
 export default function FolderScreen() {
   const theme = useTheme();
+  const isPro = usePro();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const { data: folderRows } = useLiveQuery(folderQuery(id), [id]);
@@ -52,8 +54,8 @@ export default function FolderScreen() {
   const [dragging, setDragging] = useState(false);
 
   const folder = folderRows?.[0];
-  // A Library folder is app-shipped: its cards are read-only and only Duplicate
-  // takes one out of it.
+  // A Library folder is app-shipped: its cards are read-only, and the way one
+  // leaves it is Save in the preview sheet, not a corner menu.
   const shipped = folder?.isBuiltIn ?? false;
   const subfolderRows = (allFolders ?? []).filter((row) => row.parentId === id);
   const templateRows = rows ?? [];
@@ -76,7 +78,7 @@ export default function FolderScreen() {
   const confirm: ConfirmDestructive = (options) => setPending(options);
 
   const menuFor = (cell: Cell) => {
-    if (shipped && cell.kind === 'folder') return null;
+    if (shipped) return null;
     const row =
       cell.kind === 'folder'
         ? subfolderRows.find((sub) => sub.id === cell.folder.id)
@@ -88,7 +90,9 @@ export default function FolderScreen() {
         // `folderId` is the discriminator, not `isBuiltIn` — folders carry that
         // too now that the Library ships its own.
         actions={
-          'folderId' in row ? templateActions(row, confirm) : folderActions(row, { confirm })
+          'folderId' in row
+            ? templateActions(row, { confirm, isPro })
+            : folderActions(row, { confirm })
         }
         size={CARD_MENU_SIZE}
       />

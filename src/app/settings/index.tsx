@@ -155,6 +155,7 @@ export default function SettingsScreen() {
           <DisclosureRow
             label="Import Data"
             leading={<RowIcon name="square.and.arrow.down" />}
+            chevron={false}
             onPress={() => router.push("/settings/import")}
           />
           <Separator inset={ROW_ICON_INSET} />
