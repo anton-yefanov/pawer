@@ -1,55 +1,143 @@
 [
   {
     "sourceId": "back_and_biceps",
+    "folderSourceId": "at_the_gym",
     "color": "blue",
-    "name": "Back & Biceps",
+    "name": "Wider Back, Bigger Arms",
     "position": 0,
     "exercises": [
-      { "exerciseSourceId": "pull-ups", "targetSets": 3, "targetReps": 8 },
-      { "exerciseSourceId": "wide-grip-lat-pulldown", "targetSets": 3, "targetReps": 10 },
-      { "exerciseSourceId": "machine-seated-cable-row", "targetSets": 3, "targetReps": 10 },
-      { "exerciseSourceId": "narrow-pulldown", "targetSets": 3, "targetReps": 12 },
-      { "exerciseSourceId": "barbell-curl", "targetSets": 3, "targetReps": 10 },
-      { "exerciseSourceId": "dumbbell-hammer-curl", "targetSets": 3, "targetReps": 12 }
+      {
+        "exerciseSourceId": "pull-ups",
+        "targetSets": 3,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "wide-grip-lat-pulldown",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "machine-seated-cable-row",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "narrow-pulldown",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "barbell-curl",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "dumbbell-hammer-curl",
+        "targetSets": 3,
+        "targetReps": 12
+      }
     ]
   },
   {
     "sourceId": "chest_and_triceps",
+    "folderSourceId": "at_the_gym",
     "color": "blue",
-    "name": "Chest & Triceps",
+    "name": "Chest and Arms Day",
     "position": 1,
     "exercises": [
-      { "exerciseSourceId": "barbell-bench-press", "targetSets": 4, "targetReps": 8 },
-      { "exerciseSourceId": "dumbbell-incline-bench-press", "targetSets": 3, "targetReps": 10 },
-      { "exerciseSourceId": "cable-pec-fly", "targetSets": 3, "targetReps": 12 },
-      { "exerciseSourceId": "barbell-close-grip-bench-press", "targetSets": 3, "targetReps": 10 },
-      { "exerciseSourceId": "cable-bar-pushdown", "targetSets": 3, "targetReps": 12 }
+      {
+        "exerciseSourceId": "barbell-bench-press",
+        "targetSets": 4,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "dumbbell-incline-bench-press",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "cable-pec-fly",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "barbell-close-grip-bench-press",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "cable-bar-pushdown",
+        "targetSets": 3,
+        "targetReps": 12
+      }
     ]
   },
   {
     "sourceId": "legs",
+    "folderSourceId": "at_the_gym",
     "color": "blue",
-    "name": "Legs",
+    "name": "Legs You Can Trust",
     "position": 2,
     "exercises": [
-      { "exerciseSourceId": "barbell-squat", "targetSets": 4, "targetReps": 6 },
-      { "exerciseSourceId": "barbell-romanian-deadlift", "targetSets": 3, "targetReps": 10 },
-      { "exerciseSourceId": "machine-leg-press", "targetSets": 3, "targetReps": 12 },
-      { "exerciseSourceId": "machine-leg-extension", "targetSets": 3, "targetReps": 12 },
-      { "exerciseSourceId": "lying-leg-curl", "targetSets": 3, "targetReps": 12 },
-      { "exerciseSourceId": "standing-calf-raise-machine", "targetSets": 4, "targetReps": 15 }
+      {
+        "exerciseSourceId": "barbell-squat",
+        "targetSets": 4,
+        "targetReps": 6
+      },
+      {
+        "exerciseSourceId": "barbell-romanian-deadlift",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "machine-leg-press",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "machine-leg-extension",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "lying-leg-curl",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "standing-calf-raise-machine",
+        "targetSets": 4,
+        "targetReps": 15
+      }
     ]
   },
   {
     "sourceId": "shoulders_and_arms",
+    "folderSourceId": "at_the_gym",
     "color": "blue",
-    "name": "Shoulders & Arms",
+    "name": "Shoulders and Arms",
     "position": 3,
     "exercises": [
-      { "exerciseSourceId": "dumbbell-seated-overhead-press", "targetSets": 4, "targetReps": 8 },
-      { "exerciseSourceId": "dumbbell-lateral-raise", "targetSets": 3, "targetReps": 15 },
-      { "exerciseSourceId": "cable-seated-rope-face-pull", "targetSets": 3, "targetReps": 15 },
-      { "exerciseSourceId": "dumbbell-curl", "targetSets": 3, "targetReps": 12 },
+      {
+        "exerciseSourceId": "dumbbell-seated-overhead-press",
+        "targetSets": 4,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "dumbbell-lateral-raise",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "cable-seated-rope-face-pull",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "dumbbell-curl",
+        "targetSets": 3,
+        "targetReps": 12
+      },
       {
         "exerciseSourceId": "cable-rope-overhead-tricep-extension",
         "targetSets": 3,
@@ -59,45 +147,2095 @@
   },
   {
     "sourceId": "push_day",
+    "folderSourceId": "at_the_gym",
     "color": "blue",
-    "name": "Push",
+    "name": "Everything That Pushes",
     "position": 4,
     "exercises": [
-      { "exerciseSourceId": "barbell-bench-press", "targetSets": 4, "targetReps": 6 },
-      { "exerciseSourceId": "barbell-overhead-press", "targetSets": 3, "targetReps": 8 },
+      {
+        "exerciseSourceId": "barbell-bench-press",
+        "targetSets": 4,
+        "targetReps": 6
+      },
+      {
+        "exerciseSourceId": "barbell-overhead-press",
+        "targetSets": 3,
+        "targetReps": 8
+      },
       {
         "exerciseSourceId": "barbell-incline-bench-press",
         "targetSets": 3,
         "targetReps": 10
       },
-      { "exerciseSourceId": "dumbbell-lateral-raise", "targetSets": 3, "targetReps": 15 },
-      { "exerciseSourceId": "cable-bar-pushdown", "targetSets": 3, "targetReps": 12 }
+      {
+        "exerciseSourceId": "dumbbell-lateral-raise",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "cable-rope-pushdown",
+        "targetSets": 3,
+        "targetReps": 12
+      }
     ]
   },
   {
     "sourceId": "pull_day",
+    "folderSourceId": "at_the_gym",
     "color": "blue",
-    "name": "Pull",
+    "name": "Everything That Pulls",
     "position": 5,
     "exercises": [
-      { "exerciseSourceId": "barbell-deadlift", "targetSets": 3, "targetReps": 5 },
-      { "exerciseSourceId": "pull-ups", "targetSets": 3, "targetReps": 8 },
-      { "exerciseSourceId": "barbell-bent-over-row", "targetSets": 3, "targetReps": 10 },
-      { "exerciseSourceId": "machine-seated-cable-row", "targetSets": 3, "targetReps": 12 },
-      { "exerciseSourceId": "barbell-curl", "targetSets": 3, "targetReps": 10 }
+      {
+        "exerciseSourceId": "barbell-deadlift",
+        "targetSets": 3,
+        "targetReps": 5
+      },
+      {
+        "exerciseSourceId": "pull-ups",
+        "targetSets": 3,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "barbell-bent-over-row",
+        "targetSets": 3,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "cable-rope-hammer-curl",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "reverse-pec-deck",
+        "targetSets": 3,
+        "targetReps": 15
+      }
     ]
   },
   {
     "sourceId": "full_body",
+    "folderSourceId": "at_the_gym",
     "color": "blue",
-    "name": "Full Body",
+    "name": "Whole Body in One Go",
     "position": 6,
     "exercises": [
-      { "exerciseSourceId": "barbell-squat", "targetSets": 3, "targetReps": 8 },
-      { "exerciseSourceId": "barbell-bench-press", "targetSets": 3, "targetReps": 8 },
-      { "exerciseSourceId": "barbell-bent-over-row", "targetSets": 3, "targetReps": 10 },
-      { "exerciseSourceId": "dumbbell-seated-overhead-press", "targetSets": 3, "targetReps": 10 },
-      { "exerciseSourceId": "front-plank", "targetSets": 3, "targetReps": null }
+      {
+        "exerciseSourceId": "barbell-squat",
+        "targetSets": 3,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "barbell-bench-press",
+        "targetSets": 3,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "machine-seated-cable-row",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "dumbbell-seated-overhead-press",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "front-plank",
+        "targetSets": 3
+      }
+    ]
+  },
+  {
+    "sourceId": "gym_first_week",
+    "folderSourceId": "at_the_gym",
+    "color": "green",
+    "name": "Your First Gym Week",
+    "position": 7,
+    "exercises": [
+      {
+        "exerciseSourceId": "machine-leg-press",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "machine-chest-press",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "machine-seated-cable-row",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "machine-front-military-press",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "machine-crunch",
+        "targetSets": 3,
+        "targetReps": 15
+      }
+    ]
+  },
+  {
+    "sourceId": "gym_three_big_lifts",
+    "folderSourceId": "at_the_gym",
+    "color": "black",
+    "name": "Three Big Lifts",
+    "position": 8,
+    "exercises": [
+      {
+        "exerciseSourceId": "barbell-squat",
+        "targetSets": 5,
+        "targetReps": 5
+      },
+      {
+        "exerciseSourceId": "barbell-bench-press",
+        "targetSets": 5,
+        "targetReps": 5
+      },
+      {
+        "exerciseSourceId": "barbell-deadlift",
+        "targetSets": 3,
+        "targetReps": 5
+      },
+      {
+        "exerciseSourceId": "front-plank",
+        "targetSets": 3
+      }
+    ]
+  },
+  {
+    "sourceId": "gym_upper_body",
+    "folderSourceId": "at_the_gym",
+    "color": "blue",
+    "name": "Full Upper Body Day",
+    "position": 9,
+    "exercises": [
+      {
+        "exerciseSourceId": "barbell-bench-press",
+        "targetSets": 4,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "wide-grip-lat-pulldown",
+        "targetSets": 4,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "dumbbell-seated-overhead-press",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "machine-seated-cable-row",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-curl",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "cable-rope-pushdown",
+        "targetSets": 3,
+        "targetReps": 12
+      }
+    ]
+  },
+  {
+    "sourceId": "gym_lower_body",
+    "folderSourceId": "at_the_gym",
+    "color": "blue",
+    "name": "Full Lower Body Day",
+    "position": 10,
+    "exercises": [
+      {
+        "exerciseSourceId": "barbell-squat",
+        "targetSets": 4,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "barbell-romanian-deadlift",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "bulgarian-split-squat",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "seated-leg-curl",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "machine-leg-extension",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "standing-calf-raise-machine",
+        "targetSets": 4,
+        "targetReps": 15
+      }
+    ]
+  },
+  {
+    "sourceId": "gym_30_minutes",
+    "folderSourceId": "at_the_gym",
+    "color": "orange",
+    "name": "In and Out in 30 Min",
+    "position": 11,
+    "exercises": [
+      {
+        "exerciseSourceId": "trap-bar-deadlift",
+        "targetSets": 3,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "machine-chest-press",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "neutral-grip-lat-pulldown",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "dumbbell-lateral-raise",
+        "targetSets": 3,
+        "targetReps": 15
+      }
+    ]
+  },
+  {
+    "sourceId": "gym_strong_chest",
+    "folderSourceId": "at_the_gym",
+    "color": "blue",
+    "name": "A Chest That Shows",
+    "position": 12,
+    "exercises": [
+      {
+        "exerciseSourceId": "barbell-incline-bench-press",
+        "targetSets": 4,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "dumbbell-bench-press",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "cable-high-to-low-fly",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "machine-pec-fly",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "parralel-bar-dips",
+        "targetSets": 3,
+        "targetReps": 10
+      }
+    ]
+  },
+  {
+    "sourceId": "gym_wide_back",
+    "folderSourceId": "at_the_gym",
+    "color": "blue",
+    "name": "Build a Wider Back",
+    "position": 13,
+    "exercises": [
+      {
+        "exerciseSourceId": "wide-grip-lat-pulldown",
+        "targetSets": 4,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "chest-supported-t-bar-row",
+        "targetSets": 4,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "straight-arm-lat-pulldown",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "single-arm-lat-pulldown",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "machine-face-pulls",
+        "targetSets": 3,
+        "targetReps": 15
+      }
+    ]
+  },
+  {
+    "sourceId": "gym_arms_only",
+    "folderSourceId": "at_the_gym",
+    "color": "purple",
+    "name": "Just Arms Today",
+    "position": 14,
+    "exercises": [
+      {
+        "exerciseSourceId": "barbell-curl",
+        "targetSets": 4,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "ez-bar-preacher-curl",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "cable-rope-hammer-curl",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "barbell-close-grip-bench-press",
+        "targetSets": 4,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "cable-rope-overhead-tricep-extension",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "cable-single-arm-rope-pushdown",
+        "targetSets": 3,
+        "targetReps": 15
+      }
+    ]
+  },
+  {
+    "sourceId": "gym_shoulders_only",
+    "folderSourceId": "at_the_gym",
+    "color": "purple",
+    "name": "Just Shoulders Today",
+    "position": 15,
+    "exercises": [
+      {
+        "exerciseSourceId": "barbell-overhead-press",
+        "targetSets": 4,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "dumbbell-lateral-raise",
+        "targetSets": 4,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "reverse-pec-deck",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "cable-seated-rope-face-pull",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "dumbbell-shrug",
+        "targetSets": 3,
+        "targetReps": 12
+      }
+    ]
+  },
+  {
+    "sourceId": "gym_glutes",
+    "folderSourceId": "at_the_gym",
+    "color": "red",
+    "name": "Glutes and Hamstrings",
+    "position": 16,
+    "exercises": [
+      {
+        "exerciseSourceId": "barbell-hip-thrust",
+        "targetSets": 4,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "barbell-romanian-deadlift",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "cable-pull-through",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "seated-leg-curl",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "machine-hip-abduction",
+        "targetSets": 3,
+        "targetReps": 20
+      }
+    ]
+  },
+  {
+    "sourceId": "gym_busy_day",
+    "folderSourceId": "at_the_gym",
+    "color": "orange",
+    "name": "Busy Day, Still Trained",
+    "position": 17,
+    "exercises": [
+      {
+        "exerciseSourceId": "machine-leg-press",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "machine-chest-press",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "machine-neutral-row",
+        "targetSets": 3,
+        "targetReps": 12
+      }
+    ]
+  },
+  {
+    "sourceId": "home_first_workout",
+    "folderSourceId": "at_home",
+    "color": "green",
+    "name": "Your First Workout",
+    "position": 18,
+    "exercises": [
+      {
+        "exerciseSourceId": "bodyweight-squat",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "bodyweight-knee-push-ups",
+        "targetSets": 3,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "glute-bridge",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "bird-dog",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "front-plank",
+        "targetSets": 3
+      }
+    ]
+  },
+  {
+    "sourceId": "home_full_body_no_kit",
+    "folderSourceId": "at_home",
+    "color": "green",
+    "name": "No Kit, Whole Body",
+    "position": 19,
+    "exercises": [
+      {
+        "exerciseSourceId": "push-up",
+        "targetSets": 4,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "bodyweight-squat",
+        "targetSets": 4,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "inverted-row",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "bodyweight-reverse-lunge",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "hand-plank",
+        "targetSets": 3
+      }
+    ]
+  },
+  {
+    "sourceId": "home_20_minutes",
+    "folderSourceId": "at_home",
+    "color": "orange",
+    "name": "Whole Body in 20 Min",
+    "position": 20,
+    "exercises": [
+      {
+        "exerciseSourceId": "burpee",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "bodyweight-squat",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "push-up",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "mountain-climber",
+        "targetSets": 3,
+        "targetReps": 20
+      }
+    ]
+  },
+  {
+    "sourceId": "home_quiet",
+    "folderSourceId": "at_home",
+    "color": "purple",
+    "name": "Quiet Workout for Flats",
+    "position": 21,
+    "exercises": [
+      {
+        "exerciseSourceId": "wall-sit",
+        "targetSets": 3
+      },
+      {
+        "exerciseSourceId": "split-squat-isometric-hold",
+        "targetSets": 3
+      },
+      {
+        "exerciseSourceId": "front-plank",
+        "targetSets": 3
+      },
+      {
+        "exerciseSourceId": "glute-bridge",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "dead-bug",
+        "targetSets": 3,
+        "targetReps": 12
+      }
+    ]
+  },
+  {
+    "sourceId": "home_core_floor",
+    "folderSourceId": "at_home",
+    "color": "yellow",
+    "name": "Core on the Floor",
+    "position": 22,
+    "exercises": [
+      {
+        "exerciseSourceId": "dead-bug",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "v-up",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "bodyweight-russian-twist",
+        "targetSets": 3,
+        "targetReps": 20
+      },
+      {
+        "exerciseSourceId": "elbow-side-plank",
+        "targetSets": 3
+      },
+      {
+        "exerciseSourceId": "front-plank",
+        "targetSets": 3
+      }
+    ]
+  },
+  {
+    "sourceId": "home_legs_floor",
+    "folderSourceId": "at_home",
+    "color": "green",
+    "name": "Legs Without Weights",
+    "position": 23,
+    "exercises": [
+      {
+        "exerciseSourceId": "bodyweight-squat",
+        "targetSets": 4,
+        "targetReps": 20
+      },
+      {
+        "exerciseSourceId": "bodyweight-alternating-reverse-lunges",
+        "targetSets": 3,
+        "targetReps": 16
+      },
+      {
+        "exerciseSourceId": "single-leg-step-down",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "single-leg-glute-bridge",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "single-leg-standing-calf-raise",
+        "targetSets": 3,
+        "targetReps": 15
+      }
+    ]
+  },
+  {
+    "sourceId": "home_upper_push",
+    "folderSourceId": "at_home",
+    "color": "blue",
+    "name": "Push Harder Every Week",
+    "position": 24,
+    "exercises": [
+      {
+        "exerciseSourceId": "incline-push-up",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "push-up",
+        "targetSets": 4,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "decline-push-up",
+        "targetSets": 3,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "diamond-push-ups",
+        "targetSets": 3,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "bench-dips",
+        "targetSets": 3,
+        "targetReps": 12
+      }
+    ]
+  },
+  {
+    "sourceId": "home_glutes",
+    "folderSourceId": "at_home",
+    "color": "red",
+    "name": "Wake Up Your Glutes",
+    "position": 25,
+    "exercises": [
+      {
+        "exerciseSourceId": "glute-bridge",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "frog-pump",
+        "targetSets": 3,
+        "targetReps": 20
+      },
+      {
+        "exerciseSourceId": "b-stance-hip-thrust",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "bodyweight-hip-abduction",
+        "targetSets": 3,
+        "targetReps": 20
+      },
+      {
+        "exerciseSourceId": "single-leg-hip-thrust",
+        "targetSets": 3,
+        "targetReps": 12
+      }
+    ]
+  },
+  {
+    "sourceId": "home_band_full_body",
+    "folderSourceId": "at_home",
+    "color": "orange",
+    "name": "One Band, Whole Body",
+    "position": 26,
+    "exercises": [
+      {
+        "exerciseSourceId": "band-squat",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "band-row",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "band-overhead-press",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "band-romanian-deadlift",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "band-curl",
+        "targetSets": 3,
+        "targetReps": 15
+      }
+    ]
+  },
+  {
+    "sourceId": "home_band_upper",
+    "folderSourceId": "at_home",
+    "color": "blue",
+    "name": "Band Back and Arms",
+    "position": 27,
+    "exercises": [
+      {
+        "exerciseSourceId": "band-seated-pulldown",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "band-row",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "band-high-face-pull",
+        "targetSets": 3,
+        "targetReps": 20
+      },
+      {
+        "exerciseSourceId": "band-curl",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "band-lateral-raise",
+        "targetSets": 3,
+        "targetReps": 20
+      }
+    ]
+  },
+  {
+    "sourceId": "home_morning",
+    "folderSourceId": "at_home",
+    "color": "yellow",
+    "name": "Ten Minutes to Wake Up",
+    "position": 28,
+    "exercises": [
+      {
+        "exerciseSourceId": "jumping-jack",
+        "targetSets": 3
+      },
+      {
+        "exerciseSourceId": "bodyweight-squat",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "push-up",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "bird-dog",
+        "targetSets": 3,
+        "targetReps": 10
+      }
+    ]
+  },
+  {
+    "sourceId": "home_desk_relief",
+    "folderSourceId": "at_home",
+    "color": "purple",
+    "name": "Undo a Day at the Desk",
+    "position": 29,
+    "exercises": [
+      {
+        "exerciseSourceId": "band-high-face-pull",
+        "targetSets": 3,
+        "targetReps": 20
+      },
+      {
+        "exerciseSourceId": "supermans",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "bird-dog",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dead-hang",
+        "targetSets": 3
+      },
+      {
+        "exerciseSourceId": "abdominals-stretch-variation-one",
+        "targetSets": 2
+      }
+    ]
+  },
+  {
+    "sourceId": "home_sweat",
+    "folderSourceId": "at_home",
+    "color": "red",
+    "name": "Get Your Heart Going",
+    "position": 30,
+    "exercises": [
+      {
+        "exerciseSourceId": "jump-rope",
+        "targetSets": 4
+      },
+      {
+        "exerciseSourceId": "burpee",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "jump-squats",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "mountain-climber",
+        "targetSets": 3,
+        "targetReps": 20
+      }
+    ]
+  },
+  {
+    "sourceId": "home_strong_legs_glutes",
+    "folderSourceId": "at_home",
+    "color": "green",
+    "name": "Legs and Glutes at Home",
+    "position": 31,
+    "exercises": [
+      {
+        "exerciseSourceId": "bulgarian-split-squat",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "bodyweight-alternating-lateral-lunge",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "single-leg-glute-bridge",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "nordic-hamstring-curl",
+        "targetSets": 3,
+        "targetReps": 6
+      },
+      {
+        "exerciseSourceId": "bodyweight-donkey-calf-raise",
+        "targetSets": 3,
+        "targetReps": 20
+      }
+    ]
+  },
+  {
+    "sourceId": "home_travel",
+    "folderSourceId": "at_home",
+    "color": "blue",
+    "name": "Hotel Room Workout",
+    "position": 32,
+    "exercises": [
+      {
+        "exerciseSourceId": "push-up",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "bodyweight-box-squat",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "bench-dips",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "bodyweight-reverse-lunge",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "front-plank",
+        "targetSets": 3
+      }
+    ]
+  },
+  {
+    "sourceId": "home_short_core",
+    "folderSourceId": "at_home",
+    "color": "yellow",
+    "name": "Five Minutes of Core",
+    "position": 33,
+    "exercises": [
+      {
+        "exerciseSourceId": "front-plank",
+        "targetSets": 2
+      },
+      {
+        "exerciseSourceId": "mountain-climber",
+        "targetSets": 2,
+        "targetReps": 20
+      },
+      {
+        "exerciseSourceId": "v-up",
+        "targetSets": 2,
+        "targetReps": 15
+      }
+    ]
+  },
+  {
+    "sourceId": "db_first",
+    "folderSourceId": "dumbbells_only",
+    "color": "green",
+    "name": "Start With One Pair",
+    "position": 34,
+    "exercises": [
+      {
+        "exerciseSourceId": "dumbbell-goblet-squat",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "floor-press",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-row-bilateral",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-seated-overhead-press",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "front-plank",
+        "targetSets": 3
+      }
+    ]
+  },
+  {
+    "sourceId": "db_full_body",
+    "folderSourceId": "dumbbells_only",
+    "color": "orange",
+    "name": "One Pair, Whole Body",
+    "position": 35,
+    "exercises": [
+      {
+        "exerciseSourceId": "dumbbell-goblet-squat",
+        "targetSets": 4,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-bench-press",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "dumbbell-single-arm-row",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-deadlift",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "dumbbell-seated-overhead-press",
+        "targetSets": 3,
+        "targetReps": 10
+      }
+    ]
+  },
+  {
+    "sourceId": "db_upper",
+    "folderSourceId": "dumbbells_only",
+    "color": "blue",
+    "name": "Upper Body, Two Weights",
+    "position": 36,
+    "exercises": [
+      {
+        "exerciseSourceId": "dumbbell-bench-press",
+        "targetSets": 4,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "dumbbell-row-bilateral",
+        "targetSets": 4,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "arnold-press",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-lateral-raise",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "dumbbell-curl",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-skullcrusher",
+        "targetSets": 3,
+        "targetReps": 12
+      }
+    ]
+  },
+  {
+    "sourceId": "db_lower",
+    "folderSourceId": "dumbbells_only",
+    "color": "green",
+    "name": "Legs With Dumbbells",
+    "position": 37,
+    "exercises": [
+      {
+        "exerciseSourceId": "dumbbell-front-squat",
+        "targetSets": 4,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "dumbbell-goblet-bulgarian-split-squat",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "single-leg-dumbbell-romanian-deadlift",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "dumbbell-goblet-reverse-lunge",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-single-leg-calf-raise",
+        "targetSets": 3,
+        "targetReps": 15
+      }
+    ]
+  },
+  {
+    "sourceId": "db_push",
+    "folderSourceId": "dumbbells_only",
+    "color": "blue",
+    "name": "Press and Push",
+    "position": 38,
+    "exercises": [
+      {
+        "exerciseSourceId": "dumbbell-incline-bench-press",
+        "targetSets": 4,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "dumbbell-seated-overhead-press",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "dumbbell-chest-fly",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-lateral-raise",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "dumbbell-tricep-kickback",
+        "targetSets": 3,
+        "targetReps": 15
+      }
+    ]
+  },
+  {
+    "sourceId": "db_pull",
+    "folderSourceId": "dumbbells_only",
+    "color": "blue",
+    "name": "Row and Pull",
+    "position": 39,
+    "exercises": [
+      {
+        "exerciseSourceId": "chest-supported-dumbbell-row",
+        "targetSets": 4,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "dumbbell-single-arm-row",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-rear-delt-fly",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "dumbbell-shrug",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "dumbbell-hammer-curl",
+        "targetSets": 3,
+        "targetReps": 12
+      }
+    ]
+  },
+  {
+    "sourceId": "db_arms",
+    "folderSourceId": "dumbbells_only",
+    "color": "purple",
+    "name": "Arms With a Single Pair",
+    "position": 40,
+    "exercises": [
+      {
+        "exerciseSourceId": "dumbbell-curl",
+        "targetSets": 4,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-incline-curl",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-concentration-curl",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-skullcrusher",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-seated-overhead-tricep-extension",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-tricep-kickback",
+        "targetSets": 3,
+        "targetReps": 15
+      }
+    ]
+  },
+  {
+    "sourceId": "db_shoulders",
+    "folderSourceId": "dumbbells_only",
+    "color": "purple",
+    "name": "Shoulders, Two Weights",
+    "position": 41,
+    "exercises": [
+      {
+        "exerciseSourceId": "dumbbell-seated-overhead-press",
+        "targetSets": 4,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "dumbbell-lateral-raise",
+        "targetSets": 4,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "dumbbell-seated-rear-delt-fly",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "dumbbell-front-raise",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "cuban-press",
+        "targetSets": 3,
+        "targetReps": 12
+      }
+    ]
+  },
+  {
+    "sourceId": "db_chest",
+    "folderSourceId": "dumbbells_only",
+    "color": "blue",
+    "name": "Chest Without a Bench",
+    "position": 42,
+    "exercises": [
+      {
+        "exerciseSourceId": "floor-press",
+        "targetSets": 4,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "dumbbell-single-arm-chest-press",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-chest-fly",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "push-up",
+        "targetSets": 3,
+        "targetReps": 15
+      }
+    ]
+  },
+  {
+    "sourceId": "db_back",
+    "folderSourceId": "dumbbells_only",
+    "color": "blue",
+    "name": "A Back Built on Rows",
+    "position": 43,
+    "exercises": [
+      {
+        "exerciseSourceId": "chest-supported-dumbbell-row",
+        "targetSets": 4,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "dumbbell-row-unilateral",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-laying-reverse-fly",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "dumbbell-superman",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "dumbbell-shrug",
+        "targetSets": 3,
+        "targetReps": 15
+      }
+    ]
+  },
+  {
+    "sourceId": "db_hips",
+    "folderSourceId": "dumbbells_only",
+    "color": "red",
+    "name": "Hips and Hamstrings",
+    "position": 44,
+    "exercises": [
+      {
+        "exerciseSourceId": "dumbbell-heels-elevated-hip-thrust",
+        "targetSets": 4,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "deficit-dumbbell-romanian-deadlift",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "dumbbell-goblet-forward-lunge",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "hamstring-curl",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-feet-elevated-glute-bridge",
+        "targetSets": 3,
+        "targetReps": 15
+      }
+    ]
+  },
+  {
+    "sourceId": "db_core",
+    "folderSourceId": "dumbbells_only",
+    "color": "yellow",
+    "name": "Core With Weight",
+    "position": 45,
+    "exercises": [
+      {
+        "exerciseSourceId": "dumbbell-russian-twist",
+        "targetSets": 3,
+        "targetReps": 20
+      },
+      {
+        "exerciseSourceId": "dumbbell-situp",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "dumbbell-side-bend",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "front-plank",
+        "targetSets": 3
+      }
+    ]
+  },
+  {
+    "sourceId": "db_30",
+    "folderSourceId": "dumbbells_only",
+    "color": "orange",
+    "name": "Two Weights, 30 Min",
+    "position": 46,
+    "exercises": [
+      {
+        "exerciseSourceId": "dumbbell-thruster",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-single-arm-row",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-goblet-reverse-lunge",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "floor-press",
+        "targetSets": 3,
+        "targetReps": 12
+      }
+    ]
+  },
+  {
+    "sourceId": "db_strength",
+    "folderSourceId": "dumbbells_only",
+    "color": "black",
+    "name": "Heavier, Fewer Reps",
+    "position": 47,
+    "exercises": [
+      {
+        "exerciseSourceId": "dumbbell-front-squat",
+        "targetSets": 5,
+        "targetReps": 6
+      },
+      {
+        "exerciseSourceId": "dumbbell-bench-press",
+        "targetSets": 5,
+        "targetReps": 6
+      },
+      {
+        "exerciseSourceId": "dumbbell-deadlift",
+        "targetSets": 4,
+        "targetReps": 6
+      },
+      {
+        "exerciseSourceId": "single-arm-dumbbell-overhead-press",
+        "targetSets": 4,
+        "targetReps": 8
+      }
+    ]
+  },
+  {
+    "sourceId": "db_conditioning",
+    "folderSourceId": "dumbbells_only",
+    "color": "red",
+    "name": "Keep Moving and Sweat",
+    "position": 48,
+    "exercises": [
+      {
+        "exerciseSourceId": "man-maker",
+        "targetSets": 4,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "dumbbell-thruster",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-single-arm-clean-and-press",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "mountain-climber",
+        "targetSets": 3,
+        "targetReps": 20
+      }
+    ]
+  },
+  {
+    "sourceId": "db_small_space",
+    "folderSourceId": "dumbbells_only",
+    "color": "green",
+    "name": "Small Space, Big Effort",
+    "position": 49,
+    "exercises": [
+      {
+        "exerciseSourceId": "dumbbell-goblet-squat",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "floor-press",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-single-arm-row",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-step-up-low",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "dumbbell-russian-twist",
+        "targetSets": 3,
+        "targetReps": 20
+      }
+    ]
+  },
+  {
+    "sourceId": "cal_zero",
+    "folderSourceId": "calisthenics",
+    "color": "green",
+    "name": "Start From Zero",
+    "position": 50,
+    "exercises": [
+      {
+        "exerciseSourceId": "bodyweight-knee-push-ups",
+        "targetSets": 3,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "incline-push-up",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "bodyweight-box-squat",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "glute-bridge",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "front-plank",
+        "targetSets": 3
+      }
+    ]
+  },
+  {
+    "sourceId": "cal_first_pullup",
+    "folderSourceId": "calisthenics",
+    "color": "purple",
+    "name": "Work Up to a Pull-up",
+    "position": 51,
+    "exercises": [
+      {
+        "exerciseSourceId": "band-assisted-pull-up",
+        "targetSets": 4,
+        "targetReps": 6
+      },
+      {
+        "exerciseSourceId": "inverted-row",
+        "targetSets": 4,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "dead-hang",
+        "targetSets": 3
+      },
+      {
+        "exerciseSourceId": "band-seated-pulldown",
+        "targetSets": 3,
+        "targetReps": 15
+      }
+    ]
+  },
+  {
+    "sourceId": "cal_first_pushup",
+    "folderSourceId": "calisthenics",
+    "color": "green",
+    "name": "Work Up to a Push-up",
+    "position": 52,
+    "exercises": [
+      {
+        "exerciseSourceId": "incline-push-up",
+        "targetSets": 4,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "bodyweight-knee-push-ups",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "bodyweight-elevated-push-up",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "front-plank",
+        "targetSets": 3
+      }
+    ]
+  },
+  {
+    "sourceId": "cal_pushups_harder",
+    "folderSourceId": "calisthenics",
+    "color": "blue",
+    "name": "Harder Push-ups",
+    "position": 53,
+    "exercises": [
+      {
+        "exerciseSourceId": "decline-push-up",
+        "targetSets": 4,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "diamond-push-ups",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "push-up",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "parralel-bar-dips",
+        "targetSets": 3,
+        "targetReps": 10
+      }
+    ]
+  },
+  {
+    "sourceId": "cal_dips",
+    "folderSourceId": "calisthenics",
+    "color": "blue",
+    "name": "Dips and Strong Triceps",
+    "position": 54,
+    "exercises": [
+      {
+        "exerciseSourceId": "parralel-bar-dips",
+        "targetSets": 4,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "bench-dips",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "diamond-push-ups",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "hand-plank",
+        "targetSets": 3
+      }
+    ]
+  },
+  {
+    "sourceId": "cal_core_hold",
+    "folderSourceId": "calisthenics",
+    "color": "yellow",
+    "name": "Hold the Plank Longer",
+    "position": 55,
+    "exercises": [
+      {
+        "exerciseSourceId": "front-plank",
+        "targetSets": 4
+      },
+      {
+        "exerciseSourceId": "elbow-side-plank",
+        "targetSets": 3
+      },
+      {
+        "exerciseSourceId": "hand-plank",
+        "targetSets": 3
+      },
+      {
+        "exerciseSourceId": "dead-bug",
+        "targetSets": 3,
+        "targetReps": 12
+      }
+    ]
+  },
+  {
+    "sourceId": "cal_bar_basics",
+    "folderSourceId": "calisthenics",
+    "color": "purple",
+    "name": "Bar and Floor Basics",
+    "position": 56,
+    "exercises": [
+      {
+        "exerciseSourceId": "pull-ups",
+        "targetSets": 4,
+        "targetReps": 6
+      },
+      {
+        "exerciseSourceId": "push-up",
+        "targetSets": 4,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "bodyweight-squat",
+        "targetSets": 4,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "hanging-knee-raises",
+        "targetSets": 3,
+        "targetReps": 12
+      }
+    ]
+  },
+  {
+    "sourceId": "cal_full_body",
+    "folderSourceId": "calisthenics",
+    "color": "purple",
+    "name": "Whole Body on the Bar",
+    "position": 57,
+    "exercises": [
+      {
+        "exerciseSourceId": "pull-ups",
+        "targetSets": 3,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "parralel-bar-dips",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "bulgarian-split-squat",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "inverted-row",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "toes-to-bar",
+        "targetSets": 3,
+        "targetReps": 8
+      }
+    ]
+  },
+  {
+    "sourceId": "cal_pull_day",
+    "folderSourceId": "calisthenics",
+    "color": "blue",
+    "name": "Pull Day on the Bar",
+    "position": 58,
+    "exercises": [
+      {
+        "exerciseSourceId": "wide-grip-pull-up",
+        "targetSets": 4,
+        "targetReps": 6
+      },
+      {
+        "exerciseSourceId": "chin-ups",
+        "targetSets": 3,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "inverted-row",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "neutral-grip-pull-up",
+        "targetSets": 3,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "dead-hang",
+        "targetSets": 3
+      }
+    ]
+  },
+  {
+    "sourceId": "cal_push_day",
+    "folderSourceId": "calisthenics",
+    "color": "blue",
+    "name": "Push Day on the Floor",
+    "position": 59,
+    "exercises": [
+      {
+        "exerciseSourceId": "push-up",
+        "targetSets": 4,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "decline-push-up",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "bench-dips",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "hand-plank",
+        "targetSets": 3
+      },
+      {
+        "exerciseSourceId": "mountain-climber",
+        "targetSets": 3,
+        "targetReps": 20
+      }
+    ]
+  },
+  {
+    "sourceId": "cal_legs",
+    "folderSourceId": "calisthenics",
+    "color": "green",
+    "name": "Legs Without a Barbell",
+    "position": 60,
+    "exercises": [
+      {
+        "exerciseSourceId": "bodyweight-squat",
+        "targetSets": 4,
+        "targetReps": 20
+      },
+      {
+        "exerciseSourceId": "cossack-squat",
+        "targetSets": 3,
+        "targetReps": 10
+      },
+      {
+        "exerciseSourceId": "bulgarian-split-squat",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "nordic-hamstring-curl",
+        "targetSets": 3,
+        "targetReps": 6
+      },
+      {
+        "exerciseSourceId": "single-leg-standing-calf-raise",
+        "targetSets": 3,
+        "targetReps": 20
+      }
+    ]
+  },
+  {
+    "sourceId": "cal_hold",
+    "folderSourceId": "calisthenics",
+    "color": "black",
+    "name": "Hold Your Own Weight",
+    "position": 61,
+    "exercises": [
+      {
+        "exerciseSourceId": "dead-hang",
+        "targetSets": 4
+      },
+      {
+        "exerciseSourceId": "wall-sit",
+        "targetSets": 3
+      },
+      {
+        "exerciseSourceId": "split-squat-isometric-hold",
+        "targetSets": 3
+      },
+      {
+        "exerciseSourceId": "elbow-side-plank",
+        "targetSets": 3
+      }
+    ]
+  },
+  {
+    "sourceId": "cal_strength",
+    "folderSourceId": "calisthenics",
+    "color": "black",
+    "name": "Harder Moves",
+    "position": 62,
+    "exercises": [
+      {
+        "exerciseSourceId": "weighted-pull-ups",
+        "targetSets": 5,
+        "targetReps": 5
+      },
+      {
+        "exerciseSourceId": "parralel-bar-dips",
+        "targetSets": 5,
+        "targetReps": 6
+      },
+      {
+        "exerciseSourceId": "decline-push-up",
+        "targetSets": 4,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "toes-to-bar",
+        "targetSets": 4,
+        "targetReps": 8
+      }
+    ]
+  },
+  {
+    "sourceId": "cal_endurance",
+    "folderSourceId": "calisthenics",
+    "color": "orange",
+    "name": "How Many Can You Do?",
+    "position": 63,
+    "exercises": [
+      {
+        "exerciseSourceId": "push-up",
+        "targetSets": 5
+      },
+      {
+        "exerciseSourceId": "pull-ups",
+        "targetSets": 5
+      },
+      {
+        "exerciseSourceId": "bodyweight-squat",
+        "targetSets": 5
+      },
+      {
+        "exerciseSourceId": "burpee",
+        "targetSets": 3,
+        "targetReps": 15
+      }
+    ]
+  },
+  {
+    "sourceId": "cal_core_abs",
+    "folderSourceId": "calisthenics",
+    "color": "yellow",
+    "name": "Abs You Can Feel",
+    "position": 64,
+    "exercises": [
+      {
+        "exerciseSourceId": "hanging-knee-raises",
+        "targetSets": 4,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "v-up",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "decline-crunch",
+        "targetSets": 3,
+        "targetReps": 15
+      },
+      {
+        "exerciseSourceId": "bodyweight-russian-twist",
+        "targetSets": 3,
+        "targetReps": 20
+      },
+      {
+        "exerciseSourceId": "front-plank",
+        "targetSets": 3
+      }
+    ]
+  },
+  {
+    "sourceId": "cal_weighted",
+    "folderSourceId": "calisthenics",
+    "color": "black",
+    "name": "Add Weight to Your Reps",
+    "position": 65,
+    "exercises": [
+      {
+        "exerciseSourceId": "weighted-pull-ups",
+        "targetSets": 4,
+        "targetReps": 6
+      },
+      {
+        "exerciseSourceId": "parralel-bar-dips",
+        "targetSets": 4,
+        "targetReps": 8
+      },
+      {
+        "exerciseSourceId": "captains-chair-knee-raise",
+        "targetSets": 3,
+        "targetReps": 12
+      },
+      {
+        "exerciseSourceId": "back-extension",
+        "targetSets": 3,
+        "targetReps": 12
+      }
+    ]
+  },
+  {
+    "sourceId": "cardio_easy_run",
+    "folderSourceId": "cardio",
+    "color": "green",
+    "name": "Easy Steady Run",
+    "position": 66,
+    "exercises": [
+      {
+        "exerciseSourceId": "running-cooldown",
+        "targetSets": 1
+      },
+      {
+        "exerciseSourceId": "long-run",
+        "targetSets": 1
+      }
+    ]
+  },
+  {
+    "sourceId": "cardio_intervals",
+    "folderSourceId": "cardio",
+    "color": "red",
+    "name": "Short Hard Intervals",
+    "position": 67,
+    "exercises": [
+      {
+        "exerciseSourceId": "running-intervals",
+        "targetSets": 1
+      },
+      {
+        "exerciseSourceId": "running-cooldown",
+        "targetSets": 1
+      }
+    ]
+  },
+  {
+    "sourceId": "cardio_row",
+    "folderSourceId": "cardio",
+    "color": "blue",
+    "name": "Row Until You're Warm",
+    "position": 68,
+    "exercises": [
+      {
+        "exerciseSourceId": "rowing-machine-steady-state",
+        "targetSets": 1
+      },
+      {
+        "exerciseSourceId": "rowing-intervals",
+        "targetSets": 1
+      }
+    ]
+  },
+  {
+    "sourceId": "cardio_bike",
+    "folderSourceId": "cardio",
+    "color": "orange",
+    "name": "Ride Steady and Easy",
+    "position": 69,
+    "exercises": [
+      {
+        "exerciseSourceId": "cycling-warmup",
+        "targetSets": 1
+      },
+      {
+        "exerciseSourceId": "steady-state-ride",
+        "targetSets": 1
+      },
+      {
+        "exerciseSourceId": "cycling-cooldown",
+        "targetSets": 1
+      }
+    ]
+  },
+  {
+    "sourceId": "cardio_machines_mix",
+    "folderSourceId": "cardio",
+    "color": "purple",
+    "name": "A Mix of Machines",
+    "position": 70,
+    "exercises": [
+      {
+        "exerciseSourceId": "stair-climber",
+        "targetSets": 1
+      },
+      {
+        "exerciseSourceId": "ski-erg",
+        "targetSets": 1
+      },
+      {
+        "exerciseSourceId": "assault-bike",
+        "targetSets": 1
+      }
+    ]
+  },
+  {
+    "sourceId": "cardio_swim",
+    "folderSourceId": "cardio",
+    "color": "blue",
+    "name": "A Simple Swim",
+    "position": 71,
+    "exercises": [
+      {
+        "exerciseSourceId": "swim-kick-drill",
+        "targetSets": 1
+      },
+      {
+        "exerciseSourceId": "freestyle-swim",
+        "targetSets": 1
+      },
+      {
+        "exerciseSourceId": "swim-pull-drill",
+        "targetSets": 1
+      }
     ]
   }
 ]

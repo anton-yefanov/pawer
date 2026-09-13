@@ -109,9 +109,13 @@ export function templateActions(
 }
 
 export function folderActions(
-  folder: { id: string; name: string; parentId: string | null },
+  folder: { id: string; name: string; parentId: string | null; isBuiltIn: boolean },
   { confirm, canAddFolder = false }: { confirm: ConfirmDestructive; canAddFolder?: boolean },
 ): CardAction[] {
+  // Nothing on a Library folder is the user's to change; the way out of one is
+  // duplicating a template inside it.
+  if (folder.isBuiltIn) return [];
+
   const actions: CardAction[] = [];
 
   if (canAddFolder) {

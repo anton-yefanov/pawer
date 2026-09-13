@@ -49,8 +49,8 @@ export default function StartWorkoutScreen() {
 
   const personal = mine ?? [];
   const loose = personal.filter((template) => template.folderId === null);
-  const byFolder = groupBy(
-    personal.filter((template) => template.folderId !== null),
+  const filed = groupBy(
+    [...personal, ...(builtIn ?? [])].filter((template) => template.folderId !== null),
     (template) => template.folderId,
   );
 
@@ -59,11 +59,19 @@ export default function StartWorkoutScreen() {
 
   const { folderCards, templateCards: myCards, onDrop, onReorder } = useGridDrop(
     (folders ?? [])
-      .filter((folder) => folder.parentId === null)
-      .map((folder) => toFolderCard(folder, byFolder.get(folder.id) ?? [])),
+      .filter((folder) => !folder.isBuiltIn && folder.parentId === null)
+      .map((folder) => toFolderCard(folder, filed.get(folder.id) ?? [])),
     loose.map((t) => toTemplateCard(t, byTemplate.get(t.id) ?? [])),
   );
-  const builtInCards = (builtIn ?? []).map((t) => toTemplateCard(t, byTemplate.get(t.id) ?? []));
+
+  const libraryFolders = (folders ?? [])
+    .filter((folder) => folder.isBuiltIn)
+    .map((folder) => toFolderCard(folder, filed.get(folder.id) ?? []));
+  // Every shipped template is filed, so this is only the escape hatch for one
+  // that arrives before its folder does.
+  const looseBuiltInCards = (builtIn ?? [])
+    .filter((t) => t.folderId === null)
+    .map((t) => toTemplateCard(t, byTemplate.get(t.id) ?? []));
 
   const open = (id: string) => router.push({ pathname: '/active', params: { id } });
 
@@ -123,7 +131,12 @@ export default function StartWorkoutScreen() {
             emptyHint="Add a template with the plus button, or duplicate one below"
           />
 
-          <TemplateSection title="Library" templates={builtInCards} collapsible />
+          <TemplateSection
+            title="Library"
+            templates={looseBuiltInCards}
+            folders={libraryFolders}
+            collapsible
+          />
         </ScrollView>
 
         <ActiveWorkoutPrompt

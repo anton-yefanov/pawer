@@ -170,12 +170,17 @@ export const sets = sqliteTable(
   (t) => [index('sets_workout_exercise_idx').on(t.workoutExerciseId, t.position)]
 );
 
-/** Groups personal templates. App-shipped templates are never filed. */
+/** Groups templates — a user's own, and the app-shipped folders of the Library. */
 export const folders = sqliteTable(
   'folders',
   {
     id: text('id').primaryKey(),
+
+    /** Slug for app-shipped folders (e.g. `at_home`); null for user-created ones. */
+    sourceId: text('source_id'),
+
     name: text('name').notNull(),
+    isBuiltIn: integer('is_built_in', { mode: 'boolean' }).notNull().default(false),
     position: integer('position').notNull().default(0),
     color: text('color').$type<CardColor>(),
 
@@ -186,7 +191,10 @@ export const folders = sqliteTable(
     parentId: text('parent_id').references((): AnySQLiteColumn => folders.id),
     ...timestamps,
   },
-  (t) => [index('folders_parent_idx').on(t.parentId)]
+  (t) => [
+    uniqueIndex('folders_source_id_unq').on(t.sourceId),
+    index('folders_parent_idx').on(t.parentId),
+  ]
 );
 
 /** Saved workout template. Free tier caps user-created ones at 3. */

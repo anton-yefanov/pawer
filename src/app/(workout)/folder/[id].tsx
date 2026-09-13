@@ -52,6 +52,9 @@ export default function FolderScreen() {
   const [dragging, setDragging] = useState(false);
 
   const folder = folderRows?.[0];
+  // A Library folder is app-shipped: its cards are read-only and only Duplicate
+  // takes one out of it.
+  const shipped = folder?.isBuiltIn ?? false;
   const subfolderRows = (allFolders ?? []).filter((row) => row.parentId === id);
   const templateRows = rows ?? [];
   const { folderCards, templateCards, onDrop, onReorder } = useGridDrop(
@@ -73,6 +76,7 @@ export default function FolderScreen() {
   const confirm: ConfirmDestructive = (options) => setPending(options);
 
   const menuFor = (cell: Cell) => {
+    if (shipped && cell.kind === 'folder') return null;
     const row =
       cell.kind === 'folder'
         ? subfolderRows.find((sub) => sub.id === cell.folder.id)
@@ -81,8 +85,10 @@ export default function FolderScreen() {
     return (
       <CardMenu
         accessibilityLabel={`${row.name} options`}
+        // `folderId` is the discriminator, not `isBuiltIn` — folders carry that
+        // too now that the Library ships its own.
         actions={
-          'isBuiltIn' in row ? templateActions(row, confirm) : folderActions(row, { confirm })
+          'folderId' in row ? templateActions(row, confirm) : folderActions(row, { confirm })
         }
         size={CARD_MENU_SIZE}
       />
@@ -96,7 +102,7 @@ export default function FolderScreen() {
         // Dismissing mid-drag would unmount the lifted card under the finger.
         options={{ contentStyle: { backgroundColor: theme.background }, gestureEnabled: !dragging }}
         right={
-          folder ? (
+          folder && !shipped ? (
             <CardMenu
               accessibilityLabel={`${folder.name} options`}
               actions={folderActions(folder, { confirm: confirmFolderDelete, canAddFolder: true })}
@@ -115,7 +121,12 @@ export default function FolderScreen() {
         {folderCards.length === 0 && templateCards.length === 0 ? (
           <EmptyState icon="folder.fill" text="Drag a template here, or add a folder" />
         ) : (
-          <CardGrid folders={folderCards} templates={templateCards} draggable menuFor={menuFor} />
+          <CardGrid
+            folders={folderCards}
+            templates={templateCards}
+            draggable={!shipped}
+            menuFor={menuFor}
+          />
         )}
       </ScrollView>
 

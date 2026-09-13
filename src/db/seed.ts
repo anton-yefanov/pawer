@@ -1,17 +1,18 @@
 import { eq, inArray, sql } from 'drizzle-orm';
 
 import { asCardColor } from '@/constants/card-colors';
-import { EXERCISES_ARTWORK, serializeArtwork } from '@/lib/card-artwork';
+import { emojiArtwork, EXERCISES_ARTWORK, serializeArtwork } from '@/lib/card-artwork';
 import { buildSearchText } from '@/lib/exercise-search';
 
 import { newId } from './id';
 import type { Database } from './client';
-import { exercises, settings, templateExercises, templates, templateSets } from './schema';
+import { exercises, folders, settings, templateExercises, templates, templateSets } from './schema';
 import seedExercises from './seed/exercises.json';
+import seedFolderData from './seed/folders.json';
 import seedTemplateData from './seed/templates.json';
 
 /**
- * Bump when src/db/seed/exercises.json or seed/templates.json changes so
+ * Bump when src/db/seed/exercises.json, seed/folders.json or seed/templates.json changes so
  * existing installs re-seed on next launch. Seeding is an upsert keyed on
  * `sourceId`, so bumping this never touches logged sets — exercise UUIDs are
  * derived from the vendor slug and stay stable across rebuilds (see
@@ -22,7 +23,7 @@ import seedTemplateData from './seed/templates.json';
  * drizzle/0017_wipe_seeded_exercises.sql clears every app-owned exercise and
  * the history hanging off it before this runs.
  */
-export const SEED_VERSION = 15;
+export const SEED_VERSION = 16;
 
 const SEED_VERSION_KEY = 'seed_version';
 
@@ -94,6 +95,7 @@ export async function seedIfNeeded(db: Database): Promise<{ seeded: boolean; cou
       });
   }
 
+  await seedFolders(db);
   await seedTemplates(db);
 
   await setSetting(db, SEED_VERSION_KEY, String(SEED_VERSION));
@@ -101,8 +103,41 @@ export async function seedIfNeeded(db: Database): Promise<{ seeded: boolean; cou
 }
 
 /**
- * App-shipped templates. Runs after the exercise upsert because it resolves
- * exercise ids from the rows just written.
+ * The Library's folders. A shipped folder is always top level, so `parentId` is
+ * neither written nor refreshed — filing one inside another is the user's to do
+ * and there is nothing here that would undo it.
+ */
+async function seedFolders(db: Database): Promise<void> {
+  for (const folder of seedFolderData) {
+    await db
+      .insert(folders)
+      .values({
+        id: newId(),
+        sourceId: folder.sourceId,
+        name: folder.name,
+        position: folder.position,
+        color: asCardColor(folder.color),
+        artwork: serializeArtwork(emojiArtwork(folder.emoji)),
+        isBuiltIn: true,
+      })
+      .onConflictDoUpdate({
+        target: folders.sourceId,
+        set: {
+          name: sql`excluded.name`,
+          position: sql`excluded.position`,
+          color: sql`excluded.color`,
+          artwork: sql`excluded.artwork`,
+          isBuiltIn: true,
+          deletedAt: null,
+          updatedAt: sql`(unixepoch() * 1000)`,
+        },
+      });
+  }
+}
+
+/**
+ * App-shipped templates. Runs after the exercise and folder upserts because it
+ * resolves both their ids from the rows just written.
  *
  * Exercise rows are replaced rather than diffed: nothing references them and
  * they are app-owned, so a hard delete is safe and keeps the update honest when
@@ -115,6 +150,12 @@ async function seedTemplates(db: Database): Promise<void> {
       .map((row) => [row.sourceId, row.id])
   );
 
+  const folderIdBySource = new Map(
+    (await db.select({ id: folders.id, sourceId: folders.sourceId }).from(folders).all())
+      .filter((row): row is { id: string; sourceId: string } => row.sourceId !== null)
+      .map((row) => [row.sourceId, row.id])
+  );
+
   for (const template of seedTemplateData) {
     await db
       .insert(templates)
@@ -123,6 +164,7 @@ async function seedTemplates(db: Database): Promise<void> {
         sourceId: template.sourceId,
         name: template.name,
         position: template.position,
+        folderId: folderIdBySource.get(template.folderSourceId) ?? null,
         color: asCardColor(template.color),
         artwork: serializeArtwork(EXERCISES_ARTWORK),
         isBuiltIn: true,
@@ -132,6 +174,7 @@ async function seedTemplates(db: Database): Promise<void> {
         set: {
           name: sql`excluded.name`,
           position: sql`excluded.position`,
+          folderId: sql`excluded.folder_id`,
           color: sql`excluded.color`,
           artwork: sql`excluded.artwork`,
           isBuiltIn: true,

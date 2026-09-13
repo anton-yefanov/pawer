@@ -21,6 +21,7 @@ import { METADATA_PATH, groupOf, isCardio } from './exercise-taxonomy.mjs';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = resolve(ROOT, 'src/db/seed/exercises.json');
 const TEMPLATES = resolve(ROOT, 'src/db/seed/templates.json');
+const FOLDERS = resolve(ROOT, 'src/db/seed/folders.json');
 
 /** Fixed namespace UUID for this app. Changing it re-ids the entire library. */
 const NAMESPACE = '6f1c2d3e-4b5a-4c7d-8e9f-0a1b2c3d4e5f';
@@ -200,7 +201,14 @@ for (const slug of unknownAliasIds(seen)) {
 
 // A template entry that resolves to nothing is dropped in silence at seed time
 // (see seedTemplates in src/db/seed.ts), so it has to fail here instead.
+const folderIds = new Set(
+  JSON.parse(readFileSync(FOLDERS, 'utf8')).map((folder) => folder.sourceId),
+);
+
 for (const template of JSON.parse(readFileSync(TEMPLATES, 'utf8'))) {
+  if (!folderIds.has(template.folderSourceId)) {
+    problems.push(`template "${template.sourceId}" is filed in unknown "${template.folderSourceId}"`);
+  }
   for (const { exerciseSourceId } of template.exercises) {
     if (!seen.has(exerciseSourceId)) {
       problems.push(`template "${template.sourceId}" references unknown "${exerciseSourceId}"`);
