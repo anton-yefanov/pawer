@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View } from "react-native";
 import { AreaChart as ChartKitAreaChart } from "react-native-chart-kit/v2";
 
+import { CHART_LABEL_SIZE } from "@/components/analytics/chart-text";
 import { useTheme } from "@/hooks/use-theme";
 import {
   formatBucketRange,
@@ -140,6 +141,10 @@ export function AreaChart({
             text: theme.textSecondary,
             mutedText: theme.textSecondary,
             series: [color],
+            typography: {
+              axisLabelSize: CHART_LABEL_SIZE,
+              legendLabelSize: CHART_LABEL_SIZE,
+            },
           }}
         />
       )}

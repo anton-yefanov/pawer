@@ -28,7 +28,7 @@ export function StatGrid({ tiles }: { tiles: readonly StatTile[] }) {
   const reserve = tiles.some((tile) => tile.delta);
 
   return (
-    <View style={styles.grid}>
+    <View>
       {rows.map((row, rowIndex) => (
         <Fragment key={row.map((tile) => tile.label).join()}>
           {rowIndex > 0 && <View style={[styles.rowRule, rule]} />}
@@ -138,12 +138,9 @@ function Tile({
 }
 
 const styles = StyleSheet.create({
-  grid: {
-    flex: 1,
-  },
   row: {
-    flex: 1,
     flexDirection: "row",
+    paddingVertical: Spacing.two,
   },
   rowRule: {
     height: StyleSheet.hairlineWidth,
