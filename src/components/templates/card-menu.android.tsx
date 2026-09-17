@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 
 import { Menu } from '@/components/android/menu';
 import { CIRCLE_BUTTON_SIZE, GlassCircle } from '@/components/circle-button';
@@ -15,34 +15,24 @@ import * as haptics from '@/lib/haptics';
 
 export { CARD_MENU_SIZE };
 
-function BareDisc({
-  accessibilityLabel,
-  children,
-}: {
-  size: number;
-  accessibilityLabel?: string;
-  children: React.ReactNode;
-}) {
-  return <View accessibilityLabel={accessibilityLabel}>{children}</View>;
-}
-
 export function CardMenu({
   actions,
   accessibilityLabel,
   size = CIRCLE_BUTTON_SIZE,
-  bare,
+  glass,
 }: {
   actions: readonly CardAction[];
   accessibilityLabel: string;
   size?: number;
-  /** No disc: a secondary-ink glyph straight on a card, like a list header's. */
-  bare?: boolean;
+  /** Glass at any size — by default a small menu wears the flat cover disc. */
+  glass?: boolean;
 }) {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
   const onCover = size <= CARD_MENU_SIZE;
-  const Disc = bare ? BareDisc : onCover ? CardMenuDisc : GlassCircle;
-  const ink = bare ? theme.textSecondary : onCover ? CARD_MENU_INK : theme.text;
+  const flat = onCover && !glass;
+  const Disc = flat ? CardMenuDisc : GlassCircle;
+  const ink = flat ? CARD_MENU_INK : theme.text;
 
   return (
     <Disc size={size} accessibilityLabel={accessibilityLabel}>
@@ -70,7 +60,7 @@ export function CardMenu({
         >
           <Icon
             name="ellipsis"
-            size={onCover && !bare ? 16 : 22}
+            size={onCover ? 16 : 22}
             tintColor={ink}
           />
         </Pressable>

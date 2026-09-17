@@ -133,6 +133,15 @@ export function setTotalsQuery(range: DateRange, includeWarmup: boolean) {
     .where(inRange(range));
 }
 
+/** Only the start times: a training day is a local calendar day, which SQL can't bucket. */
+export function trainingDaysQuery(range: DateRange) {
+  return db
+    .select({ startedAt: workouts.startedAt })
+    .from(workouts)
+    .where(inRange(range))
+    .orderBy(asc(workouts.startedAt));
+}
+
 export type MetricRow = {
   startedAt: number;
   durationMs: number;

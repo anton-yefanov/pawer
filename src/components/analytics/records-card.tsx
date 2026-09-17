@@ -14,6 +14,7 @@ import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { periodRecordsQuery } from "@/lib/analytics-queries";
 import { formatPrValue, isPrKind, PR_LABELS } from "@/lib/personal-records";
+import { BLOCK_CATALOG } from "@/lib/analytics-layout";
 import { useWeightUnit } from "@/lib/weight-unit";
 
 /** A highlight reel, not a log — and the block's fixed height holds five rows plus "more". */
@@ -39,7 +40,7 @@ export function RecordsCard({ slot }: { slot: BlockSlot }) {
   return (
     <AnalyticsBlock
       slot={slot}
-      title="Personal records"
+      title={BLOCK_CATALOG.records.title}
       subtitle={
         known.length === 0 ? "None yet" : `${known.length} set in this period`
       }

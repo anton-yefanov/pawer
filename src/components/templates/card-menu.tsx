@@ -1,6 +1,5 @@
 import { Button, Divider, Host, Image, Menu, ZStack } from '@expo/ui/swift-ui';
 import { buttonStyle, contentShape, frame, shapes } from '@expo/ui/swift-ui/modifiers';
-import { View } from 'react-native';
 
 import { CIRCLE_BUTTON_SIZE, GlassCircle } from '@/components/circle-button';
 import { sfSymbol } from '@/components/icon';
@@ -14,17 +13,6 @@ import { useTheme } from '@/hooks/use-theme';
 import * as haptics from '@/lib/haptics';
 
 export { CARD_MENU_SIZE };
-
-function BareDisc({
-  accessibilityLabel,
-  children,
-}: {
-  size: number;
-  accessibilityLabel?: string;
-  children: React.ReactNode;
-}) {
-  return <View accessibilityLabel={accessibilityLabel}>{children}</View>;
-}
 
 /**
  * Same Host-sizing rules as ExerciseMenu: the Host is explicitly sized or it
@@ -41,18 +29,19 @@ export function CardMenu({
   actions,
   accessibilityLabel,
   size = CIRCLE_BUTTON_SIZE,
-  bare,
+  glass,
 }: {
   actions: readonly CardAction[];
   accessibilityLabel: string;
   size?: number;
-  /** No disc: a secondary-ink glyph straight on a card, like a list header's. */
-  bare?: boolean;
+  /** Glass at any size — by default a small menu wears the flat cover disc. */
+  glass?: boolean;
 }) {
   const theme = useTheme();
   const onCover = size <= CARD_MENU_SIZE;
-  const Disc = bare ? BareDisc : onCover ? CardMenuDisc : GlassCircle;
-  const ink = bare ? theme.textSecondary : onCover ? CARD_MENU_INK : theme.text;
+  const flat = onCover && !glass;
+  const Disc = flat ? CardMenuDisc : GlassCircle;
+  const ink = flat ? CARD_MENU_INK : theme.text;
 
   return (
     <Disc size={size} accessibilityLabel={accessibilityLabel}>
@@ -66,7 +55,7 @@ export function CardMenu({
               <Image
                 systemName="ellipsis"
                 color={ink}
-                size={onCover && !bare ? 13 : undefined}
+                size={onCover ? 13 : undefined}
               />
             </ZStack>
           }

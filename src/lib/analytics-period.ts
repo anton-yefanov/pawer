@@ -14,8 +14,8 @@ export const PERIODS: readonly { id: PeriodId; label: string; short: string }[] 
 
 export const DEFAULT_PERIOD: PeriodId = 'd7';
 
-/** The free tier sees the two shortest windows; anything wider is Pro. */
-export const FREE_PERIODS: readonly PeriodId[] = ['d7', 'd30'];
+/** The free tier sees the windows up to a quarter; anything wider is Pro. */
+export const FREE_PERIODS: readonly PeriodId[] = ['d7', 'd30', 'd90'];
 
 export function isPeriodLocked(id: PeriodId, isPro: boolean): boolean {
   return !isPro && !FREE_PERIODS.includes(id);
