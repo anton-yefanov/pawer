@@ -20,6 +20,7 @@ import { setTypeOf } from '@/lib/set-types';
 import {
   formatPreviousSet,
   missingRequiredFields,
+  setGains,
   TRACKING,
   type SetField,
   type TrackedSet,
@@ -30,6 +31,7 @@ import {
   displayToMeters,
   distanceUnitFor,
   formatDecimal,
+  formatDuration,
   kgToDisplay,
   metersToDisplay,
   parseDecimalInput,
@@ -104,6 +106,7 @@ export function SetRow({ set, label, previous, unit, trackingType, actions, onCo
     !completable || set.completed ? [] : missingRequiredFields({ ...set, ...draft }, trackingType);
 
   const previousLabel = previous ? formatPreviousSet(previous, trackingType, unit) : '—';
+  const gains = set.completed && previous ? setGains(set, previous, trackingType) : {};
 
   const row = (
     <View
@@ -120,52 +123,56 @@ export function SetRow({ set, label, previous, unit, trackingType, actions, onCo
       </ThemedText>
 
       {fields.map((field) => {
+        const badge = gainLabel(field, gains[field], set, previous, unit, trackingType);
+
         if (field === 'duration') {
           return (
-            <DurationCell
-              key={field}
-              width={fieldWidth(fields.length)}
-              seconds={set.durationSeconds}
-              placeholder={previous?.durationSeconds ?? null}
-              highlighted={flagged && missing.includes(field)}
-              completed={set.completed}
-              onEdit={(value) => setDraft((current) => ({ ...current, durationSeconds: value }))}
-              onCommit={(value) => actions.updateSetValues(set.id, { durationSeconds: value })}
-            />
+            <GainBadge key={field} label={badge}>
+              <DurationCell
+                width={fieldWidth(fields.length)}
+                seconds={set.durationSeconds}
+                placeholder={previous?.durationSeconds ?? null}
+                highlighted={flagged && missing.includes(field)}
+                completed={set.completed}
+                onEdit={(value) => setDraft((current) => ({ ...current, durationSeconds: value }))}
+                onCommit={(value) => actions.updateSetValues(set.id, { durationSeconds: value })}
+              />
+            </GainBadge>
           );
         }
 
         const cell = FIELDS[field];
         return (
-          <NumericCell
-            key={field}
-            focusKey={focusKey(set.id, field)}
-            width={fieldWidth(fields.length)}
-            value={cell.display(set, unit)}
-            placeholder={previous ? cell.display(previous, unit) : ''}
-            keyboardType={cell.keyboardType}
-            maxLength={cell.maxLength}
-            highlighted={flagged && missing.includes(field)}
-            completed={set.completed}
-            onEdit={(text) => setDraft((current) => ({ ...current, ...cell.parse(text, unit) }))}
-            onCommit={(text) => {
-              const values = cell.parse(text, unit);
-              const fillWeight =
-                autofillWeight &&
-                field === 'reps' &&
-                values.reps != null &&
-                set.weightKg == null &&
-                fields.includes('weight') &&
-                previous?.weightKg != null;
-              // Returned, not dropped: `useDebouncedWrite` guards whatever the
-              // commit hands back, and this is the write that carries the
-              // weight and reps the user just typed.
-              return actions.updateSetValues(
-                set.id,
-                fillWeight ? { ...values, weightKg: previous.weightKg } : values,
-              );
-            }}
-          />
+          <GainBadge key={field} label={badge}>
+            <NumericCell
+              focusKey={focusKey(set.id, field)}
+              width={fieldWidth(fields.length)}
+              value={cell.display(set, unit)}
+              placeholder={previous ? cell.display(previous, unit) : ''}
+              keyboardType={cell.keyboardType}
+              maxLength={cell.maxLength}
+              highlighted={flagged && missing.includes(field)}
+              completed={set.completed}
+              onEdit={(text) => setDraft((current) => ({ ...current, ...cell.parse(text, unit) }))}
+              onCommit={(text) => {
+                const values = cell.parse(text, unit);
+                const fillWeight =
+                  autofillWeight &&
+                  field === 'reps' &&
+                  values.reps != null &&
+                  set.weightKg == null &&
+                  fields.includes('weight') &&
+                  previous?.weightKg != null;
+                // Returned, not dropped: `useDebouncedWrite` guards whatever the
+                // commit hands back, and this is the write that carries the
+                // weight and reps the user just typed.
+                return actions.updateSetValues(
+                  set.id,
+                  fillWeight ? { ...values, weightKg: previous.weightKg } : values,
+                );
+              }}
+            />
+          </GainBadge>
         );
       })}
 
@@ -301,6 +308,43 @@ export function SetRow({ set, label, previous, unit, trackingType, actions, onCo
 }
 
 const FLAG_MS = 1500;
+
+/**
+ * The difference is taken between the two *displayed* values, so a gain that
+ * rounds away in the user's unit never shows as "+0".
+ */
+function gainLabel(
+  field: SetField,
+  gain: number | undefined,
+  set: TrackedSet,
+  previous: PreviousSet | undefined,
+  unit: WeightUnit,
+  trackingType: TrackingType,
+): string | null {
+  if (gain == null || previous == null) return null;
+  if (field === 'duration') return `+${formatDuration(gain)}`;
+  if (field === 'reps') return `+${gain}`;
+  const shown = (value: TrackedSet) => parseDecimalInput(FIELDS[field].display(value, unit)) ?? 0;
+  // Less assistance is the gain, so it reads with the column's own minus.
+  const assisted = field === 'weight' && trackingType === 'assisted_bodyweight';
+  const delta = Math.round(Math.abs(shown(set) - shown(previous)) * 100) / 100;
+  return delta > 0 ? `${assisted ? '−' : '+'}${formatDecimal(delta)}` : null;
+}
+
+function GainBadge({ label, children }: { label: string | null; children: React.ReactNode }) {
+  const theme = useTheme();
+  if (label == null) return children;
+  return (
+    <View>
+      {children}
+      <View pointerEvents="none" style={[styles.badge, { backgroundColor: theme.success }]}>
+        <ThemedText type="caption2" weight="semibold" numeric style={{ color: theme.accentContent }}>
+          {label}
+        </ThemedText>
+      </View>
+    </View>
+  );
+}
 
 const FIELD_NAMES: Record<SetField, string> = {
   weight: 'weight',
@@ -483,6 +527,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 0,
     fontVariant: ['tabular-nums'],
+  },
+  // The swipeable clips its row, so the badge has to stay inside the 6pt
+  // between the row's top edge and the cell rather than float higher.
+  badge: {
+    position: 'absolute',
+    top: -6,
+    right: -4,
+    height: 14,
+    paddingHorizontal: 5,
+    borderRadius: 7,
+    justifyContent: 'center',
   },
   check: {
     width: SET_COLUMNS.check - 8,

@@ -143,3 +143,42 @@ export function missingRequiredFields(set: TrackedSet, type: TrackingType): SetF
 export function isValidSet(set: TrackedSet, type: TrackingType): boolean {
   return missingRequiredFields(set, type).length === 0;
 }
+
+/**
+ * How far a set beat the previous one, per field, in storage units — only the
+ * fields where it actually improved. Assisted weight improves by going down,
+ * and its gain is still a positive magnitude. A cardio time is left out: a
+ * longer clock can mean a slower pace.
+ */
+export function setGains(
+  set: TrackedSet,
+  previous: TrackedSet,
+  type: TrackingType
+): Partial<Record<SetField, number>> {
+  const gains: Partial<Record<SetField, number>> = {};
+  const gain = (field: SetField, now: number | null, before: number | null) => {
+    if (now != null && before != null && now > before) gains[field] = now - before;
+  };
+
+  switch (type) {
+    case 'weight_reps':
+    case 'weighted_bodyweight':
+      gain('weight', set.weightKg, previous.weightKg);
+      gain('reps', set.reps, previous.reps);
+      break;
+    case 'assisted_bodyweight':
+      gain('weight', previous.weightKg, set.weightKg);
+      gain('reps', set.reps, previous.reps);
+      break;
+    case 'bodyweight_reps':
+      gain('reps', set.reps, previous.reps);
+      break;
+    case 'duration':
+      gain('duration', set.durationSeconds, previous.durationSeconds);
+      break;
+    case 'distance_duration':
+      gain('distance', set.distanceM, previous.distanceM);
+      break;
+  }
+  return gains;
+}
