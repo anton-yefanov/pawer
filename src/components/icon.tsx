@@ -17,6 +17,7 @@ import { CaretLeftIcon } from "phosphor-react-native/src/icons/CaretLeft";
 import { CaretRightIcon } from "phosphor-react-native/src/icons/CaretRight";
 import { CaretUpDownIcon } from "phosphor-react-native/src/icons/CaretUpDown";
 import { ChartBarIcon } from "phosphor-react-native/src/icons/ChartBar";
+import { ChartLineUpIcon } from "phosphor-react-native/src/icons/ChartLineUp";
 import { CheckIcon } from "phosphor-react-native/src/icons/Check";
 import { CircleHalfIcon } from "phosphor-react-native/src/icons/CircleHalf";
 import { ClockIcon } from "phosphor-react-native/src/icons/Clock";
@@ -133,6 +134,10 @@ const ICONS = {
     symbol: { ios: "chart.bar.fill", android: "bar_chart" },
     glyph: ChartBarIcon,
     weight: "fill",
+  },
+  "chart.line.uptrend.xyaxis": {
+    symbol: { ios: "chart.line.uptrend.xyaxis", android: "show_chart" },
+    glyph: ChartLineUpIcon,
   },
   calendar: {
     symbol: { ios: "calendar", android: "calendar_today" },

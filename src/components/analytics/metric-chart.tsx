@@ -12,11 +12,9 @@ import {
   CardPlaceholder,
   placeholderSeries,
 } from "@/components/analytics/placeholder";
-import { ThemedText } from "@/components/themed-text";
 import { Spacing } from "@/constants/theme";
-import { periodLabel } from "@/lib/analytics-period";
 import { metricSeriesQuery, type MetricRow } from "@/lib/analytics-queries";
-import { buildSeries, formatBucketRange } from "@/lib/analytics-series";
+import { buildSeries } from "@/lib/analytics-series";
 import { useIncludeWarmup } from "@/lib/warmup-stats";
 
 export function MetricChart({
@@ -24,12 +22,14 @@ export function MetricChart({
   title,
   pick,
   format,
+  formatAxis,
   placeholder,
 }: {
   slot: BlockSlot;
   title: string;
   pick: (row: MetricRow) => number;
   format: (value: number) => string;
+  formatAxis?: (value: number) => string;
   /** A week of believable values, in this metric's own unit, for the empty card. */
   placeholder: readonly number[];
 }) {
@@ -46,7 +46,6 @@ export function MetricChart({
     [rows, range, pick],
   );
   const total = series.points.reduce((sum, point) => sum + point.value, 0);
-  const point = selected === null ? undefined : series.points[selected];
   const empty = series.points.length === 0;
   const preview = useMemo(() => placeholderSeries(placeholder), [placeholder]);
 
@@ -54,7 +53,7 @@ export function MetricChart({
     <AnalyticsBlock
       slot={slot}
       title={title}
-      subtitle={empty ? "No workouts yet" : `${series.label} total`}
+      subtitle={empty ? "No workouts yet" : `${format(total)} total`}
       period={period}
       onPeriodChange={(next) => {
         setSelected(null);
@@ -63,43 +62,26 @@ export function MetricChart({
     >
       {!empty ? (
         <View style={styles.body}>
-          <View style={styles.readout}>
-            <ThemedText type="title1" numeric>
-              {format(point ? point.value : total)}
-            </ThemedText>
-            <ThemedText type="footnote" themeColor="textSecondary">
-              {point
-                ? formatBucketRange(point, series.bucket)
-                : periodLabel(period)}
-            </ThemedText>
-          </View>
-
           <AreaChart
             points={series.points}
             bucket={series.bucket}
             selected={selected}
             onSelect={setSelected}
             formatValue={format}
+            formatAxis={formatAxis}
+            tip
           />
         </View>
       ) : (
         <CardPlaceholder text="Log a workout to unlock">
           <View style={styles.body}>
-            <View style={styles.readout}>
-              <ThemedText type="title1" numeric>
-                {format(placeholder.reduce((sum, value) => sum + value, 0))}
-              </ThemedText>
-              <ThemedText type="footnote" themeColor="textSecondary">
-                {periodLabel(period)}
-              </ThemedText>
-            </View>
-
             <AreaChart
               points={preview}
               bucket="day"
               selected={null}
               onSelect={() => {}}
               formatValue={format}
+              formatAxis={formatAxis}
               muted
             />
           </View>
@@ -112,8 +94,5 @@ export function MetricChart({
 const styles = StyleSheet.create({
   body: {
     gap: Spacing.three,
-  },
-  readout: {
-    gap: Spacing.half,
   },
 });

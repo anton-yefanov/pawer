@@ -58,11 +58,15 @@ export function formatWeight(kg: number | null, unit: WeightUnit): string {
  * season's work reads as `26.49 t` instead of `26490 kg`. Pounds have no such
  * customary unit in the gym, so they stay pounds and only gain separators.
  */
-export function formatTonnage(kg: number, unit: WeightUnit): string {
+export function formatTonnage(kg: number, unit: WeightUnit, compact = false): string {
   const value = kgToDisplay(kg, unit);
+  if (compact && value === 0) return '0';
   if (unit === 'kg' && value >= 1000) {
-    return `${(value / 1000).toFixed(2).replace('.', DECIMAL)} t`;
+    // Compact is for axis ticks, which are round numbers: `5 t`, not `5.00 t`.
+    const tonnes = compact ? formatDecimal(value / 1000) : (value / 1000).toFixed(2).replace('.', DECIMAL);
+    return `${tonnes} t`;
   }
+  if (compact && value >= 1000) return `${formatDecimal(value / 1000)}k ${unit}`;
   return `${formatGrouped(value)} ${unit}`;
 }
 

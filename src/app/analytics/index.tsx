@@ -9,11 +9,13 @@ import { RecordsCard } from "@/components/analytics/records-card";
 import { SummaryBlock } from "@/components/analytics/summary-block";
 import { TrainingDaysBlock } from "@/components/analytics/training-days-block";
 import { CircleButton } from "@/components/circle-button";
+import { Icon } from "@/components/icon";
 import { ThemedText } from "@/components/themed-text";
 import {
   ExerciseReorderProvider,
   type Settle,
 } from "@/components/workout/exercise-reorder";
+import { BigButton } from "@/components/workout/big-button";
 import { BottomTabInset, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import {
@@ -46,6 +48,7 @@ export default function AnalyticsScreen() {
   const insets = useSafeAreaInsets();
   const layout = useBlockLayout();
   const { blocks } = layout;
+  const empty = blocks.length === 0;
   const [reordering, setReordering] = useState(false);
 
   const reorder = (from: number, to: number, settle: Settle) => {
@@ -65,6 +68,8 @@ export default function AnalyticsScreen() {
     },
   });
 
+  const addChart = () => router.push("/analytics/add-block");
+
   const render = (slot: BlockSlot) => {
     switch (slot.id) {
       case "summary":
@@ -81,6 +86,7 @@ export default function AnalyticsScreen() {
             title={BLOCK_CATALOG.tonnage.title}
             pick={pickVolume}
             format={(value) => formatTonnage(value, unit)}
+            formatAxis={(value) => formatTonnage(value, unit, true)}
             placeholder={PLACEHOLDER_TONNAGE_KG}
           />
         );
@@ -115,19 +121,37 @@ export default function AnalyticsScreen() {
         contentInsetAdjustmentBehavior="never"
         // A lifted block moves with the finger; scrolling under it at the same
         // time would put it somewhere the drop test can't see.
-        scrollEnabled={!reordering}
+        scrollEnabled={!reordering && !empty}
       >
         <View style={styles.title}>
           <ThemedText type="largeTitle">Analytics</ThemedText>
-          <CircleButton
-            symbol="plus"
-            label="Add Chart"
-            onPress={() => router.push("/analytics/add-block")}
-          />
+          <CircleButton symbol="plus" label="Add Chart" onPress={addChart} />
         </View>
 
         {blocks.map((id, index) => render(slotFor(id, index)))}
       </ScrollView>
+      {empty && (
+        <View style={styles.empty} pointerEvents="box-none">
+          <Icon
+            name="chart.line.uptrend.xyaxis"
+            size={64}
+            tintColor={theme.textTertiary}
+          />
+          <ThemedText type="title2" weight="bold" style={styles.emptyTitle}>
+            See Your Progress
+          </ThemedText>
+          <ThemedText
+            type="body"
+            themeColor="textSecondary"
+            style={styles.emptyText}
+          >
+            Add a chart to follow your training and watch your strength grow.
+          </ThemedText>
+          <View style={styles.emptyButton}>
+            <BigButton title="Add Chart" onPress={addChart} />
+          </View>
+        </View>
+      )}
     </ExerciseReorderProvider>
   );
 }
@@ -137,6 +161,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  // Laid over the whole screen rather than under the title, so the message sits
+  // at the screen's true centre.
+  empty: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: Spacing.three,
+  },
+  emptyTitle: { marginTop: Spacing.three, textAlign: "center" },
+  emptyText: { marginTop: Spacing.two, maxWidth: 280, textAlign: "center" },
+  emptyButton: {
+    marginTop: Spacing.four,
   },
   content: {
     padding: Spacing.three,

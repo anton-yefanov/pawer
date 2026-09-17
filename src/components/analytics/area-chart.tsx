@@ -2,8 +2,12 @@ import { useState } from "react";
 import { View } from "react-native";
 import { AreaChart as ChartKitAreaChart } from "react-native-chart-kit/v2";
 
+import { AXIS_GUTTER } from "@/components/analytics/chart-renderer";
+import { ChartTip } from "@/components/analytics/chart-tip";
 import { CHART_LABEL_SIZE } from "@/components/analytics/chart-text";
+import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { press, select } from "@/lib/haptics";
 import {
   formatBucketRange,
   type Bucket,
@@ -11,6 +15,11 @@ import {
 } from "@/lib/analytics-series";
 
 const HEIGHT = 180;
+
+// The kit pads the plot by 10pt, then the label width, then an 8pt gap, and
+// right-aligns the labels against that gap. The plot starts at `AXIS_GUTTER`
+// on every chart, whatever its labels say.
+const Y_LABEL_WIDTH = AXIS_GUTTER - 18;
 
 const SMOOTH_STEPS = 12;
 
@@ -59,6 +68,8 @@ export function AreaChart({
   muted = false,
   smooth = false,
   labels = true,
+  tip = false,
+  formatAxis,
 }: {
   points: readonly SeriesPoint[];
   bucket: Bucket;
@@ -68,9 +79,16 @@ export function AreaChart({
   muted?: boolean;
   smooth?: boolean;
   labels?: boolean;
+  /** Float the selected value over the plot, for callers with no readout of their own. */
+  tip?: boolean;
+  /** A terser `formatValue` for the y-axis ticks. */
+  formatAxis?: (value: number) => string;
 }) {
   const theme = useTheme();
   const [width, setWidth] = useState(0);
+  const [tipX, setTipX] = useState(0);
+
+  const axisFormat = labels ? (formatAxis ?? formatValue) : () => "";
 
   const color = muted ? theme.accentMuted : theme.accent;
   const data = smooth
@@ -97,7 +115,7 @@ export function AreaChart({
             toOpacity: 0,
           }}
           yDomain={{ min: 0, max: "dataMax", nice: true }}
-          yAxisLabelWidth="stable"
+          yAxisLabelWidth={Y_LABEL_WIDTH}
           showDots={false}
           activeDot={{
             visible: true,
@@ -114,7 +132,13 @@ export function AreaChart({
               : {
                   mode: "scrub",
                   selectionPersistence: "whileActive",
-                  onSelect: (event) => onSelect(event.index),
+                  onSelect: (event) => {
+                    if (event.index === selected) return;
+                    if (selected === null) press();
+                    else select();
+                    setTipX(event.position.x);
+                    onSelect(event.index);
+                  },
                   onDeselect: () => onSelect(null),
                 }
           }
@@ -123,7 +147,7 @@ export function AreaChart({
           legend={false}
           showHorizontalGridLines
           showVerticalGridLines={false}
-          formatYLabel={labels ? formatValue : () => ""}
+          formatYLabel={axisFormat}
           formatXLabel={
             labels
               ? (_, index) =>
@@ -146,6 +170,19 @@ export function AreaChart({
               legendLabelSize: CHART_LABEL_SIZE,
             },
           }}
+        />
+      )}
+      {tip && !muted && selected !== null && points[selected] && (
+        // Pinned over the top of the plot, where the finger scrubbing below
+        // can never cover it.
+        <ChartTip
+          bounds={width}
+          place={(tip) => ({
+            top: -tip.height + Spacing.one,
+            left: tipX - tip.width / 2,
+          })}
+          label={formatBucketRange(points[selected], bucket)}
+          value={formatValue(points[selected].value)}
         />
       )}
     </View>
