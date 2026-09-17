@@ -2,7 +2,10 @@ import { useState } from "react";
 import { View } from "react-native";
 import { AreaChart as ChartKitAreaChart } from "react-native-chart-kit/v2";
 
-import { AXIS_GUTTER } from "@/components/analytics/chart-renderer";
+import {
+  AXIS_GUTTER,
+  chartRenderer,
+} from "@/components/analytics/chart-renderer";
 import { ChartTip } from "@/components/analytics/chart-tip";
 import { CHART_LABEL_SIZE } from "@/components/analytics/chart-text";
 import { Spacing } from "@/constants/theme";
@@ -20,6 +23,8 @@ const HEIGHT = 180;
 // right-aligns the labels against that gap. The plot starts at `AXIS_GUTTER`
 // on every chart, whatever its labels say.
 const Y_LABEL_WIDTH = AXIS_GUTTER - 18;
+
+const renderer = chartRenderer({ clipLines: true });
 
 const SMOOTH_STEPS = 12;
 
@@ -116,16 +121,21 @@ export function AreaChart({
           }}
           yDomain={{ min: 0, max: "dataMax", nice: true }}
           yAxisLabelWidth={Y_LABEL_WIDTH}
+          renderer={renderer}
           showDots={false}
           activeDot={{
             visible: true,
             shape: "circle",
-            radius: 4,
-            fill: "background",
-            stroke: "series",
+            radius: 5,
+            fill: "series",
+            // The theme's background is transparent here, so the ring that
+            // lifts the dot off the line is the card's own colour.
+            stroke: theme.surface,
             strokeWidth: 2,
           }}
-          selectedIndex={selected ?? undefined}
+          // Never `undefined`: that flips the kit to uncontrolled, where it keeps
+          // its own copy of the first touch and shows it again once we clear.
+          selectedIndex={selected ?? -1}
           interaction={
             muted
               ? "none"
