@@ -1,9 +1,11 @@
 import { SymbolView, type SymbolViewProps } from "expo-symbols";
 import type { Icon as PhosphorIcon, IconWeight } from "phosphor-react-native";
 import { ArrowClockwiseIcon } from "phosphor-react-native/src/icons/ArrowClockwise";
+import { ArrowDownIcon } from "phosphor-react-native/src/icons/ArrowDown";
 import { ArrowDownRightIcon } from "phosphor-react-native/src/icons/ArrowDownRight";
 import { ArrowLineDownIcon } from "phosphor-react-native/src/icons/ArrowLineDown";
 import { ArrowSquareOutIcon } from "phosphor-react-native/src/icons/ArrowSquareOut";
+import { ArrowUpIcon } from "phosphor-react-native/src/icons/ArrowUp";
 import { ArrowUpRightIcon } from "phosphor-react-native/src/icons/ArrowUpRight";
 import { ArrowsClockwiseIcon } from "phosphor-react-native/src/icons/ArrowsClockwise";
 import { BarbellIcon } from "phosphor-react-native/src/icons/Barbell";
@@ -83,6 +85,14 @@ type IconEntry = {
  * rather than against it.
  */
 const ICONS = {
+  "arrow.down": {
+    symbol: { ios: "arrow.down", android: "arrow_downward" },
+    glyph: ArrowDownIcon,
+  },
+  "arrow.up": {
+    symbol: { ios: "arrow.up", android: "arrow_upward" },
+    glyph: ArrowUpIcon,
+  },
   "arrow.down.right": {
     symbol: { ios: "arrow.down.right", android: "south_east" },
     glyph: ArrowDownRightIcon,

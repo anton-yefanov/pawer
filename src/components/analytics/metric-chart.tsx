@@ -1,130 +1,90 @@
+import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { useMemo, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
+import {
+  AnalyticsBlock,
+  useBlockPeriod,
+  type BlockSlot,
+} from "@/components/analytics/analytics-block";
 import { AreaChart } from "@/components/analytics/area-chart";
 import {
   CardPlaceholder,
   placeholderSeries,
 } from "@/components/analytics/placeholder";
 import { ThemedText } from "@/components/themed-text";
-import { CardRadius, Spacing } from "@/constants/theme";
-import { useEasedProgress } from "@/hooks/use-eased-progress";
-import { useTheme } from "@/hooks/use-theme";
-import { periodLabel, type PeriodId } from "@/lib/analytics-period";
-import {
-  formatBucketRange,
-  trendSeries,
-  type Series,
-} from "@/lib/analytics-series";
-import * as haptics from "@/lib/haptics";
+import { Spacing } from "@/constants/theme";
+import { periodLabel } from "@/lib/analytics-period";
+import { metricSeriesQuery, type MetricRow } from "@/lib/analytics-queries";
+import { buildSeries, formatBucketRange } from "@/lib/analytics-series";
+import { useIncludeWarmup } from "@/lib/warmup-stats";
 
 export function MetricChart({
+  slot,
   title,
-  series,
-  total,
+  pick,
   format,
-  period,
   placeholder,
 }: {
+  slot: BlockSlot;
   title: string;
-  series: Series;
-  total: number;
+  pick: (row: MetricRow) => number;
   format: (value: number) => string;
-  period: PeriodId;
   /** A week of believable values, in this metric's own unit, for the empty card. */
   placeholder: readonly number[];
 }) {
-  const theme = useTheme();
+  const { period, range, select } = useBlockPeriod();
+  const includeWarmup = useIncludeWarmup();
   const [selected, setSelected] = useState<number | null>(null);
-  const [trend, setTrend] = useState(false);
 
-  const trended = useMemo(() => trendSeries(series), [series]);
-  const progress = useEasedProgress(trend);
-
-  // Interpolated point by point rather than cross-faded: the two series share
-  // their buckets, so the line can walk from one shape to the other and the
-  // y-axis rescales with it.
-  const shown = useMemo(() => {
-    if (progress === 0) return series;
-    if (progress === 1) return trended;
-    return {
-      ...series,
-      points: series.points.map((point, index) => ({
-        ...point,
-        value:
-          point.value + (trended.points[index].value - point.value) * progress,
-      })),
-    };
-  }, [series, trended, progress]);
-
-  const point = selected === null ? undefined : shown.points[selected];
-  const empty = shown.points.length === 0;
+  const { data: rows } = useLiveQuery(metricSeriesQuery(range, includeWarmup), [
+    range,
+    includeWarmup,
+  ]);
+  const series = useMemo(
+    () => buildSeries(rows ?? [], range, pick),
+    [rows, range, pick],
+  );
+  const total = series.points.reduce((sum, point) => sum + point.value, 0);
+  const point = selected === null ? undefined : series.points[selected];
+  const empty = series.points.length === 0;
   const preview = useMemo(() => placeholderSeries(placeholder), [placeholder]);
 
   return (
-    <View
-      style={[
-        styles.card,
-        {
-          backgroundColor: theme.surface,
-          borderColor: theme.backgroundElement,
-        },
-      ]}
+    <AnalyticsBlock
+      slot={slot}
+      title={title}
+      subtitle={empty ? "No workouts yet" : `${series.label} total`}
+      period={period}
+      onPeriodChange={(next) => {
+        setSelected(null);
+        select(next);
+      }}
     >
-      <View style={styles.header}>
-        <ThemedText type="headline" numberOfLines={1} style={styles.title}>
-          {empty ? title : `${title} (${series.label})`}
-        </ThemedText>
-        {!empty && (
-          <Pressable
-            onPress={() => {
-              haptics.select();
-              setTrend(!trend);
-            }}
-            style={({ pressed }) => [
-              styles.chip,
-              {
-                backgroundColor: trend
-                  ? theme.backgroundSelected
-                  : theme.backgroundElement,
-                opacity: pressed ? 0.6 : 1,
-              },
-            ]}
-          >
-            <ThemedText
-              type="footnote"
-              themeColor={trend ? "text" : "textSecondary"}
-            >
-              Trend
-            </ThemedText>
-          </Pressable>
-        )}
-      </View>
-
       {!empty ? (
-        <>
+        <View style={styles.body}>
           <View style={styles.readout}>
             <ThemedText type="title1" numeric>
               {format(point ? point.value : total)}
             </ThemedText>
             <ThemedText type="footnote" themeColor="textSecondary">
               {point
-                ? formatBucketRange(point, shown.bucket)
+                ? formatBucketRange(point, series.bucket)
                 : periodLabel(period)}
             </ThemedText>
           </View>
 
           <AreaChart
-            points={shown.points}
-            bucket={shown.bucket}
+            points={series.points}
+            bucket={series.bucket}
             selected={selected}
             onSelect={setSelected}
             formatValue={format}
           />
-        </>
+        </View>
       ) : (
         <CardPlaceholder text="Log a workout to unlock">
-          <View style={styles.placeholder}>
+          <View style={styles.body}>
             <View style={styles.readout}>
               <ThemedText type="title1" numeric>
                 {format(placeholder.reduce((sum, value) => sum + value, 0))}
@@ -145,36 +105,15 @@ export function MetricChart({
           </View>
         </CardPlaceholder>
       )}
-    </View>
+    </AnalyticsBlock>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: CardRadius,
-    borderCurve: "continuous",
-    borderWidth: 1,
-    padding: Spacing.three,
+  body: {
     gap: Spacing.three,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: Spacing.two,
-  },
-  title: {
-    flexShrink: 1,
-  },
-  chip: {
-    paddingVertical: Spacing.half,
-    paddingHorizontal: Spacing.two,
-    borderRadius: 8,
   },
   readout: {
     gap: Spacing.half,
-  },
-  placeholder: {
-    gap: Spacing.three,
   },
 });

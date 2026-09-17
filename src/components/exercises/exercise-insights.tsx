@@ -114,10 +114,6 @@ function totalMeasure(totals: ExerciseTotals, kind: string, unit: WeightUnit) {
 /**
  * Everything the app knows about one exercise: standing records, lifetime
  * totals, a per-session trend and the last few sessions.
- *
- * `StatRows` from the analytics screen is deliberately not reused — its tiles
- * are `surface` cards, which is the sheet's own background, so they would read
- * as nothing at all here.
  */
 export function ExerciseInsights({
   id,

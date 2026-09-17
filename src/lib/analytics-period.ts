@@ -1,16 +1,15 @@
-export type PeriodId = 'd7' | 'd30' | 'd90' | 'd180' | 'y1' | 'all' | 'custom';
+export type PeriodId = 'd7' | 'd30' | 'd90' | 'd180' | 'y1' | 'all';
 
 /** Epoch ms, half-open `[from, to)`. */
 export type DateRange = { from: number; to: number };
 
-export const PERIODS: readonly { id: PeriodId; label: string }[] = [
-  { id: 'd7', label: 'Last 7 days' },
-  { id: 'd30', label: 'Last 30 days' },
-  { id: 'd90', label: 'Last 90 days' },
-  { id: 'd180', label: 'Last 180 days' },
-  { id: 'y1', label: 'Last year' },
-  { id: 'all', label: 'All time' },
-  { id: 'custom', label: 'Custom' },
+export const PERIODS: readonly { id: PeriodId; label: string; short: string }[] = [
+  { id: 'd7', label: 'Last 7 days', short: '7D' },
+  { id: 'd30', label: 'Last 30 days', short: '30D' },
+  { id: 'd90', label: 'Last 90 days', short: '3M' },
+  { id: 'd180', label: 'Last 180 days', short: '6M' },
+  { id: 'y1', label: 'Last year', short: '1Y' },
+  { id: 'all', label: 'All time', short: 'All' },
 ];
 
 export const DEFAULT_PERIOD: PeriodId = 'd7';
@@ -24,6 +23,10 @@ export function isPeriodLocked(id: PeriodId, isPro: boolean): boolean {
 
 export function periodLabel(id: PeriodId): string {
   return PERIODS.find((period) => period.id === id)?.label ?? '';
+}
+
+export function shortPeriodLabel(id: PeriodId): string {
+  return PERIODS.find((period) => period.id === id)?.short ?? '';
 }
 
 export function startOfDay(date: Date): number {
@@ -51,7 +54,7 @@ function endOfDay(date: Date): number {
  * workout finished this morning belongs to "last 7 days" whatever the clock
  * says when the screen opens.
  */
-export function rangeFor(id: PeriodId, custom?: { from: Date; to: Date }): DateRange {
+export function rangeFor(id: PeriodId): DateRange {
   const tomorrow = endOfDay(new Date());
 
   switch (id) {
@@ -71,12 +74,5 @@ export function rangeFor(id: PeriodId, custom?: { from: Date; to: Date }): DateR
     }
     case 'all':
       return { from: 0, to: tomorrow };
-    case 'custom': {
-      if (!custom) return { from: 0, to: tomorrow };
-      const reversed = custom.from > custom.to;
-      const first = reversed ? custom.to : custom.from;
-      const last = reversed ? custom.from : custom.to;
-      return { from: startOfDay(first), to: endOfDay(last) };
-    }
   }
 }

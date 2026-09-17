@@ -5,10 +5,10 @@ import { StyleSheet } from 'react-native';
  * Compact SwiftUI `DatePicker` — tapping the value opens the system wheel in a
  * popover, which is the interaction the reference screenshot shows.
  *
- * Trailing-aligned in whatever width the row has left, like DayPicker: a fixed
- * host width leaves dead space after the time pill, and `matchContents`
- * collapses a compact picker to a few points wide — the trap the exercise
- * filter menu documents.
+ * Trailing-aligned in whatever width the row has left: a fixed host width
+ * leaves dead space after the time pill, and `matchContents` collapses a
+ * compact picker to a few points wide — the trap the exercise filter menu
+ * documents.
  *
  * `ignoreSafeArea` because the hosting controller otherwise applies the keyboard
  * inset itself and slides the picker out of its row — the notes field on this

@@ -4,7 +4,11 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { Menu, type MenuItem } from "@/components/android/menu";
 import { Pill } from "@/components/exercises/pill";
 import { type IconName } from "@/components/icon";
-import { periodLabel, type PeriodId } from "@/lib/analytics-period";
+import {
+  periodLabel,
+  shortPeriodLabel,
+  type PeriodId,
+} from "@/lib/analytics-period";
 import * as haptics from "@/lib/haptics";
 
 export function PeriodMenu<Id extends PeriodId>({
@@ -12,6 +16,7 @@ export function PeriodMenu<Id extends PeriodId>({
   periods,
   icon = "calendar",
   raised,
+  compact,
   locked,
   onChange,
 }: {
@@ -20,6 +25,8 @@ export function PeriodMenu<Id extends PeriodId>({
   /** `null` next to controls that carry no glyphs of their own. */
   icon?: IconName | null;
   raised?: boolean;
+  /** A smaller pill reading "3M"; the menu keeps the long labels. */
+  compact?: boolean;
   /** Draws a lock on the row; picking it still calls `onChange`. */
   locked?: (id: PeriodId) => boolean;
   onChange: (next: Id) => void;
@@ -49,7 +56,8 @@ export function PeriodMenu<Id extends PeriodId>({
           {({ pressed }) => (
             <Pill
               icon={icon ?? undefined}
-              label={periodLabel(value)}
+              label={compact ? shortPeriodLabel(value) : periodLabel(value)}
+              compact={compact}
               raised={raised}
               trailing="chevron.down"
               pressed={pressed}

@@ -1,45 +1,22 @@
-import { useLiveQuery } from "drizzle-orm/expo-sqlite";
-import { useMemo, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { useState } from "react";
+import { ScrollView, StyleSheet } from "react-native";
 
-import { DayPicker } from "@/components/analytics/day-picker";
+import type { BlockSlot } from "@/components/analytics/analytics-block";
 import { MetricChart } from "@/components/analytics/metric-chart";
-import { QuickSummary } from "@/components/analytics/quick-summary";
 import { RecordsCard } from "@/components/analytics/records-card";
-import { StatRows, type StatRow } from "@/components/analytics/stat-rows";
-import { PeriodMenu } from "@/components/exercises/period-menu";
-import { ThemedText } from "@/components/themed-text";
-import { BottomTabInset, CardRadius, Spacing } from "@/constants/theme";
+import { SummaryBlock } from "@/components/analytics/summary-block";
+import {
+  ExerciseReorderProvider,
+  type Settle,
+} from "@/components/workout/exercise-reorder";
+import { BottomTabInset, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { useBlockLayout, type BlockId } from "@/lib/analytics-layout";
+import type { MetricRow } from "@/lib/analytics-queries";
+import * as haptics from "@/lib/haptics";
+import { move } from "@/lib/order";
+import { formatTonnage } from "@/lib/units";
 import { useWeightUnit } from "@/lib/weight-unit";
-import {
-  combineTotals,
-  firstWorkoutQuery,
-  metricSeriesQuery,
-  periodRecordsQuery,
-  prTotalsQuery,
-  setTotalsQuery,
-  workoutTotalsQuery,
-} from "@/lib/analytics-queries";
-import {
-  DEFAULT_PERIOD,
-  PERIODS,
-  isPeriodLocked,
-  rangeFor,
-  type PeriodId,
-} from "@/lib/analytics-period";
-import { allowPeriod } from "@/lib/pro-gates";
-import { usePro } from "@/lib/purchases";
-import { comparisonLabel, delta, previousRange } from "@/lib/analytics-compare";
-import { buildQuickSummary } from "@/lib/analytics-insights";
-import { buildSeries } from "@/lib/analytics-series";
-import {
-  distanceUnitFor,
-  formatDistance,
-  formatTonnage,
-  splitMeasure,
-} from "@/lib/units";
-import { useIncludeWarmup } from "@/lib/warmup-stats";
 import { formatHoursMinutes } from "@/lib/workout-stats";
 
 const MINUTE = 60_000;
@@ -50,253 +27,82 @@ const PLACEHOLDER_DURATION_MS = [45, 62, 51, 70, 58, 74, 63, 81].map(
   (minutes) => minutes * MINUTE,
 );
 
+// Module-level so the chart's series memo isn't rebuilt every render.
+const pickVolume = (row: MetricRow) => row.volumeKg;
+const pickDuration = (row: MetricRow) => row.durationMs;
+
 export default function AnalyticsScreen() {
   const theme = useTheme();
   const unit = useWeightUnit();
-  const isPro = usePro();
+  const layout = useBlockLayout();
+  const { blocks } = layout;
+  const [reordering, setReordering] = useState(false);
 
-  const [period, setPeriod] = useState<PeriodId>(DEFAULT_PERIOD);
-  const [customFrom, setCustomFrom] = useState(() => rangeFor("d7").from);
-  const [customTo, setCustomTo] = useState(() => Date.now());
-  const [today] = useState(() => Date.now());
-
-  const selectPeriod = (next: PeriodId) => {
-    allowPeriod(next, isPro).then((allowed) => {
-      if (allowed) setPeriod(next);
-    });
+  const reorder = (from: number, to: number, settle: Settle) => {
+    void layout.reorder(move(blocks, from, to));
+    settle();
+    haptics.complete();
   };
 
-  const range = useMemo(
-    () =>
-      rangeFor(period, { from: new Date(customFrom), to: new Date(customTo) }),
-    [period, customFrom, customTo],
-  );
-
-  const includeWarmup = useIncludeWarmup();
-
-  const previous = useMemo(() => previousRange(range), [range]);
-
-  const { data: workoutRows } = useLiveQuery(workoutTotalsQuery(range), [
-    range,
-  ]);
-  const { data: setRows } = useLiveQuery(setTotalsQuery(range, includeWarmup), [
-    range,
-    includeWarmup,
-  ]);
-  const { data: metricRows } = useLiveQuery(
-    metricSeriesQuery(range, includeWarmup),
-    [range, includeWarmup],
-  );
-  const { data: prRows } = useLiveQuery(prTotalsQuery(range), [range]);
-  const { data: recordRows } = useLiveQuery(periodRecordsQuery(range), [range]);
-
-  // Always built, so the hook order never depends on whether the period has a
-  // comparison; the result is discarded when `previous` is null.
-  const comparison = previous ?? range;
-  const { data: pastWorkoutRows } = useLiveQuery(
-    workoutTotalsQuery(comparison),
-    [comparison],
-  );
-  const { data: pastSetRows } = useLiveQuery(
-    setTotalsQuery(comparison, includeWarmup),
-    [comparison, includeWarmup],
-  );
-  const { data: pastPrRows } = useLiveQuery(prTotalsQuery(comparison), [
-    comparison,
-  ]);
-
-  const totals = combineTotals(workoutRows?.[0], setRows?.[0], prRows?.[0]);
-  const past = combineTotals(
-    pastWorkoutRows?.[0],
-    pastSetRows?.[0],
-    pastPrRows?.[0],
-  );
-
-  const { data: firstRows } = useLiveQuery(firstWorkoutQuery(), []);
-  const firstWorkoutAt = firstRows?.[0]?.startedAt ?? null;
-
-  // Three conditions, all about not promising a comparison the screen can't
-  // keep. The rows have to belong to *this* comparison — until they do they are
-  // the last period's, and a delta drawn from them would show for a frame and
-  // then vanish. The previous window has to be one the user's training actually
-  // covers, or a partial window reads as an impossible gain. And it has to
-  // contain a workout at all.
-  const settled =
-    pastWorkoutRows?.[0]?.from === comparison.from &&
-    pastPrRows?.[0]?.from === comparison.from;
-  const covered =
-    previous !== null &&
-    firstWorkoutAt !== null &&
-    firstWorkoutAt <= previous.from;
-  const comparable = covered && settled && past.workouts > 0;
-
-  const since = (pick: (of: typeof totals) => number) =>
-    comparable ? delta(pick(totals), pick(past)) : undefined;
-
-  const summary = buildQuickSummary({ totals, past, comparable, range, unit });
-
-  const tonnage = useMemo(
-    () => buildSeries(metricRows ?? [], range, (row) => row.volumeKg),
-    [metricRows, range],
-  );
-  const duration = useMemo(
-    () => buildSeries(metricRows ?? [], range, (row) => row.durationMs),
-    [metricRows, range],
-  );
-
-  const rows: StatRow[] = [
-    {
-      tiles: [
-        {
-          label: "Workouts",
-          value: String(totals.workouts),
-          delta: since((of) => of.workouts),
-        },
-        {
-          label: "Total tonnage",
-          ...splitMeasure(formatTonnage(totals.volumeKg, unit)),
-          delta: since((of) => of.volumeKg),
-        },
-      ],
+  const slotFor = (id: BlockId, index: number): BlockSlot => ({
+    id,
+    index,
+    count: blocks.length,
+    moveTo: (to) => void layout.reorder(move(blocks, index, to)),
+    remove: () => {
+      haptics.warn();
+      void layout.remove(id);
     },
-    {
-      split: [
-        {
-          label: "Sets",
-          value: String(totals.completedSets),
-          delta: since((of) => of.completedSets),
-        },
-        {
-          label: "Reps",
-          value: String(totals.reps),
-          delta: since((of) => of.reps),
-        },
-        {
-          label: "PRs",
-          value: String(totals.records),
-          delta: since((of) => of.records),
-        },
-      ],
-    },
-    {
-      tiles: [
-        {
-          label: "Time in gym",
-          value: formatHoursMinutes(totals.durationMs),
-          delta: since((of) => of.durationMs),
-        },
-        {
-          label: "Avg duration",
-          value: formatHoursMinutes(totals.avgDurationMs),
-          delta: since((of) => of.avgDurationMs),
-        },
-      ],
-    },
-    {
-      tiles: [
-        {
-          label: "Avg tonnage",
-          ...splitMeasure(formatTonnage(totals.avgVolumeKg, unit)),
-          delta: since((of) => of.avgVolumeKg),
-        },
-        {
-          label: "Total distance",
-          ...splitMeasure(
-            formatDistance(totals.distanceM, distanceUnitFor(unit)),
-          ),
-          delta: since((of) => of.distanceM),
-        },
-      ],
-    },
-  ];
+  });
+
+  const render = (slot: BlockSlot) => {
+    switch (slot.id) {
+      case "summary":
+        return <SummaryBlock key={slot.id} slot={slot} />;
+      case "records":
+        return <RecordsCard key={slot.id} slot={slot} />;
+      case "tonnage":
+        return (
+          <MetricChart
+            key={slot.id}
+            slot={slot}
+            title="Total tonnage"
+            pick={pickVolume}
+            format={(value) => formatTonnage(value, unit)}
+            placeholder={PLACEHOLDER_TONNAGE_KG}
+          />
+        );
+      case "duration":
+        return (
+          <MetricChart
+            key={slot.id}
+            slot={slot}
+            title="Time in gym"
+            pick={pickDuration}
+            format={formatHoursMinutes}
+            placeholder={PLACEHOLDER_DURATION_MS}
+          />
+        );
+    }
+  };
 
   return (
-    <ScrollView
-      style={{ backgroundColor: theme.background }}
-      contentContainerStyle={styles.content}
-      contentInsetAdjustmentBehavior="automatic"
+    <ExerciseReorderProvider
+      count={blocks.length}
+      onReorder={reorder}
+      onReorderingChange={setReordering}
     >
-      <View style={styles.periodRow}>
-        <PeriodMenu
-          value={period}
-          periods={PERIODS}
-          icon={null}
-          raised
-          locked={(id) => isPeriodLocked(id, isPro)}
-          onChange={selectPeriod}
-        />
-      </View>
-
-      {period === "custom" && (
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: theme.surface,
-              borderColor: theme.backgroundElement,
-            },
-          ]}
-        >
-          <View style={styles.cardRow}>
-            <ThemedText themeColor="textSecondary">From</ThemedText>
-            <DayPicker
-              value={new Date(customFrom)}
-              max={new Date(Math.min(customTo, today))}
-              onChange={(next) => setCustomFrom(next.getTime())}
-            />
-          </View>
-          <View
-            style={[
-              styles.divider,
-              { backgroundColor: theme.backgroundElement },
-            ]}
-          />
-          <View style={styles.cardRow}>
-            <ThemedText themeColor="textSecondary">To</ThemedText>
-            <DayPicker
-              value={new Date(customTo)}
-              min={new Date(customFrom)}
-              max={new Date(today)}
-              onChange={(next) => setCustomTo(next.getTime())}
-            />
-          </View>
-        </View>
-      )}
-
-      <QuickSummary summary={summary} />
-
-      <StatRows rows={rows} />
-
-      {comparable && (
-        <ThemedText
-          type="footnote"
-          themeColor="textTertiary"
-          style={styles.caption}
-        >
-          vs {comparisonLabel(range)}
-        </ThemedText>
-      )}
-
-      <RecordsCard records={recordRows ?? []} unit={unit} />
-
-      <MetricChart
-        title="Total tonnage"
-        series={tonnage}
-        total={totals.volumeKg}
-        format={(value) => formatTonnage(value, unit)}
-        period={period}
-        placeholder={PLACEHOLDER_TONNAGE_KG}
-      />
-
-      <MetricChart
-        title="Time in gym"
-        series={duration}
-        total={totals.durationMs}
-        format={formatHoursMinutes}
-        period={period}
-        placeholder={PLACEHOLDER_DURATION_MS}
-      />
-    </ScrollView>
+      <ScrollView
+        style={{ backgroundColor: theme.background }}
+        contentContainerStyle={styles.content}
+        contentInsetAdjustmentBehavior="automatic"
+        // A lifted block moves with the finger; scrolling under it at the same
+        // time would put it somewhere the drop test can't see.
+        scrollEnabled={!reordering}
+      >
+        {blocks.map((id, index) => render(slotFor(id, index)))}
+      </ScrollView>
+    </ExerciseReorderProvider>
   );
 }
 
@@ -304,30 +110,7 @@ const styles = StyleSheet.create({
   content: {
     padding: Spacing.three,
     paddingBottom: BottomTabInset + Spacing.four,
-    gap: Spacing.two,
-  },
-  card: {
-    borderRadius: CardRadius,
-    borderCurve: "continuous",
-    borderWidth: 1,
-    paddingHorizontal: Spacing.three,
-  },
-  periodRow: {
-    alignItems: "flex-start",
-    paddingBottom: Spacing.one,
-  },
-  cardRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: Spacing.two,
-    minHeight: 48,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-  },
-  caption: {
-    paddingHorizontal: Spacing.three,
-    marginTop: -Spacing.one,
+    // Must match the pitch `exercise-reorder` computes a drop slot from.
+    gap: Spacing.three,
   },
 });

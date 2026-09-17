@@ -41,8 +41,7 @@ export function formatDelta(value: Delta): string {
 const DAY_MS = 86_400_000;
 
 /**
- * Named once under the grid rather than repeated on every tile. Derived from the
- * span so a custom range describes itself without a case of its own.
+ * Named once in the summary's subtitle rather than repeated on every tile.
  */
 export function comparisonLabel(range: DateRange): string {
   const days = Math.max(1, Math.round((range.to - range.from) / DAY_MS));

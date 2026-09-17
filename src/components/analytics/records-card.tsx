@@ -1,17 +1,23 @@
+import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { Fragment } from "react";
 import { StyleSheet, View } from "react-native";
 
+import {
+  AnalyticsBlock,
+  useBlockPeriod,
+  type BlockSlot,
+} from "@/components/analytics/analytics-block";
 import { CardPlaceholder } from "@/components/analytics/placeholder";
 import { PrChip } from "@/components/pr-chip";
 import { ThemedText } from "@/components/themed-text";
-import { CardRadius, Spacing } from "@/constants/theme";
+import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
-import type { PeriodRecordRow } from "@/lib/analytics-queries";
+import { periodRecordsQuery } from "@/lib/analytics-queries";
 import { formatPrValue, isPrKind, PR_LABELS } from "@/lib/personal-records";
-import type { WeightUnit } from "@/lib/units";
+import { useWeightUnit } from "@/lib/weight-unit";
 
-/** A highlight reel, not a log: a hard quarter can set dozens of records. */
-const VISIBLE = 8;
+/** A highlight reel, not a log — and the block's fixed height holds five rows plus "more". */
+const VISIBLE = 5;
 
 /** Shape only: an empty card previews its own layout under the "no records" pill. */
 const PLACEHOLDER_ROWS = [
@@ -20,38 +26,26 @@ const PLACEHOLDER_ROWS = [
   { name: "Deadlift", kind: "best_volume", value: 4200 },
 ] as const;
 
-export function RecordsCard({
-  records,
-  unit,
-}: {
-  records: readonly PeriodRecordRow[];
-  unit: WeightUnit;
-}) {
+export function RecordsCard({ slot }: { slot: BlockSlot }) {
   const theme = useTheme();
+  const unit = useWeightUnit();
+  const { period, range, select } = useBlockPeriod();
+  const { data: records } = useLiveQuery(periodRecordsQuery(range), [range]);
 
-  const known = records.filter((record) => isPrKind(record.kind));
+  const known = (records ?? []).filter((record) => isPrKind(record.kind));
   const shown = known.slice(0, VISIBLE);
   const hidden = known.length - shown.length;
 
   return (
-    <View
-      style={[
-        styles.card,
-        {
-          backgroundColor: theme.surface,
-          borderColor: theme.backgroundElement,
-        },
-      ]}
+    <AnalyticsBlock
+      slot={slot}
+      title="Personal records"
+      subtitle={
+        known.length === 0 ? "None yet" : `${known.length} set in this period`
+      }
+      period={period}
+      onPeriodChange={select}
     >
-      <View style={styles.header}>
-        <ThemedText type="headline">Personal records</ThemedText>
-        {known.length > 0 && (
-          <ThemedText type="footnote" themeColor="textSecondary">
-            {known.length}
-          </ThemedText>
-        )}
-      </View>
-
       {shown.length === 0 ? (
         <CardPlaceholder text="Log a workout to unlock">
           {PLACEHOLDER_ROWS.map((row, index) => (
@@ -121,24 +115,11 @@ export function RecordsCard({
           )}
         </View>
       )}
-    </View>
+    </AnalyticsBlock>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: CardRadius,
-    borderCurve: "continuous",
-    borderWidth: 1,
-    padding: Spacing.three,
-    gap: Spacing.two,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: Spacing.two,
-  },
   row: {
     flexDirection: "row",
     alignItems: "center",

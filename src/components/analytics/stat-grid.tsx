@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 
 import { Icon } from "@/components/icon";
 import { ThemedText } from "@/components/themed-text";
-import { CardRadius, Spacing, type TypeRole } from "@/constants/theme";
+import { Spacing, type TypeRole } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { formatDelta, type Delta } from "@/lib/analytics-compare";
 
@@ -14,73 +14,34 @@ export type StatTile = {
   delta?: Delta | null;
 };
 
-export type StatRow =
-  /** One card per tile, side by side. */
-  | { tiles: readonly StatTile[] }
-  /** A single card the tiles share, divided by hairlines. */
-  | { split: readonly StatTile[] };
+const COLUMNS = 3;
 
-export function StatRows({ rows }: { rows: readonly StatRow[] }) {
+export function StatGrid({ tiles }: { tiles: readonly StatTile[] }) {
   const theme = useTheme();
+  const rule = { backgroundColor: theme.backgroundElement };
+  const rows = Array.from(
+    { length: Math.ceil(tiles.length / COLUMNS) },
+    (_, index) => tiles.slice(index * COLUMNS, (index + 1) * COLUMNS),
+  );
+  // Space for a delta is held on every tile as soon as one shows, so the rows
+  // stay the same height and the grid doesn't reflow when a comparison lands.
+  const reserve = tiles.some((tile) => tile.delta);
 
   return (
-    <View style={styles.stack}>
-      {rows.map((row) => {
-        const tiles = "split" in row ? row.split : row.tiles;
-        // Space for a delta is held only where a neighbour actually shows one,
-        // so tiles side by side keep their labels on one line without every
-        // card growing a blank strip when the period has nothing to compare.
-        const reserve = tiles.some((tile) => tile.delta);
-
-        return "split" in row ? (
-          <View
-            key={row.split.map((tile) => tile.label).join()}
-            style={[
-              styles.card,
-              styles.splitCard,
-              {
-                backgroundColor: theme.surface,
-                borderColor: theme.backgroundElement,
-              },
-            ]}
-          >
-            {row.split.map((tile, index) => (
+    <View style={styles.grid}>
+      {rows.map((row, rowIndex) => (
+        <Fragment key={row.map((tile) => tile.label).join()}>
+          {rowIndex > 0 && <View style={[styles.rowRule, rule]} />}
+          <View style={styles.row}>
+            {row.map((tile, index) => (
               <Fragment key={tile.label}>
-                {index > 0 && (
-                  <View
-                    style={[
-                      styles.splitRule,
-                      { backgroundColor: theme.backgroundElement },
-                    ]}
-                  />
-                )}
+                {index > 0 && <View style={[styles.columnRule, rule]} />}
                 <Tile {...tile} reserve={reserve} />
               </Fragment>
             ))}
           </View>
-        ) : (
-          <View
-            key={row.tiles.map((tile) => tile.label).join()}
-            style={styles.row}
-          >
-            {row.tiles.map((tile) => (
-              <View
-                key={tile.label}
-                style={[
-                  styles.card,
-                  styles.rowCard,
-                  {
-                    backgroundColor: theme.surface,
-                    borderColor: theme.backgroundElement,
-                  },
-                ]}
-              >
-                <Tile {...tile} reserve={reserve} />
-              </View>
-            ))}
-          </View>
-        );
-      })}
+        </Fragment>
+      ))}
     </View>
   );
 }
@@ -92,19 +53,20 @@ const ARROWS = {
 } as const;
 
 /**
- * Deltas are never red or green. A lighter month is often a deliberate one, and
- * an app that colours a deload as failure is giving bad advice; direction is
- * carried by the glyph alone.
+ * A gain is tinted green, but a drop is never red: a lighter month is often a
+ * deliberate one, and an app that colours a deload as failure is giving bad
+ * advice.
  */
 function DeltaLine({ value }: { value: Delta }) {
   const theme = useTheme();
+  const tint = value.direction === "up" ? theme.positive : theme.textSecondary;
 
   return (
     <View style={styles.delta}>
       <Icon
         name={ARROWS[value.direction]}
         size={11}
-        tintColor={theme.textSecondary}
+        tintColor={tint}
         resizeMode="scaleAspectFit"
         style={styles.arrow}
       />
@@ -112,8 +74,8 @@ function DeltaLine({ value }: { value: Delta }) {
         type="caption1"
         weight="semibold"
         numeric
-        themeColor="textSecondary"
         numberOfLines={1}
+        style={{ color: tint }}
       >
         {formatDelta(value)}
       </ThemedText>
@@ -128,10 +90,10 @@ function DeltaLine({ value }: { value: Delta }) {
  * number to a fraction of its size with no way back.
  */
 function valueRole(value: string): TypeRole {
-  if (value.length <= 5) return "title1";
-  if (value.length <= 7) return "title2";
-  if (value.length <= 8) return "title3";
-  return "headline";
+  if (value.length <= 4) return "title2";
+  if (value.length <= 6) return "title3";
+  if (value.length <= 8) return "headline";
+  return "subhead";
 }
 
 function Tile({
@@ -157,7 +119,7 @@ function Tile({
             {value}
           </ThemedText>
           {unit && (
-            <ThemedText type="headline" themeColor="textSecondary">
+            <ThemedText type="footnote" themeColor="textSecondary">
               {unit}
             </ThemedText>
           )}
@@ -176,37 +138,29 @@ function Tile({
 }
 
 const styles = StyleSheet.create({
-  stack: {
-    gap: Spacing.two,
-  },
-  row: {
-    flexDirection: "row",
-    gap: Spacing.two,
-  },
-  card: {
-    borderRadius: CardRadius,
-    borderCurve: "continuous",
-    borderWidth: 1,
-    padding: Spacing.three,
-  },
-  rowCard: {
+  grid: {
     flex: 1,
   },
-  splitCard: {
+  row: {
+    flex: 1,
     flexDirection: "row",
   },
-  splitRule: {
+  rowRule: {
+    height: StyleSheet.hairlineWidth,
+  },
+  columnRule: {
     width: StyleSheet.hairlineWidth,
-    marginHorizontal: Spacing.two,
+    marginVertical: Spacing.two,
   },
   tile: {
     flex: 1,
-    gap: Spacing.one,
+    gap: Spacing.half,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: Spacing.one,
   },
   measureBox: {
-    height: 36,
+    height: 28,
     alignSelf: "stretch",
     justifyContent: "center",
   },
@@ -214,7 +168,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "baseline",
     justifyContent: "center",
-    gap: Spacing.one,
+    gap: Spacing.half,
   },
   value: {
     flexShrink: 1,

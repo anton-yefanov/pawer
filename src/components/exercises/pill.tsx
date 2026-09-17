@@ -17,6 +17,7 @@ export function Pill({
   active,
   raised,
   trailing,
+  compact,
   pressed,
   onLayout,
 }: {
@@ -26,6 +27,8 @@ export function Pill({
   /** A pill on the grey page rather than inside a card, where `backgroundElement` all but vanishes. */
   raised?: boolean;
   trailing?: IconName;
+  /** A card-header control, a size down from the sheet's. */
+  compact?: boolean;
   pressed?: boolean;
   onLayout?: React.ComponentProps<typeof View>["onLayout"];
 }) {
@@ -37,6 +40,7 @@ export function Pill({
       onLayout={onLayout}
       style={[
         styles.pill,
+        compact && styles.compact,
         {
           backgroundColor: active
             ? theme.backgroundSelected
@@ -48,11 +52,19 @@ export function Pill({
       ]}
     >
       {icon && <Glyph name={icon} size={17} color={tint} />}
-      <ThemedText type="subhead" weight="semibold" style={{ color: tint }}>
+      <ThemedText
+        type={compact ? "footnote" : "subhead"}
+        weight="semibold"
+        style={{ color: tint }}
+      >
         {label}
       </ThemedText>
       {trailing && (
-        <Glyph name={trailing} size={13} color={theme.textSecondary} />
+        <Glyph
+          name={trailing}
+          size={compact ? 10 : 13}
+          color={theme.textSecondary}
+        />
       )}
     </View>
   );
@@ -67,5 +79,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     // A full capsule, not a rounded rectangle — the height is what sets the radius.
     borderRadius: 999,
+  },
+  compact: {
+    gap: Spacing.one,
+    paddingVertical: Spacing.one + Spacing.half,
+    paddingHorizontal: Spacing.two + Spacing.half,
   },
 });
