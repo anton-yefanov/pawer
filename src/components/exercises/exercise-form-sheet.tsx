@@ -28,6 +28,7 @@ import { useSheetAutoFocus } from '@/hooks/use-sheet-autofocus';
 import { ThemedTextInput } from '@/components/themed-text-input';
 import { useTheme } from '@/hooks/use-theme';
 import { createCustomExercise, updateCustomExercise } from '@/lib/exercise-actions';
+import { MuscleGroupThumb } from '@/components/muscle-map/muscle-group-thumb';
 import { EXERCISE_GROUPS, exerciseGroup, groupOfExercise } from '@/lib/exercise-groups';
 import { deleteExercisePhoto, importExercisePhoto } from '@/lib/exercise-photos';
 import { announceCustomExercise } from '@/lib/new-exercise-handoff';
@@ -223,6 +224,7 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
                 {index > 0 && <Separator />}
                 <PickRow
                   label={option.title}
+                  leading={<MuscleGroupThumb group={option} />}
                   selected={option.id === group}
                   onPress={() => {
                     setGroup(option.id);

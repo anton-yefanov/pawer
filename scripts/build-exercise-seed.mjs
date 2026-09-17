@@ -48,6 +48,7 @@ const TRACKING_TYPE = new Set([
   'weighted_bodyweight',
   'assisted_bodyweight',
   'duration',
+  'weight_duration',
   'distance_duration',
 ]);
 
@@ -71,9 +72,11 @@ const TRACKING_OVERRIDES = new Map(
     'elbow-side-plank': 'duration',
     'front-plank': 'duration',
     'hand-plank': 'duration',
-    'kettlebell-farmers-carry': 'duration',
     'split-squat-isometric-hold': 'duration',
     'wall-sit': 'duration',
+
+    // Loaded carries: the load and the time are both the set.
+    'kettlebell-farmers-carry': 'weight_duration',
 
     // Tagged Stretch, but loaded and counted in reps.
     'barbell-spinal-jefferson-curl': 'weight_reps',

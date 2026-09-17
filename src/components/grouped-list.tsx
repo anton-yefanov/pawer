@@ -58,14 +58,22 @@ export function SectionFooter({
 }
 
 /** A plain glyph in the tile's footprint, for lists that want line icons instead of coloured tiles. */
-export function RowIcon({ name, loading = false }: { name: IconName; loading?: boolean }) {
+export function RowIcon({
+  name,
+  loading = false,
+  destructive = false,
+}: {
+  name: IconName;
+  loading?: boolean;
+  destructive?: boolean;
+}) {
   const theme = useTheme();
   return (
     <View style={groupedStyles.rowIcon}>
       {loading ? (
         <ActivityIndicator />
       ) : (
-        <Icon name={name} size={ROW_ICON_SIZE} tintColor={theme.text} />
+        <Icon name={name} size={ROW_ICON_SIZE} tintColor={destructive ? theme.danger : theme.text} />
       )}
     </View>
   );
@@ -86,6 +94,7 @@ export function DisclosureRow({
   value,
   leading,
   chevron = true,
+  destructive = false,
   onPress,
 }: {
   label: string;
@@ -93,6 +102,7 @@ export function DisclosureRow({
   value?: string;
   leading?: ReactNode;
   chevron?: boolean;
+  destructive?: boolean;
   /** Without it the row is read-only: not pressable and never shows a chevron. */
   onPress?: () => void;
 }) {
@@ -102,7 +112,7 @@ export function DisclosureRow({
     <>
       {leading}
       <View style={groupedStyles.rowText}>
-        <ThemedText>{label}</ThemedText>
+        <ThemedText themeColor={destructive ? 'danger' : undefined}>{label}</ThemedText>
         {detail && (
           <ThemedText type="footnote" themeColor="textSecondary">
             {detail}
@@ -139,11 +149,13 @@ export function DisclosureRow({
 export function PickRow({
   label,
   detail,
+  leading,
   selected,
   onPress,
 }: {
   label: string;
   detail?: string;
+  leading?: ReactNode;
   selected: boolean;
   onPress: () => void;
 }) {
@@ -159,6 +171,7 @@ export function PickRow({
         groupedStyles.row,
         pressed && { backgroundColor: theme.backgroundSelected },
       ]}>
+      {leading}
       <View style={groupedStyles.rowText}>
         <ThemedText>{label}</ThemedText>
         {detail && (

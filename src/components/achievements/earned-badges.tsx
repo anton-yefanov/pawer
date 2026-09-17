@@ -5,9 +5,11 @@ import { Spacing } from '@/constants/theme';
 import type { EarnedBadge } from '@/lib/achievements';
 import { struckMaterial } from '@/lib/badge-material';
 
-const MAX_COLUMNS = 4;
+const PER_ROW = 5;
 const MAX_SIZE = 72;
-const GAP = Spacing.three;
+/** How much of a badge its right-hand neighbour covers. */
+const OVERLAP = 0.34;
+const ROW_OVERLAP = 0.28;
 /** `BadgeRow` draws its contact shadow below the disc — see its `BLEED`. */
 const BLEED = 0.25;
 
@@ -15,15 +17,24 @@ const BLEED = 0.25;
  * The badges a finished session earned, as ornament: no captions and no
  * pressables, because the recap is not the place to inspect one. The count
  * above it says what they are.
+ *
+ * They pile rather than tile. `BadgeRow` places badge n at `n * (size + gap)`,
+ * so a negative gap is the whole fan — the Skia layer needs to know nothing
+ * about it, and painter order puts each badge over the one to its left. Rows
+ * are laid out `column-reverse` for the same reason in the other axis: the last
+ * chunk ends up highest *and* drawn last, so an overflow row sits on top of the
+ * one it spilled from.
  */
 export function EarnedBadges({ badges }: { badges: readonly EarnedBadge[] }) {
   const { width } = useWindowDimensions();
 
   if (badges.length === 0) return null;
 
-  const columns = Math.min(MAX_COLUMNS, badges.length);
+  const columns = Math.min(PER_ROW, badges.length);
   const available = width - Spacing.three * 2;
-  const size = Math.min(MAX_SIZE, Math.floor((available - GAP * (columns - 1)) / columns));
+  const span = 1 + (columns - 1) * (1 - OVERLAP);
+  const size = Math.min(MAX_SIZE, Math.floor(available / span));
+  const gap = -size * OVERLAP;
 
   const rows: BadgeFace[][] = [];
   for (let i = 0; i < badges.length; i += columns) {
@@ -41,10 +52,11 @@ export function EarnedBadges({ badges }: { badges: readonly EarnedBadge[] }) {
         <View
           key={index}
           style={{
-            width: size * faces.length + GAP * (faces.length - 1),
+            width: size * faces.length + gap * (faces.length - 1),
             height: size * (1 + BLEED),
+            marginBottom: index === 0 ? 0 : -size * ROW_OVERLAP,
           }}>
-          <BadgeRow faces={faces} size={size} gap={GAP} />
+          <BadgeRow faces={faces} size={size} gap={gap} />
         </View>
       ))}
     </View>
@@ -53,7 +65,7 @@ export function EarnedBadges({ badges }: { badges: readonly EarnedBadge[] }) {
 
 const styles = StyleSheet.create({
   rows: {
+    flexDirection: 'column-reverse',
     alignItems: 'center',
-    gap: Spacing.one,
   },
 });

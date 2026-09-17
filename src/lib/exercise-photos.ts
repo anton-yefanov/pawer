@@ -28,3 +28,7 @@ export function importExercisePhoto(sourceUri: string): Promise<string> {
 export function deleteExercisePhoto(file: string | null | undefined): void {
   photos.delete(file);
 }
+
+export function clearExercisePhotos(): void {
+  photos.clear();
+}

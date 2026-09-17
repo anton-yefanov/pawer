@@ -71,6 +71,7 @@ type TelemetryEvents = {
   import_previewed: { source: ImportSource; workouts: number; exercises: number; unmatched: number };
   import_completed: { source: ImportSource; workouts: number; skipped: number; exercises_created: number };
   data_exported: { workouts: number; sets: number };
+  data_deleted: { workouts: number };
   app_error: { scope: string };
 };
 
@@ -114,6 +115,16 @@ export function enableTelemetry(): void {
     void client.optIn().catch((error: unknown) => warn('optIn', error));
   } catch (error) {
     warn('optIn', error);
+  }
+}
+
+/** A deleted account starts over as a new anonymous user. */
+export function resetTelemetry(): void {
+  if (!client) return;
+  try {
+    client.reset();
+  } catch (error) {
+    warn('reset', error);
   }
 }
 

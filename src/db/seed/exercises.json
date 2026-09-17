@@ -5996,7 +5996,7 @@
     "mechanic": "compound",
     "equipment": "kettlebell",
     "category": "strength",
-    "trackingType": "duration",
+    "trackingType": "weight_duration",
     "primaryMuscles": [
       "forearms"
     ],

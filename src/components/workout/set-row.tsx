@@ -338,7 +338,12 @@ function GainBadge({ label, children }: { label: string | null; children: React.
     <View>
       {children}
       <View pointerEvents="none" style={[styles.badge, { backgroundColor: theme.success }]}>
-        <ThemedText type="caption2" weight="semibold" numeric style={{ color: theme.accentContent }}>
+        <ThemedText
+          type="caption2"
+          weight="semibold"
+          numeric
+          style={[styles.badgeLabel, { color: theme.accentContent }]}
+        >
           {label}
         </ThemedText>
       </View>
@@ -532,12 +537,18 @@ const styles = StyleSheet.create({
   // between the row's top edge and the cell rather than float higher.
   badge: {
     position: 'absolute',
-    top: -6,
-    right: -4,
-    height: 14,
-    paddingHorizontal: 5,
-    borderRadius: 7,
+    top: -5,
+    right: -3,
+    height: 12,
+    paddingHorizontal: 4,
+    borderRadius: 6,
     justifyContent: 'center',
+  },
+  // The scale bottoms out at caption2; a sticker sitting on top of an input has
+  // to read as trim rather than as text, so it goes one notch under the floor.
+  badgeLabel: {
+    fontSize: 10,
+    lineHeight: 12,
   },
   check: {
     width: SET_COLUMNS.check - 8,

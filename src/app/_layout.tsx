@@ -10,6 +10,7 @@ import { TelemetrySync } from '@/components/telemetry-sync';
 import { DatabaseProvider } from '@/db/provider';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
+import { AppResetProvider } from '@/lib/app-reset';
 import { AutofillWeightProvider } from '@/lib/autofill-weight';
 import { BodySexProvider } from '@/lib/body-sex';
 import { FinishReminderProvider } from '@/lib/finish-reminder';
@@ -41,25 +42,27 @@ function TabLayout() {
       <KeyboardProvider>
         <DatabaseProvider>
           <PurchasesProvider>
-            <ThemePreferenceProvider>
-              <WeightUnitProvider>
-                <BodySexProvider>
-                  <OnboardingProvider>
-                    <AutofillWeightProvider>
-                      <WarmupStatsProvider>
-                        <FinishReminderProvider>
-                          <LibraryLayoutProvider>
-                            <HomeWidgetProvider>
-                              <ThemedApp />
-                            </HomeWidgetProvider>
-                          </LibraryLayoutProvider>
-                        </FinishReminderProvider>
-                      </WarmupStatsProvider>
-                    </AutofillWeightProvider>
-                  </OnboardingProvider>
-                </BodySexProvider>
-              </WeightUnitProvider>
-            </ThemePreferenceProvider>
+            <AppResetProvider>
+              <ThemePreferenceProvider>
+                <WeightUnitProvider>
+                  <BodySexProvider>
+                    <OnboardingProvider>
+                      <AutofillWeightProvider>
+                        <WarmupStatsProvider>
+                          <FinishReminderProvider>
+                            <LibraryLayoutProvider>
+                              <HomeWidgetProvider>
+                                <ThemedApp />
+                              </HomeWidgetProvider>
+                            </LibraryLayoutProvider>
+                          </FinishReminderProvider>
+                        </WarmupStatsProvider>
+                      </AutofillWeightProvider>
+                    </OnboardingProvider>
+                  </BodySexProvider>
+                </WeightUnitProvider>
+              </ThemePreferenceProvider>
+            </AppResetProvider>
           </PurchasesProvider>
         </DatabaseProvider>
       </KeyboardProvider>

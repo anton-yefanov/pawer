@@ -38,7 +38,8 @@ export type Scope =
   | 'achievements'
   | 'support'
   | 'import'
-  | 'export';
+  | 'export'
+  | 'delete-account';
 
 type Tags = Record<string, string | number | boolean>;
 

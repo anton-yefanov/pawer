@@ -91,6 +91,7 @@ const METRICS: Record<TrackingType, readonly ExerciseMetric[]> = {
   assisted_bodyweight: [bestReps, totalReps],
   bodyweight_reps: [bestReps, totalReps],
   duration: [duration],
+  weight_duration: [topWeight, duration],
   distance_duration: [distance, duration],
 };
 
@@ -104,7 +105,7 @@ export function totalsFor(
 ): readonly ('volume' | 'reps' | 'distance' | 'duration')[] {
   if (TRACKING[type].countsVolume) return ['volume'];
   if (type === 'distance_duration') return ['distance', 'duration'];
-  if (type === 'duration') return ['duration'];
+  if (type === 'duration' || type === 'weight_duration') return ['duration'];
   return ['reps'];
 }
 

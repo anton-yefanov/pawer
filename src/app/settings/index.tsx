@@ -30,6 +30,8 @@ import {
   FINISH_REMINDER_OPTIONS,
   useFinishReminder,
 } from "@/lib/finish-reminder";
+import { useAppReset } from "@/lib/app-reset";
+import { countFinishedWorkouts, deleteAllUserData } from "@/lib/delete-account";
 import { prepareExport, shareExport } from "@/lib/export-csv";
 import { notice } from "@/lib/notice";
 import { presentCustomerCenter, presentPaywall } from "@/lib/paywall";
@@ -53,6 +55,11 @@ const SAVE_FAILED = {
 
 const EXPORT_FAILED = {
   title: "Couldn’t export your data",
+  message: "Please try again.",
+};
+
+const DELETE_FAILED = {
+  title: "Couldn’t delete your data",
   message: "Please try again.",
 };
 
@@ -85,6 +92,51 @@ export default function SettingsScreen() {
     const uri = await guard("export", prepareExport(), EXPORT_FAILED);
     setExporting(false);
     if (uri) await shareExport(uri);
+  };
+  const resetApp = useAppReset();
+  const [deleting, setDeleting] = useState(false);
+  const deleteAccount = async () => {
+    setDeleting(true);
+    const deleted = await attempt(
+      "delete-account",
+      deleteAllUserData(),
+      DELETE_FAILED,
+    );
+    setDeleting(false);
+    if (deleted) resetApp();
+  };
+  const confirmDelete = async () => {
+    if (deleting) return;
+    const workouts = await guard(
+      "delete-account",
+      countFinishedWorkouts(),
+      DELETE_FAILED,
+    );
+    if (workouts === undefined) return;
+    notice({
+      title: "Delete Account?",
+      message:
+        workouts > 0
+          ? `This permanently erases ${workouts === 1 ? "your workout" : `all ${workouts} workouts`}, templates, custom exercises and settings from this device. It can’t be undone, so consider exporting your workouts first.\n\n${PRO_NAME} stays with your Apple ID and can be restored.`
+          : `This permanently erases your templates, custom exercises and settings from this device. It can’t be undone.\n\n${PRO_NAME} stays with your Apple ID and can be restored.`,
+      actions: [
+        ...(workouts > 0
+          ? [
+              {
+                label: "Export Data First",
+                onPress: () =>
+                  void onExportPressed().then(() => confirmDelete()),
+              },
+            ]
+          : []),
+        {
+          label: "Delete Everything",
+          role: "destructive" as const,
+          onPress: () => void deleteAccount(),
+        },
+        { label: "Cancel", role: "cancel" as const, onPress: () => {} },
+      ],
+    });
   };
   const onRestorePressed = async () => {
     if (restoring) return;
@@ -256,6 +308,16 @@ export default function SettingsScreen() {
             label="Rate Pawer on App Store"
             leading={<RowIcon name="star" />}
             onPress={() => void openReview()}
+          />
+        </Section>
+
+        <Section title="Account">
+          <DisclosureRow
+            label="Delete Account"
+            leading={<RowIcon name="trash" loading={deleting} destructive />}
+            chevron={false}
+            destructive
+            onPress={() => void confirmDelete()}
           />
         </Section>
 

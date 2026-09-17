@@ -206,6 +206,14 @@ export async function cancelScheduledNotification(id: string | null): Promise<vo
   }
 }
 
+export async function cancelAllScheduledNotifications(): Promise<void> {
+  try {
+    await Notifications.cancelAllScheduledNotificationsAsync();
+  } catch (error) {
+    report('notifications', error, { phase: 'cancel-all' });
+  }
+}
+
 export function addNotificationResponseListener(
   callback: (response: Notifications.NotificationResponse) => void
 ) {

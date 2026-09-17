@@ -72,6 +72,7 @@ export function candidateValues(
       return { most_reps: reps };
     case 'assisted_bodyweight':
     case 'duration':
+    case 'weight_duration':
     case 'distance_duration':
       return {};
   }

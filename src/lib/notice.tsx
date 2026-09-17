@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
 
-import { Dialog } from '@/components/android/dialog';
+import { Dialog, type DialogAction } from '@/components/android/dialog';
+
+export type NoticeAction = DialogAction;
 
 export type NoticeOptions = {
   title: string;
   message: string;
+  /** Defaults to a single OK. */
+  actions?: readonly NoticeAction[];
 };
 
 let present: ((options: NoticeOptions) => void) | null = null;
@@ -39,7 +43,13 @@ export function NoticeHost() {
       title={pending?.title ?? ''}
       message={pending?.message}
       onDismiss={() => setPending(null)}
-      actions={[{ label: 'OK', onPress: () => setPending(null) }]}
+      actions={(pending?.actions ?? [{ label: 'OK', onPress: () => {} }]).map((action) => ({
+        ...action,
+        onPress: () => {
+          setPending(null);
+          action.onPress();
+        },
+      }))}
     />
   );
 }

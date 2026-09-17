@@ -60,7 +60,7 @@ export const exercises = sqliteTable(
     /**
      * Which fields a set of this exercise logs — see `src/lib/tracking-types.ts`.
      * 'weight_reps' | 'bodyweight_reps' | 'weighted_bodyweight' |
-     * 'assisted_bodyweight' | 'duration' | 'distance_duration'
+     * 'assisted_bodyweight' | 'duration' | 'weight_duration' | 'distance_duration'
      */
     trackingType: text('tracking_type').notNull().default('weight_reps'),
 

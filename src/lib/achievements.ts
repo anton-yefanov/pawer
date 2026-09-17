@@ -29,6 +29,7 @@ const LADDERS: Record<TrackingType, readonly LadderMetric[]> = {
   assisted_bodyweight: ['reps'],
   bodyweight_reps: ['reps'],
   duration: ['hold'],
+  weight_duration: ['weight', 'hold'],
   distance_duration: ['distance', 'session_time'],
 };
 

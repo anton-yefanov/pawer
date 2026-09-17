@@ -1,5 +1,4 @@
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
@@ -16,15 +15,15 @@ import { SheetGrabber } from '@/components/sheet-grabber';
 import { SheetHeader } from '@/components/sheet-header';
 import { ThemedText } from '@/components/themed-text';
 import { BigButton } from '@/components/workout/big-button';
+import { WorkoutMuscles } from '@/components/workout/workout-muscles';
 import { ExerciseBreakdown, SummaryStats } from '@/components/workout/workout-recap';
 import { SHEET_SCROLL, SHEET_TOP_INSET } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { markEarned } from '@/lib/achievement-news';
-import { achievementSessionsQuery } from '@/lib/achievement-queries';
-import { badgesEarnedAt, buildAchievements } from '@/lib/achievements';
 import * as haptics from '@/lib/haptics';
 import { attempt } from '@/lib/observability';
+import { useEarnedBadges } from '@/lib/use-earned-badges';
 import { useLiveRows } from '@/lib/use-live-rows';
 import { useWeightUnit } from '@/lib/weight-unit';
 import { useIncludeWarmup } from '@/lib/warmup-stats';
@@ -80,7 +79,7 @@ const raiseDone: EntryExitAnimationFunction = () => {
   return {
     initialValues: { transform: [{ translateY: DONE_DROP }] },
     animations: {
-      transform: [{ translateY: withDelay(5 * STAGGER_MS, withTiming(0, CONTENT)) }],
+      transform: [{ translateY: withDelay(6 * STAGGER_MS, withTiming(0, CONTENT)) }],
     },
   };
 };
@@ -102,11 +101,7 @@ export function WorkoutSummary({ id, onDone }: { id: string; onDone: () => void 
   const records = useLiveRows(() => workoutPersonalRecordsQuery(id), id);
   const earnedRecord = records.length > 0;
 
-  const { data: sessions } = useLiveQuery(achievementSessionsQuery(), []);
-  const badges = useMemo(
-    () => (workout ? badgesEarnedAt(buildAchievements(sessions ?? []), workout.startedAt) : []),
-    [sessions, workout]
-  );
+  const badges = useEarnedBadges(workout?.startedAt);
 
   // The recap is where a badge is announced, so it is also what marks it unread
   // — including for a past workout reopened and edited into a new milestone.
@@ -157,6 +152,10 @@ export function WorkoutSummary({ id, onDone }: { id: string; onDone: () => void 
         </Animated.View>
 
         <Animated.View entering={settle(3)}>
+          <WorkoutMuscles workoutId={id} />
+        </Animated.View>
+
+        <Animated.View entering={settle(4)}>
           <SummaryStats
             summary={summarise(workout, exercises, sets, includeWarmup)}
             unit={unit}
@@ -164,7 +163,7 @@ export function WorkoutSummary({ id, onDone }: { id: string; onDone: () => void 
           />
         </Animated.View>
 
-        <Animated.View entering={settle(4)}>
+        <Animated.View entering={settle(5)}>
           <ExerciseBreakdown
             exercises={exercises}
             sets={sets}

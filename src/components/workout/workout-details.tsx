@@ -6,9 +6,10 @@ import { SheetHeader } from '@/components/sheet-header';
 import { SheetOverlay } from '@/components/sheet-overlay';
 import { CardMenu } from '@/components/templates/card-menu';
 import { type ConfirmDestructive, type ConfirmRequest } from '@/components/templates/card-actions';
-import { ThemedText } from '@/components/themed-text';
+import { EarnedBadges } from '@/components/achievements/earned-badges';
 import { ActiveWorkoutPrompt } from '@/components/workout/active-workout-prompt';
 import { ConfirmAlert } from '@/components/workout/confirm-alert';
+import { WorkoutMuscles } from '@/components/workout/workout-muscles';
 import { ExerciseBreakdown, SummaryStats } from '@/components/workout/workout-recap';
 import { HEADER_CIRCLE_SIZE } from '@/components/workout/workout-sheet-header';
 import { workoutActions } from '@/components/workout/workout-menu-actions';
@@ -16,6 +17,7 @@ import { SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { usePro } from '@/lib/purchases';
+import { useEarnedBadges } from '@/lib/use-earned-badges';
 import { useWeightUnit } from '@/lib/weight-unit';
 import { useIncludeWarmup } from '@/lib/warmup-stats';
 import {
@@ -24,7 +26,7 @@ import {
   workoutQuery,
   workoutSetsQuery,
 } from '@/lib/workout-queries';
-import { formatStartTime, summarise } from '@/lib/workout-stats';
+import { summarise } from '@/lib/workout-stats';
 
 export function WorkoutDetails({
   id,
@@ -46,6 +48,8 @@ export function WorkoutDetails({
   const { data: exercises } = useLiveQuery(workoutExercisesQuery(id), [id]);
   const { data: sets } = useLiveQuery(workoutSetsQuery(id), [id]);
   const { data: records } = useLiveQuery(workoutPersonalRecordsQuery(id), [id]);
+  // Read-only here: the recap is what marks a badge read.
+  const badges = useEarnedBadges(workout?.startedAt);
 
   const [pending, setPending] = useState<ConfirmRequest | null>(null);
   const [blockedBy, setBlockedBy] = useState<string | null>(null);
@@ -83,13 +87,14 @@ export function WorkoutDetails({
         style={{ backgroundColor: theme.background }}
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic">
-        <ThemedText type="footnote" themeColor="textSecondary">
-          {formatStartTime(workout.startedAt)}
-        </ThemedText>
+        <EarnedBadges badges={badges} />
+
+        <WorkoutMuscles workoutId={id} />
 
         <SummaryStats
           summary={summarise(workout, exercises ?? [], sets ?? [], includeWarmup)}
           unit={unit}
+          startedAt={workout.startedAt}
         />
 
         <ExerciseBreakdown

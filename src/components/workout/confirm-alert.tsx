@@ -46,7 +46,6 @@ export function ConfirmAlert({
   return (
     <Host style={styles.host}>
       <Alert
-        modifiers={[tint(theme.accent)]}
         title={title}
         isPresented={open}
         onIsPresentedChange={(presented) => {
@@ -56,7 +55,12 @@ export function ConfirmAlert({
           <Spacer />
         </Alert.Trigger>
         <Alert.Actions>
-          <Button role={confirmRole} label={confirmLabel} onPress={onConfirm} />
+          <Button
+            role={confirmRole}
+            modifiers={confirmRole === 'default' ? [tint(theme.accent)] : []}
+            label={confirmLabel}
+            onPress={onConfirm}
+          />
           <Button role="cancel" label={dismissLabel} onPress={onDismiss} />
         </Alert.Actions>
         {message != null && (

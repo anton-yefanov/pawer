@@ -23,7 +23,7 @@ import seedTemplateData from './seed/templates.json';
  * drizzle/0017_wipe_seeded_exercises.sql clears every app-owned exercise and
  * the history hanging off it before this runs.
  */
-export const SEED_VERSION = 16;
+export const SEED_VERSION = 17;
 
 const SEED_VERSION_KEY = 'seed_version';
 

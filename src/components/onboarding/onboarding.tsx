@@ -6,6 +6,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import { useRouter } from 'expo-router';
 
 import { Pressable } from '@/components/pressable';
 import { ThemedText } from '@/components/themed-text';
@@ -38,6 +39,7 @@ export function Onboarding() {
 function OnboardingFlow() {
   const theme = useTheme();
   const { complete } = useOnboarding();
+  const router = useRouter();
   const { setUnit } = useWeightUnitPreference();
   const [step, setStep] = useState(0);
   const [picked, setPicked] = useState<WeightUnit | null>(null);
@@ -65,6 +67,7 @@ function OnboardingFlow() {
       notifications_granted: notificationsGranted,
     });
     await complete();
+    router.navigate('/');
   };
 
   return (

@@ -18,7 +18,7 @@ import {
   type WorkoutPrRow,
   type WorkoutSetRow,
 } from '@/lib/workout-queries';
-import { formatElapsed, type WorkoutSummary } from '@/lib/workout-stats';
+import { formatElapsed, formatStartTime, type WorkoutSummary } from '@/lib/workout-stats';
 
 /** The climb itself, and the wait for the card to have landed before it starts. */
 const TALLY_MS = 720;
@@ -76,10 +76,13 @@ export function SummaryStats({
   summary,
   unit,
   tally = false,
+  startedAt,
 }: {
   summary: WorkoutSummary;
   unit: WeightUnit;
   tally?: boolean;
+  /** Adds a "Date" row. The recap leaves it off — it just happened. */
+  startedAt?: number;
 }) {
   const theme = useTheme();
   const progress = useTally(tally);
@@ -87,6 +90,7 @@ export function SummaryStats({
   // At rest `progress` is exactly 1, so every figure is the same call it always
   // was — the climb can never leave a stat reading something the workout isn't.
   const stats = [
+    ...(startedAt == null ? [] : ([['Date', formatStartTime(startedAt)]] as const)),
     ['Duration', formatElapsed(summary.durationMs * progress)],
     ['Volume', formatWeight(summary.volumeKg * progress, unit)],
     ['Sets', String(Math.round(summary.completedSets * progress))],
@@ -98,7 +102,7 @@ export function SummaryStats({
       {stats.map(([label, value]) => (
         <View key={label} style={styles.stat}>
           <ThemedText themeColor="textSecondary">{label}</ThemedText>
-          <ThemedText type="headline" numeric>
+          <ThemedText type="headline" numeric numberOfLines={1} style={styles.statValue}>
             {value}
           </ThemedText>
         </View>
@@ -174,16 +178,18 @@ export function ExerciseBreakdown({
                   <ThemedText type="footnote" numeric themeColor="textTertiary" style={styles.setIndex}>
                     {index + 1}
                   </ThemedText>
-                  <ThemedText type="footnote">
+                  <ThemedText type="footnote" style={styles.setValue}>
                     {formatPreviousSet(set, trackingType, unit)}
                   </ThemedText>
-                  {records
-                    .filter((record) => record.setId === set.id)
-                    .map((record) =>
-                      isPrKind(record.kind) ? (
-                        <PrChip key={record.id} label={PR_LABELS[record.kind]} />
-                      ) : null
-                    )}
+                  <View style={styles.setChips}>
+                    {records
+                      .filter((record) => record.setId === set.id)
+                      .map((record) =>
+                        isPrKind(record.kind) ? (
+                          <PrChip key={record.id} label={PR_LABELS[record.kind]} />
+                        ) : null
+                      )}
+                  </View>
                 </View>
               ))}
           </View>
@@ -203,7 +209,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: Spacing.two,
     minHeight: 44,
+  },
+  statValue: {
+    flexShrink: 1,
   },
   exercises: {
     paddingVertical: Spacing.two,
@@ -228,10 +238,20 @@ const styles = StyleSheet.create({
   },
   setRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: Spacing.two,
   },
   setIndex: {
     width: 18,
+  },
+  setValue: {
+    flexShrink: 1,
+  },
+  setChips: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    gap: Spacing.one,
   },
 });

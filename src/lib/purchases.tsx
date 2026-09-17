@@ -21,7 +21,7 @@ export const PRO_NAME = 'Pro';
  * gym basement: the RevenueCat SDK keeps its own cache, but it is empty on a
  * cold start with no signal, and a paying user must not lose Pro because of it.
  */
-const PRO_CACHE_KEY = 'pro_entitlement';
+export const PRO_CACHE_KEY = 'pro_entitlement';
 
 const API_KEY = ((Constants.expoConfig?.extra?.revenueCat ?? {}) as Record<string, string>)[
   Platform.OS

@@ -30,6 +30,7 @@ export type PhotoStore = {
   import(sourceUri: string): Promise<string>;
   copy(file: string): Promise<string | null>;
   delete(file: string | null | undefined): void;
+  clear(): void;
 };
 
 export function photoStore({
@@ -106,6 +107,15 @@ export function photoStore({
         // here would take down the sheet that was only tidying up after itself.
         // It is still worth knowing when the store stops being tidyable at all.
         report('photos', error, { phase: 'delete' });
+      }
+    },
+
+    clear() {
+      try {
+        const dir = new Directory(Paths.document, name);
+        if (dir.exists) dir.delete();
+      } catch (error) {
+        report('photos', error, { phase: 'clear' });
       }
     },
   };

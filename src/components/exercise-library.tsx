@@ -15,12 +15,13 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CircleButton } from '@/components/circle-button';
-import { ExerciseThumb } from '@/components/exercise-thumb';
+import { EXERCISE_THUMB_SIZE, ExerciseThumb } from '@/components/exercise-thumb';
 import { ExerciseSearchBar, SEARCH_BAR_CLEARANCE } from '@/components/exercise-search-bar';
 import { FloatingSurface } from '@/components/floating-surface';
 import { EmptyState } from '@/components/empty-state';
 import { Icon } from '@/components/icon';
 import { KeyboardDismissButton } from '@/components/keyboard-dismiss';
+import { MuscleGroupThumb } from '@/components/muscle-map/muscle-group-thumb';
 import { Pressable as PressableButton } from '@/components/pressable';
 import { ThemedText } from '@/components/themed-text';
 import { SHEET_SCROLL } from '@/constants/sheet';
@@ -431,11 +432,15 @@ function GroupRow({
         <View
           style={[
             styles.row,
-            styles.groupRow,
             {
               backgroundColor: pressed ? theme.backgroundSelected : theme.surface,
             },
           ]}>
+          {group === CUSTOM_GROUP ? (
+            <View style={styles.thumbSpace} />
+          ) : (
+            <MuscleGroupThumb group={group} />
+          )}
           <ThemedText style={styles.rowText}>{group.title}</ThemedText>
           <Animated.View style={chevronStyle}>
             <Icon name="chevron.right" size={16} tintColor={theme.textSecondary} />
@@ -614,8 +619,9 @@ const styles = StyleSheet.create({
   rowText: {
     flex: 1,
   },
-  groupRow: {
-    paddingVertical: Spacing.three,
+  thumbSpace: {
+    width: EXERCISE_THUMB_SIZE,
+    height: EXERCISE_THUMB_SIZE,
   },
   separator: {
     height: StyleSheet.hairlineWidth,

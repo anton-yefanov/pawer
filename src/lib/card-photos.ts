@@ -25,3 +25,7 @@ export function copyCoverPhoto(file: string): Promise<string | null> {
 export function deleteCoverPhoto(file: string | null | undefined): void {
   covers.delete(file);
 }
+
+export function clearCoverPhotos(): void {
+  covers.clear();
+}

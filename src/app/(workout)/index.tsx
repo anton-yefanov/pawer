@@ -144,7 +144,7 @@ export default function StartWorkoutScreen() {
             folders={folderCards}
             showAdd
             draggable
-            emptyHint="Add a template with the plus button, or duplicate one below"
+            emptyHint="Add a template with the plus button, or save one from below"
           />
 
           <TemplateSection

@@ -21,6 +21,7 @@ export type TrackingType =
   | 'weighted_bodyweight'
   | 'assisted_bodyweight'
   | 'duration'
+  | 'weight_duration'
   | 'distance_duration';
 
 export type SetField = 'weight' | 'reps' | 'duration' | 'distance';
@@ -45,6 +46,7 @@ export const TRACKING: Record<TrackingType, Config> = {
   weighted_bodyweight: { fields: ['weight', 'reps'], weightSign: '+', countsVolume: true },
   assisted_bodyweight: { fields: ['weight', 'reps'], weightSign: '−', countsVolume: false },
   duration: { fields: ['duration'], weightSign: '', countsVolume: false },
+  weight_duration: { fields: ['weight', 'duration'], weightSign: '', countsVolume: false },
   distance_duration: { fields: ['distance', 'duration'], weightSign: '', countsVolume: false },
 };
 
@@ -54,12 +56,13 @@ export const TRACKING_LABELS: Record<TrackingType, { title: string }> = {
   assisted_bodyweight: { title: 'Assisted Bodyweight, Reps' },
   bodyweight_reps: { title: 'Reps' },
   duration: { title: 'Time' },
+  weight_duration: { title: 'Weight, Time' },
   distance_duration: { title: 'Distance, Time' },
 };
 
 /** Order and grouping of the exercise-type picker. */
 export const TRACKING_SECTIONS: { title: string; types: readonly TrackingType[] }[] = [
-  { title: 'Strength', types: ['weight_reps'] },
+  { title: 'Strength', types: ['weight_reps', 'weight_duration'] },
   {
     title: 'Bodyweight',
     types: ['weighted_bodyweight', 'assisted_bodyweight', 'bodyweight_reps', 'duration'],
@@ -106,6 +109,13 @@ export function formatPreviousSet(
       return reps;
     case 'duration':
       return set.durationSeconds == null ? '—' : formatDuration(set.durationSeconds);
+    case 'weight_duration': {
+      const parts = [
+        set.weightKg == null ? null : formatWeight(set.weightKg, unit),
+        set.durationSeconds == null ? null : formatDuration(set.durationSeconds),
+      ].filter((part) => part !== null);
+      return parts.length === 0 ? '—' : parts.join(' · ');
+    }
     case 'distance_duration': {
       const parts = [
         set.distanceM == null ? null : formatDistance(set.distanceM, distanceUnitFor(unit)),
@@ -133,6 +143,7 @@ export function missingRequiredFields(set: TrackedSet, type: TrackingType): SetF
     case 'bodyweight_reps':
       return hasReps ? [] : ['reps'];
     case 'duration':
+    case 'weight_duration':
       return hasDuration ? [] : ['duration'];
     case 'distance_duration':
       return hasDistance || hasDuration ? [] : ['distance', 'duration'];
@@ -174,6 +185,10 @@ export function setGains(
       gain('reps', set.reps, previous.reps);
       break;
     case 'duration':
+      gain('duration', set.durationSeconds, previous.durationSeconds);
+      break;
+    case 'weight_duration':
+      gain('weight', set.weightKg, previous.weightKg);
       gain('duration', set.durationSeconds, previous.durationSeconds);
       break;
     case 'distance_duration':

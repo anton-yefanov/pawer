@@ -152,6 +152,27 @@ export function muscleSetsQuery(range: DateRange, includeWarmup: boolean) {
     .groupBy(exercises.id);
 }
 
+/** The same shape for a single session, for the recap and the history sheet. */
+export function workoutMuscleSetsQuery(workoutId: string, includeWarmup: boolean) {
+  return db
+    .select({
+      primaryMuscles: exercises.primaryMuscles,
+      secondaryMuscles: exercises.secondaryMuscles,
+      sets: count(),
+    })
+    .from(workoutExercises)
+    .innerJoin(exercises, eq(exercises.id, workoutExercises.exerciseId))
+    .innerJoin(sets, and(eq(sets.workoutExerciseId, workoutExercises.id), isNull(sets.deletedAt)))
+    .where(
+      and(
+        eq(workoutExercises.workoutId, workoutId),
+        isNull(workoutExercises.deletedAt),
+        sql`${sets.completed} = 1 AND ${workSets(includeWarmup)}`
+      )
+    )
+    .groupBy(exercises.id);
+}
+
 /** Only the start times: a training day is a local calendar day, which SQL can't bucket. */
 export function trainingDaysQuery(range: DateRange) {
   return db
