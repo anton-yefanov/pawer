@@ -29,7 +29,7 @@ import * as haptics from '@/lib/haptics';
 import type { LoggedExercise, LoggedSet, LoggingActions } from '@/lib/logging-model';
 import { setLabels } from '@/lib/set-types';
 import { headerLabel, TRACKING, trackingTypeOf } from '@/lib/tracking-types';
-import { formatDuration, type WeightUnit } from '@/lib/units';
+import { type WeightUnit } from '@/lib/units';
 import type { PreviousSet } from '@/lib/workout-queries';
 
 /** Long enough that a tap opens the exercise and a scroll flick doesn't lift it. */
@@ -81,7 +81,6 @@ export function ExerciseCard({
   // A shared value, not state: the rest row grows the body frame by frame, and
   // each of those frames re-measures it.
   const bodyHeight = useSharedValue(0);
-  const restSeconds = exercise.restSeconds ?? defaultRestSeconds;
   const trackingType = trackingTypeOf(exercise.trackingType);
   const { fields } = TRACKING[trackingType];
   const labels = setLabels(sets);
@@ -276,7 +275,6 @@ export function ExerciseCard({
               style={({ pressed }) => [styles.addSet, pressed && styles.pressed]}>
               <ThemedText type="footnote" themeColor="textSecondary">
                 + Add set
-                {restSeconds > 0 ? ` (${formatDuration(restSeconds)})` : ''}
               </ThemedText>
             </Pressable>
           </View>
