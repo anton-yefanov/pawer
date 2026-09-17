@@ -29,6 +29,7 @@ import {
   displayToKg,
   displayToMeters,
   distanceUnitFor,
+  formatDecimal,
   kgToDisplay,
   metersToDisplay,
   parseDecimalInput,
@@ -319,7 +320,7 @@ type FieldCell = {
 const FIELDS: Record<Exclude<SetField, 'duration'>, FieldCell> = {
   weight: {
     display: (set, unit) =>
-      set.weightKg == null ? '' : String(roundForDisplay(kgToDisplay(set.weightKg, unit), unit)),
+      set.weightKg == null ? '' : formatDecimal(roundForDisplay(kgToDisplay(set.weightKg, unit), unit)),
     parse: (text, unit) => {
       const parsed = parseDecimalInput(text);
       return { weightKg: parsed == null ? null : displayToKg(parsed, unit) };
@@ -337,11 +338,10 @@ const FIELDS: Record<Exclude<SetField, 'duration'>, FieldCell> = {
     maxLength: 3,
   },
   distance: {
-    display: (set, unit) => {
-      if (set.distanceM == null) return '';
-      const value = metersToDisplay(set.distanceM, distanceUnitFor(unit));
-      return String(Math.round(value * 100) / 100);
-    },
+    display: (set, unit) =>
+      set.distanceM == null
+        ? ''
+        : formatDecimal(metersToDisplay(set.distanceM, distanceUnitFor(unit))),
     parse: (text, unit) => {
       const parsed = parseDecimalInput(text);
       return {

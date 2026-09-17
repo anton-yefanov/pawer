@@ -2,7 +2,7 @@ import { Stack } from "expo-router";
 
 import { tabBarScreenLayout } from "@/components/app-tabs";
 import { stackScreenOptions, surfacePageOptions, TAB_ROOT_HEADER } from "@/constants/navigation";
-import { FULL_SHEET } from "@/constants/sheet";
+import { FULL_SHEET, SHEET } from "@/constants/sheet";
 import { useTheme } from "@/hooks/use-theme";
 
 export default function SettingsLayout() {
@@ -21,6 +21,10 @@ export default function SettingsLayout() {
         options={{ ...FULL_SHEET, headerShown: false, ...surfacePageOptions(theme) }}
       />
       <Stack.Screen name="new-exercise" options={FULL_SHEET} />
+      <Stack.Screen
+        name="info"
+        options={{ ...SHEET, sheetAllowedDetents: "fitToContents", headerShown: false }}
+      />
     </Stack>
   );
 }

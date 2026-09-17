@@ -8,6 +8,7 @@ import { ArrowUpRightIcon } from "phosphor-react-native/src/icons/ArrowUpRight";
 import { ArrowsClockwiseIcon } from "phosphor-react-native/src/icons/ArrowsClockwise";
 import { BarbellIcon } from "phosphor-react-native/src/icons/Barbell";
 import { BellRingingIcon } from "phosphor-react-native/src/icons/BellRinging";
+import { SpeakerHighIcon } from "phosphor-react-native/src/icons/SpeakerHigh";
 import { CalendarBlankIcon } from "phosphor-react-native/src/icons/CalendarBlank";
 import { CaretDownIcon } from "phosphor-react-native/src/icons/CaretDown";
 import { CaretLeftIcon } from "phosphor-react-native/src/icons/CaretLeft";
@@ -212,6 +213,10 @@ const ICONS = {
     glyph: BellRingingIcon,
     weight: "fill",
   },
+  "speaker.wave.2": {
+    symbol: { ios: "speaker.wave.2", android: "volume_up" },
+    glyph: SpeakerHighIcon,
+  },
   flame: {
     symbol: { ios: "flame", android: "local_fire_department" },
     glyph: FlameIcon,
@@ -233,6 +238,7 @@ const ICONS = {
     weight: "fill",
   },
   info: { symbol: { ios: "info", android: "info" }, glyph: InfoIcon },
+  "info.circle": { symbol: { ios: "info.circle", android: "info" }, glyph: InfoIcon },
   "keyboard.chevron.compact.down": {
     symbol: { ios: "keyboard.chevron.compact.down", android: "keyboard_hide" },
     glyph: KeyboardIcon,

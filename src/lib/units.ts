@@ -3,6 +3,8 @@
  * exist only between these functions and the user's eyeballs.
  */
 
+import { getLocales } from 'expo-localization';
+
 export type WeightUnit = 'kg' | 'lb';
 export type DistanceUnit = 'km' | 'mi';
 
@@ -26,21 +28,29 @@ export function displayToKg(value: number, unit: WeightUnit): number {
   return unit === 'kg' ? value : value / LB_PER_KG;
 }
 
-/**
- * Rounds to the nearest plate increment the user can actually load: 0.5 kg or
- * 1 lb. Keeps 82.5 kg from rendering as 181.87839... lb.
- */
-export function roundForDisplay(value: number, unit: WeightUnit): number {
-  const step = unit === 'kg' ? 0.5 : 1;
-  return Math.round(value / step) * step;
+// Hundredths only strip the kg↔lb conversion noise. Snapping to plate steps
+// would silently turn a logged 2.8 kg band or micro-plate into 3.
+export function roundForDisplay(value: number, _unit: WeightUnit): number {
+  return Math.round(value * 100) / 100;
+}
+
+// Read from the region, not the language: the decimal pad's key follows the
+// region too, so an English-language phone in Germany types and reads commas.
+const locale = getLocales()[0];
+const DECIMAL = locale?.decimalSeparator ?? '.';
+const GROUPING = locale?.digitGroupingSeparator ?? ',';
+
+export function formatDecimal(value: number): string {
+  return String(Math.round(value * 100) / 100).replace('.', DECIMAL);
+}
+
+function formatGrouped(value: number): string {
+  return String(Math.round(value)).replace(/\B(?=(\d{3})+(?!\d))/g, GROUPING);
 }
 
 export function formatWeight(kg: number | null, unit: WeightUnit): string {
   if (kg == null) return '—';
-  const value = roundForDisplay(kgToDisplay(kg, unit), unit);
-  // Drop the decimal when it is a whole number: "60 kg", not "60.0 kg".
-  const text = Number.isInteger(value) ? String(value) : value.toFixed(1);
-  return `${text} ${unit}`;
+  return `${formatDecimal(roundForDisplay(kgToDisplay(kg, unit), unit))} ${unit}`;
 }
 
 /**
@@ -50,8 +60,10 @@ export function formatWeight(kg: number | null, unit: WeightUnit): string {
  */
 export function formatTonnage(kg: number, unit: WeightUnit): string {
   const value = kgToDisplay(kg, unit);
-  if (unit === 'kg' && value >= 1000) return `${(value / 1000).toFixed(2)} t`;
-  return `${Math.round(value).toLocaleString()} ${unit}`;
+  if (unit === 'kg' && value >= 1000) {
+    return `${(value / 1000).toFixed(2).replace('.', DECIMAL)} t`;
+  }
+  return `${formatGrouped(value)} ${unit}`;
 }
 
 /** Splits `1,240 kg` into its parts so a display can set the unit apart. */
@@ -78,8 +90,7 @@ export function displayToMeters(value: number, unit: DistanceUnit): number {
 
 export function formatDistance(meters: number | null, unit: DistanceUnit): string {
   if (meters == null) return '—';
-  const value = Math.round(metersToDisplay(meters, unit) * 100) / 100;
-  return `${Number.isInteger(value) ? value : value.toFixed(2).replace(/0$/, '')} ${unit}`;
+  return `${formatDecimal(metersToDisplay(meters, unit))} ${unit}`;
 }
 
 /**

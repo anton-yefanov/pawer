@@ -12,17 +12,20 @@ const SWITCH = { width: 51, height: 31 } as const;
 type Props = {
   label: string;
   leading?: ReactNode;
+  /** Sits right after the label. */
+  accessory?: ReactNode;
   value: boolean;
   onChange: (next: boolean) => void;
 };
 
 /** Same sizing rule as the other SwiftUI hosts here: size the `Host` or it collapses. */
-export function ToggleRow({ label, leading, value, onChange }: Props) {
+export function ToggleRow({ label, leading, accessory, value, onChange }: Props) {
   return (
     <View style={[groupedStyles.row, leading != null && groupedStyles.rowWithLeading]}>
       {leading}
-      <View style={groupedStyles.rowText}>
+      <View style={[groupedStyles.rowText, groupedStyles.labelWithAccessory]}>
         <ThemedText>{label}</ThemedText>
+        {accessory}
       </View>
       <Host style={styles.switch}>
         <Toggle

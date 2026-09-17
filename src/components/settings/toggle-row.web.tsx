@@ -8,18 +8,21 @@ import { useTheme } from '@/hooks/use-theme';
 type Props = {
   label: string;
   leading?: ReactNode;
+  /** Sits right after the label. */
+  accessory?: ReactNode;
   value: boolean;
   onChange: (next: boolean) => void;
 };
 
-export function ToggleRow({ label, leading, value, onChange }: Props) {
+export function ToggleRow({ label, leading, accessory, value, onChange }: Props) {
   const theme = useTheme();
 
   return (
     <View style={[groupedStyles.row, leading != null && groupedStyles.rowWithLeading]}>
       {leading}
-      <View style={groupedStyles.rowText}>
+      <View style={[groupedStyles.rowText, groupedStyles.labelWithAccessory]}>
         <ThemedText>{label}</ThemedText>
+        {accessory}
       </View>
       <Switch
         value={value}

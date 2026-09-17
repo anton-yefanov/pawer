@@ -202,6 +202,11 @@ export const groupedStyles = StyleSheet.create({
   rowText: {
     flex: 1,
   },
+  labelWithAccessory: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+  },
   rowIcon: {
     width: TILE_SIZE,
     height: TILE_SIZE,

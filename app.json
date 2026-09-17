@@ -2,7 +2,7 @@
   "expo": {
     "name": "Pawer",
     "slug": "pawer",
-    "version": "1.0.1",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "pawer",
@@ -11,7 +11,7 @@
       "icon": "./assets/pawer.icon",
       "bundleIdentifier": "com.antonyefanov.pawer",
       "appleTeamId": "CDG4MY328T",
-      "buildNumber": "2",
+      "buildNumber": "1",
       "privacyManifests": {
         "NSPrivacyTracking": false,
         "NSPrivacyCollectedDataTypes": [
@@ -162,7 +162,14 @@
         "expo-notifications",
         {
           "icon": "./assets/images/notification-icon.png",
-          "color": "#208AEF"
+          "color": "#208AEF",
+          "sounds": [
+            "./assets/sounds/chime.wav",
+            "./assets/sounds/bell.wav",
+            "./assets/sounds/marimba.wav",
+            "./assets/sounds/beep.wav",
+            "./assets/sounds/pulse.wav"
+          ]
         }
       ],
       [
@@ -183,7 +190,9 @@
           "organization": "ant-dream"
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "./plugins/with-uiscene-lifecycle",
+      "expo-audio"
     ],
     "extra": {
       "revenueCat": {

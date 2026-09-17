@@ -2,6 +2,7 @@ import * as Notifications from 'expo-notifications';
 import { AppState, Platform } from 'react-native';
 
 import { report } from '@/lib/observability';
+import { REST_SOUNDS, restSound, restSoundFile, type RestSoundId } from '@/lib/rest-sound';
 
 const REST_CHANNEL_ID = 'rest-timer';
 
@@ -65,6 +66,36 @@ const androidChannels =
       })
     : Promise.resolve();
 
+// A channel keeps whatever sound it was created with for as long as the app is
+// installed, so the choice has to live in the channel *id* — one channel per
+// sound, created the first time that sound is used. The plain REST_CHANNEL_ID
+// above stays the 'system' one, and the one every existing install already has.
+const restChannels = new Map<RestSoundId, Promise<void>>();
+
+async function restChannelId(sound: RestSoundId): Promise<string> {
+  await androidChannels;
+  const file = restSoundFile(sound);
+  if (Platform.OS !== 'android' || !file) return REST_CHANNEL_ID;
+
+  const id = `${REST_CHANNEL_ID}-${sound}`;
+  let pending = restChannels.get(sound);
+  if (!pending) {
+    pending = Notifications.setNotificationChannelAsync(id, {
+      name: `Rest timer (${REST_SOUNDS.find((entry) => entry.id === sound)?.label ?? sound})`,
+      importance: Notifications.AndroidImportance.HIGH,
+      vibrationPattern: [0, 250, 250, 250],
+      sound: file,
+    })
+      .then(() => undefined)
+      .catch((error: unknown) => {
+        report('notifications', error, { phase: 'channels' });
+      });
+    restChannels.set(sound, pending);
+  }
+  await pending;
+  return id;
+}
+
 /**
  * Asked once during onboarding, behind a screen that says what the alert is
  * for — a bare system prompt with no context is the one most reliably denied.
@@ -105,6 +136,8 @@ export async function scheduleNotification(input: {
   date: number;
   channelId: string;
   interruptionLevel: 'active' | 'timeSensitive';
+  /** A filename bundled by the expo-notifications plugin, or 'default'. */
+  sound?: string;
   data?: Record<string, unknown>;
   identifier?: string;
 }): Promise<string | null> {
@@ -117,7 +150,7 @@ export async function scheduleNotification(input: {
       content: {
         title: input.title,
         body: input.body,
-        sound: 'default',
+        sound: input.sound ?? 'default',
         interruptionLevel: input.interruptionLevel,
         data: input.data,
       },
@@ -138,11 +171,13 @@ export async function scheduleRestNotification(
   body: string
 ): Promise<string | null> {
   await dismissRestNotification();
+  const sound = restSound();
   return scheduleNotification({
     title: 'Rest over',
     body,
     date: endsAt,
-    channelId: REST_CHANNEL_ID,
+    sound: restSoundFile(sound) ?? 'default',
+    channelId: await restChannelId(sound),
     interruptionLevel: 'timeSensitive',
     identifier: REST_NOTIFICATION_ID,
   });

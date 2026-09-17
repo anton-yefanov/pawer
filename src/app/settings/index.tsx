@@ -10,6 +10,7 @@ import {
   Separator,
 } from "@/components/grouped-list";
 import { Emoji } from "@/components/emoji";
+import { InfoButton } from "@/components/settings/info-button";
 import { MenuRow } from "@/components/settings/menu-row";
 import { ToggleRow } from "@/components/settings/toggle-row";
 import { ThemedText } from "@/components/themed-text";
@@ -30,6 +31,11 @@ import {
 import { prepareExport, shareExport } from "@/lib/export-csv";
 import { notice } from "@/lib/notice";
 import { presentCustomerCenter, presentPaywall } from "@/lib/paywall";
+import {
+  playRestSoundPreview,
+  REST_SOUNDS,
+  useRestSound,
+} from "@/lib/rest-sound";
 import { PRO_NAME, usePurchases } from "@/lib/purchases";
 import { THEME_PREFERENCES, useThemePreference } from "@/lib/theme-preference";
 import { useWarmupStatsPreference } from "@/lib/warmup-stats";
@@ -63,6 +69,7 @@ export default function SettingsScreen() {
     useWarmupStatsPreference();
   const { option: finishReminder, setOption: setFinishReminder } =
     useFinishReminder();
+  const { sound: restSound, setSound: setRestSound } = useRestSound();
   const { isPro, restore } = usePurchases();
   const [restoring, setRestoring] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -123,6 +130,9 @@ export default function SettingsScreen() {
           <ToggleRow
             label="Autofill Weight"
             leading={<RowIcon name="wand.and.stars" />}
+            accessory={
+              <InfoButton topic="autofill-weight" label="Autofill Weight" />
+            }
             value={autofillWeight}
             onChange={setAutofillWeight}
           />
@@ -146,6 +156,20 @@ export default function SettingsScreen() {
               // has said they want the notification.
               if (id !== "never")
                 void attempt("notifications", ensureNotificationPermission());
+            }}
+            onOpenChange={setMenuOpen}
+          />
+          <Separator inset={ROW_ICON_INSET} />
+          <MenuRow
+            label="Rest Sound"
+            title="Play when rest is over"
+            leading={<RowIcon name="speaker.wave.2" />}
+            accessory={<InfoButton topic="rest-sound" label="Rest Sound" />}
+            options={REST_SOUNDS}
+            selected={restSound}
+            onSelect={(id) => {
+              void attempt("settings", setRestSound(id), SAVE_FAILED);
+              playRestSoundPreview(id);
             }}
             onOpenChange={setMenuOpen}
           />

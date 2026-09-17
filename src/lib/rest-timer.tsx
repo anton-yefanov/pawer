@@ -5,6 +5,7 @@ import { getSetting, setSetting } from '@/db/seed';
 import { useAppStateActive } from '@/hooks/use-app-state-active';
 import * as haptics from '@/lib/haptics';
 import { cancelRestNotification, scheduleRestNotification } from '@/lib/notifications';
+import { loadRestSound } from '@/lib/rest-sound';
 
 import { attempt } from '@/lib/observability';
 
@@ -42,6 +43,12 @@ const RestTimerContext = createContext<RestTimer | null>(null);
 export function RestTimerProvider({ children }: { children: ReactNode }) {
   const [rest, setRest] = useState<RestState | null>(null);
   const [now, setNow] = useState(() => Date.now());
+
+  // The sound the next ping carries is read from the cache in `rest-sound`, so
+  // it has to be warm before the first set is ticked.
+  useEffect(() => {
+    void attempt('settings', loadRestSound());
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
