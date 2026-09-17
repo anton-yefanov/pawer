@@ -2,10 +2,11 @@ import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Platform } from 'react-native';
 
-import { Colors } from '@/constants/theme';
+import { TINTS } from '@/constants/tints';
 import { workoutActivity, type WorkoutActivityProps } from '@/lib/live-activity-layout';
 import { breadcrumb, guardSync, report } from '@/lib/observability';
 import { useRestTimer } from '@/lib/rest-timer';
+import { useResolvedTint } from '@/lib/theme-preference';
 import { isWorkSet } from '@/lib/set-types';
 import { formatTonnage } from '@/lib/units';
 import { useIncludeWarmup } from '@/lib/warmup-stats';
@@ -33,18 +34,14 @@ export function WorkoutActivityProvider({ children }: { children: ReactNode }) {
   return children;
 }
 
-/**
- * The activity always renders on black — the Dynamic Island and the Lock Screen
- * banner have no light variant — so it takes the dark scheme's accent rather
- * than the app's current one, which would be the duller `#007AFF` whenever the
- * phone is in light mode.
- */
-const TINT = Colors.dark.accent;
-
 function useWorkoutActivity() {
   const unit = useWeightUnit();
   const rest = useRestTimer();
   const includeWarmup = useIncludeWarmup();
+  // The activity always renders on black — the Dynamic Island and the Lock
+  // Screen banner have no light variant — so it takes the dark scheme's accent
+  // whatever the phone's current scheme is.
+  const tint = TINTS[useResolvedTint()].dark.accent;
 
   const { data: activeRows, updatedAt } = useLiveQuery(activeWorkoutQuery(), []);
   const active = activeRows[0];
@@ -104,7 +101,7 @@ function useWorkoutActivity() {
       setsLabel: `${counted.filter((set) => set.completed).length}/${counted.length} sets`,
       volumeLabel: formatTonnage(totalVolumeKg(sets, tracking, includeWarmup), unit),
       exercisesLabel: exercises.length === 1 ? '1 exercise' : `${exercises.length} exercises`,
-      tint: TINT,
+      tint,
     };
 
     if (startedId.current !== active.id) {
@@ -134,7 +131,7 @@ function useWorkoutActivity() {
 
     const [instance] = workoutActivity.getInstances();
     if (instance) push(instance, props, previous);
-  }, [updatedAt, active, exerciseRows, setRows, rest.endsAt, rest.total, unit, includeWarmup]);
+  }, [updatedAt, active, exerciseRows, setRows, rest.endsAt, rest.total, unit, includeWarmup, tint]);
 }
 
 /**

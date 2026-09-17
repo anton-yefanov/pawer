@@ -18,18 +18,6 @@ export function stackScreenOptions(theme: Theme) {
   } as const;
 }
 
-/**
- * `headerLargeTitle` is iOS-only and react-native-screens has no collapsing
- * `MediumTopAppBar`, so a hand-rolled one would be the app's only custom nav
- * chrome. A tab root keeps the standard top app bar and takes the emphasis
- * alone: the title one step up in size and weight.
- */
-export const TAB_ROOT_HEADER = {
-  // A screen's `headerTitleStyle` replaces the navigator's rather than merging
-  // with it, so the family is repeated here.
-  headerTitleStyle: { fontFamily: Fonts.sans, fontSize: 22, fontWeight: "700" },
-} as const;
-
 export function surfacePageOptions(theme: Theme) {
   return {
     headerStyle: { backgroundColor: theme.surface },

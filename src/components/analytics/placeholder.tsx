@@ -45,8 +45,8 @@ export function CardPlaceholder({
   const theme = useTheme();
 
   return (
-    <View>
-      <View pointerEvents="none" style={styles.preview}>
+    <View style={styles.fill}>
+      <View pointerEvents="none" style={[styles.fill, styles.preview]}>
         {children}
       </View>
       <View pointerEvents="none" style={styles.center}>
@@ -68,6 +68,7 @@ export function CardPlaceholder({
 }
 
 const styles = StyleSheet.create({
+  fill: { flex: 1 },
   preview: { opacity: 0.55 },
   center: {
     ...StyleSheet.absoluteFill,

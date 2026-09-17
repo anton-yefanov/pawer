@@ -133,6 +133,25 @@ export function setTotalsQuery(range: DateRange, includeWarmup: boolean) {
     .where(inRange(range));
 }
 
+/** One row per exercise; the muscle totals are summed in JS, where our muscle names map onto the body diagram's. */
+export function muscleSetsQuery(range: DateRange, includeWarmup: boolean) {
+  return db
+    .select({
+      primaryMuscles: exercises.primaryMuscles,
+      secondaryMuscles: exercises.secondaryMuscles,
+      sets: count(),
+    })
+    .from(workouts)
+    .innerJoin(
+      workoutExercises,
+      and(eq(workoutExercises.workoutId, workouts.id), isNull(workoutExercises.deletedAt))
+    )
+    .innerJoin(exercises, eq(exercises.id, workoutExercises.exerciseId))
+    .innerJoin(sets, and(eq(sets.workoutExerciseId, workoutExercises.id), isNull(sets.deletedAt)))
+    .where(and(inRange(range), sql`${sets.completed} = 1 AND ${workSets(includeWarmup)}`))
+    .groupBy(exercises.id);
+}
+
 /** Only the start times: a training day is a local calendar day, which SQL can't bucket. */
 export function trainingDaysQuery(range: DateRange) {
   return db

@@ -1,6 +1,7 @@
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
+import { router } from "expo-router";
 import { Fragment } from "react";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 import {
   AnalyticsBlock,
@@ -107,11 +108,20 @@ export function RecordsCard({ slot }: { slot: BlockSlot }) {
                   { backgroundColor: theme.backgroundElement },
                 ]}
               />
-              <View style={styles.row}>
-                <ThemedText type="footnote" themeColor="textSecondary">
-                  + {hidden} more
+              <Pressable
+                accessibilityRole="button"
+                onPress={() =>
+                  router.push({
+                    pathname: `${slot.detailPrefix}/records` as const,
+                    params: { period },
+                  })
+                }
+                style={styles.row}
+              >
+                <ThemedText type="subhead" themeColor="accent">
+                  {hidden} more
                 </ThemedText>
-              </View>
+              </Pressable>
             </>
           )}
         </View>
@@ -125,7 +135,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.two,
-    minHeight: 40,
+    minHeight: 39,
   },
   divider: {
     height: StyleSheet.hairlineWidth,

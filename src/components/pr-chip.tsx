@@ -9,9 +9,9 @@ export function PrChip({ label }: { label: string }) {
   const theme = useTheme();
 
   return (
-    <View style={[styles.chip, { backgroundColor: theme.goldMuted }]}>
-      <Icon name="trophy.fill" size={12} tintColor={theme.gold} />
-      <ThemedText type="caption1" weight="bold" themeColor="gold">
+    <View style={[styles.chip, { backgroundColor: theme.accentTint }]}>
+      <Icon name="trophy.fill" size={12} tintColor={theme.accent} />
+      <ThemedText type="caption1" weight="bold" themeColor="accent">
         {label}
       </ThemedText>
     </View>

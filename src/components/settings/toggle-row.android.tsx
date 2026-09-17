@@ -34,7 +34,7 @@ export function ToggleRow({ label, leading, accessory, value, onChange }: Props)
         }}
         accessibilityLabel={label}
         thumbColor={value ? theme.accentContent : undefined}
-        trackColor={{ false: theme.backgroundSelected, true: theme.success }}
+        trackColor={{ false: theme.backgroundSelected, true: theme.accent }}
       />
     </View>
   );

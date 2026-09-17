@@ -13,12 +13,14 @@ import { Emoji } from "@/components/emoji";
 import { InfoButton } from "@/components/settings/info-button";
 import { MenuRow } from "@/components/settings/menu-row";
 import { ToggleRow } from "@/components/settings/toggle-row";
+import { TabTitle, TAB_TITLE_INSET } from "@/components/tab-title";
 import { ThemedText } from "@/components/themed-text";
 import { TAB_CONTENT_INSET } from "@/constants/navigation";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { openReview } from "@/lib/app-store-review";
 import { useAutofillWeightPreference } from "@/lib/autofill-weight";
+import { BODY_SEXES, useBodySexPreference } from "@/lib/body-sex";
 import {
   openLegalDocument,
   PRIVACY_POLICY_URL,
@@ -37,6 +39,7 @@ import {
   useRestSound,
 } from "@/lib/rest-sound";
 import { PRO_NAME, usePurchases } from "@/lib/purchases";
+import { TINT_OPTIONS } from "@/constants/tints";
 import { THEME_PREFERENCES, useThemePreference } from "@/lib/theme-preference";
 import { useWarmupStatsPreference } from "@/lib/warmup-stats";
 import { WEIGHT_UNITS, useWeightUnitPreference } from "@/lib/weight-unit";
@@ -60,8 +63,9 @@ const RESTORE_MESSAGES = {
 
 export default function SettingsScreen() {
   const theme = useTheme();
-  const { preference, setPreference } = useThemePreference();
+  const { preference, setPreference, tint, setTint } = useThemePreference();
   const { unit, setUnit } = useWeightUnitPreference();
+  const { sex, setSex } = useBodySexPreference();
   const [menuOpen, setMenuOpen] = useState(false);
   const { enabled: autofillWeight, setEnabled: setAutofillWeight } =
     useAutofillWeightPreference();
@@ -99,9 +103,12 @@ export default function SettingsScreen() {
     <View style={styles.screen}>
       <ScrollView
         style={{ backgroundColor: theme.background }}
-        contentContainerStyle={styles.content}
-        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={[styles.content, { paddingTop: TAB_TITLE_INSET }]}
+        contentInsetAdjustmentBehavior="never"
       >
+        <View style={styles.title}>
+          <TabTitle title="Settings" />
+        </View>
         <Section title="App">
           <MenuRow
             label="Appearance"
@@ -111,6 +118,18 @@ export default function SettingsScreen() {
             onSelect={(id) =>
               void attempt("settings", setPreference(id), SAVE_FAILED)
             }
+            onOpenChange={setMenuOpen}
+          />
+          <Separator inset={ROW_ICON_INSET} />
+          <MenuRow
+            label="Tint Color"
+            leading={<RowIcon name="paintpalette" />}
+            options={TINT_OPTIONS}
+            selected={tint}
+            trailing={
+              <View style={[styles.swatch, { backgroundColor: theme.accent }]} />
+            }
+            onSelect={(id) => void attempt("settings", setTint(id), SAVE_FAILED)}
             onOpenChange={setMenuOpen}
           />
         </Section>
@@ -123,6 +142,17 @@ export default function SettingsScreen() {
             selected={unit}
             onSelect={(id) =>
               void attempt("settings", setUnit(id), SAVE_FAILED)
+            }
+            onOpenChange={setMenuOpen}
+          />
+          <Separator inset={ROW_ICON_INSET} />
+          <MenuRow
+            label="Body Diagram"
+            leading={<RowIcon name="figure.strengthtraining.traditional" />}
+            options={BODY_SEXES}
+            selected={sex}
+            onSelect={(id) =>
+              void attempt("settings", setSex(id), SAVE_FAILED)
             }
             onOpenChange={setMenuOpen}
           />
@@ -301,10 +331,17 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
   },
+  swatch: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+  },
   content: {
-    paddingTop: Spacing.three,
     paddingBottom: TAB_CONTENT_INSET + Spacing.four,
     gap: Spacing.four,
+  },
+  title: {
+    paddingHorizontal: Spacing.three,
   },
   footer: {
     alignItems: "center",

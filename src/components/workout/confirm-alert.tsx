@@ -1,7 +1,9 @@
 import { Alert, Button, Host, Spacer, Text } from '@expo/ui/swift-ui';
+import { tint } from '@expo/ui/swift-ui/modifiers';
 import { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 
+import { useTheme } from '@/hooks/use-theme';
 import * as haptics from '@/lib/haptics';
 
 /**
@@ -32,6 +34,7 @@ export function ConfirmAlert({
   onConfirm: () => void;
   onDismiss: () => void;
 }) {
+  const theme = useTheme();
   // The alert is presented declaratively, so its arrival is the only thing to
   // hook — there is no press to hang the buzz off.
   useEffect(() => {
@@ -43,6 +46,7 @@ export function ConfirmAlert({
   return (
     <Host style={styles.host}>
       <Alert
+        modifiers={[tint(theme.accent)]}
         title={title}
         isPresented={open}
         onIsPresentedChange={(presented) => {

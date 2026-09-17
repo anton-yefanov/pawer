@@ -192,6 +192,7 @@
       ],
       "expo-sharing",
       "./plugins/with-uiscene-lifecycle",
+      "./plugins/with-tint-swatches",
       "expo-audio"
     ],
     "extra": {

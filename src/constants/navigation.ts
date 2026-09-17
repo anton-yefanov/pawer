@@ -11,9 +11,6 @@ export function stackScreenOptions(theme: Theme) {
   } as const;
 }
 
-/** A tab root's own header options. */
-export const TAB_ROOT_HEADER = { headerLargeTitle: true } as const;
-
 /** A screen that is a full-bleed list of edge-to-edge rows, so white throughout. */
 export function surfacePageOptions(theme: Theme) {
   return { contentStyle: { backgroundColor: theme.surface } } as const;

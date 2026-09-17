@@ -4,21 +4,23 @@ import {
 } from 'react-native-keyboard-controller';
 
 import { Colors } from '@/constants/theme';
+import { TINTS } from '@/constants/tints';
+import { useResolvedTint } from '@/lib/theme-preference';
 
-const THEME: NonNullable<KeyboardToolbarProps['theme']> = {
+const toolbarTheme = (tint: (typeof TINTS)[keyof typeof TINTS]): NonNullable<KeyboardToolbarProps['theme']> => ({
   light: {
-    primary: Colors.light.accent,
+    primary: tint.light.accent,
     disabled: Colors.light.textSecondary,
     background: Colors.light.surface,
     ripple: Colors.light.backgroundSelected,
   },
   dark: {
-    primary: Colors.dark.accent,
+    primary: tint.dark.accent,
     disabled: Colors.dark.textSecondary,
     background: Colors.dark.surface,
     ripple: Colors.dark.backgroundSelected,
   },
-};
+});
 
 /**
  * Only the arrows that walk a card's fields in order: `number-pad` and
@@ -29,7 +31,7 @@ const THEME: NonNullable<KeyboardToolbarProps['theme']> = {
  */
 export function KeyboardToolbar() {
   return (
-    <Toolbar theme={THEME}>
+    <Toolbar theme={toolbarTheme(TINTS[useResolvedTint()])}>
       <Toolbar.Prev />
       <Toolbar.Next />
     </Toolbar>

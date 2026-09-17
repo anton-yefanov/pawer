@@ -4,6 +4,7 @@ import { StyleSheet, View } from "react-native";
 
 import {
   AnalyticsBlock,
+  BLOCK_BODY_HEIGHT,
   useBlockPeriod,
   type BlockSlot,
 } from "@/components/analytics/analytics-block";
@@ -69,6 +70,7 @@ export function MetricChart({
             onSelect={setSelected}
             formatValue={format}
             formatAxis={formatAxis}
+            height={BLOCK_BODY_HEIGHT}
             tip
           />
         </View>
@@ -82,6 +84,7 @@ export function MetricChart({
               onSelect={() => {}}
               formatValue={format}
               formatAxis={formatAxis}
+              height={BLOCK_BODY_HEIGHT}
               muted
             />
           </View>

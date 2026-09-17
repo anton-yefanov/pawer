@@ -1,10 +1,14 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
+import { useTheme } from '@/hooks/use-theme';
+
 import { tabIcon } from './icon';
 
 export default function AppTabs() {
+  const theme = useTheme();
+
   return (
-    <NativeTabs labelVisibilityMode="unlabeled">
+    <NativeTabs labelVisibilityMode="unlabeled" tintColor={theme.accent}>
       <NativeTabs.Trigger name="history">
         <NativeTabs.Trigger.Label hidden>History</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon {...tabIcon('clock', 'clock.fill')} />

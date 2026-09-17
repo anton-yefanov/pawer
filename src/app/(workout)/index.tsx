@@ -2,19 +2,23 @@ import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AchievementsButton } from '@/components/achievements/achievements-button';
+import { BlockView } from '@/components/analytics/block-view';
 import { TemplateDragProvider } from '@/components/templates/template-drag';
 import { TemplateSection } from '@/components/templates/template-section';
 import { useGridDrop } from '@/components/templates/use-grid-drop';
+import { TabTitle, TAB_TITLE_INSET } from '@/components/tab-title';
 import { ThemedText } from '@/components/themed-text';
 import { ActiveWorkoutPrompt } from '@/components/workout/active-workout-prompt';
 import { BigButton } from '@/components/workout/big-button';
 import { ElapsedTime } from '@/components/workout/elapsed-time';
+import { ExerciseReorderProvider } from '@/components/workout/exercise-reorder';
 import { BottomTabInset, CardRadius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import * as haptics from '@/lib/haptics';
+import { useHomeWidget } from '@/lib/home-widget';
+import { guard } from '@/lib/observability';
 import { toFolderCard, toTemplateCard } from '@/lib/template-cards';
 import {
   foldersQuery,
@@ -25,15 +29,14 @@ import { startEmptyWorkout } from '@/lib/workout-actions';
 import { activeWorkoutQuery, groupBy } from '@/lib/workout-queries';
 import { formatStartTime } from '@/lib/workout-stats';
 
-import { guard } from '@/lib/observability';
-
+const noop = () => {};
 
 export default function StartWorkoutScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { data } = useLiveQuery(activeWorkoutQuery(), []);
   const active = data?.[0];
+  const homeWidget = useHomeWidget();
 
   const { data: mine } = useLiveQuery(templatesQuery(false), []);
   const { data: builtIn } = useLiveQuery(templatesQuery(true), []);
@@ -94,16 +97,29 @@ export default function StartWorkoutScreen() {
       <View style={styles.screen}>
         <ScrollView
           style={{ backgroundColor: theme.background }}
-          contentContainerStyle={[styles.container, { paddingTop: insets.top + Spacing.two }]}
+          contentContainerStyle={[styles.container, { paddingTop: TAB_TITLE_INSET }]}
           // The title is content on this screen, so the notch is cleared by the
           // padding above rather than by the scroll view's own adjustment —
           // which only iOS makes, and only from a header this screen has not got.
           contentInsetAdjustmentBehavior="never"
           scrollEnabled={!dragging}>
-          <View style={styles.title}>
-            <ThemedText type="largeTitle">Home</ThemedText>
+          <TabTitle title="Home">
             <AchievementsButton />
-          </View>
+          </TabTitle>
+
+          {/* A single block that never moves; the provider only satisfies the
+              hooks the block shares with the Analytics list. */}
+          <ExerciseReorderProvider count={1} onReorder={noop} onReorderingChange={noop}>
+            <BlockView
+              slot={{
+                id: homeWidget.widget,
+                index: 0,
+                draggable: false,
+                detailPrefix: '/home',
+                onReplace: () => router.push('/home-widget'),
+              }}
+            />
+          </ExerciseReorderProvider>
 
           {active ? (
             <View style={styles.section}>
@@ -161,11 +177,6 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     paddingBottom: BottomTabInset + Spacing.four,
     gap: Spacing.four,
-  },
-  title: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
   section: {
     gap: Spacing.two,

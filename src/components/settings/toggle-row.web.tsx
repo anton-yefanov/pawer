@@ -28,7 +28,7 @@ export function ToggleRow({ label, leading, accessory, value, onChange }: Props)
         value={value}
         onValueChange={onChange}
         accessibilityLabel={label}
-        trackColor={{ false: theme.backgroundSelected, true: theme.success }}
+        trackColor={{ false: theme.backgroundSelected, true: theme.accent }}
       />
     </View>
   );

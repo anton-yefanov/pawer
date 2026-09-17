@@ -4,7 +4,6 @@ import { tabBarScreenLayout } from "@/components/app-tabs";
 import {
   stackScreenOptions,
   surfacePageOptions,
-  TAB_ROOT_HEADER,
 } from "@/constants/navigation";
 import { DETAIL_SHEET, FULL_SHEET } from "@/constants/sheet";
 import { useTheme } from "@/hooks/use-theme";
@@ -21,7 +20,7 @@ export default function HistoryLayout() {
     <Stack screenOptions={stackScreenOptions(theme)} screenLayout={tabBarScreenLayout}>
       <Stack.Screen
         name="index"
-        options={{ title: "History", ...TAB_ROOT_HEADER }}
+        options={{ title: "History", headerShown: false }}
       />
       <Stack.Screen
         name="workout-details"

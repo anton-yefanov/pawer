@@ -18,6 +18,7 @@ import {
   labelsHidden,
   shapes,
   tag,
+  tint,
 } from '@expo/ui/swift-ui/modifiers';
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -174,6 +175,7 @@ export function ExerciseMenu({
               onDateChange={(date) => onChangeRest(fromWheelDate(date))}
               modifiers={[
                 datePickerStyle('wheel'),
+                tint(theme.accent),
                 labelsHidden(),
                 frame({ width: 240, height: 160 }),
               ]}

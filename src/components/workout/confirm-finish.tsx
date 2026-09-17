@@ -1,7 +1,9 @@
 import { Alert, Button, Host, Spacer, Text } from '@expo/ui/swift-ui';
+import { tint } from '@expo/ui/swift-ui/modifiers';
 import { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 
+import { useTheme } from '@/hooks/use-theme';
 import * as haptics from '@/lib/haptics';
 
 type Props = {
@@ -13,6 +15,7 @@ type Props = {
 
 /** Same in-sheet presentation trick as `ConfirmAlert`, with a third action. */
 export function ConfirmFinish({ open, onCompleteUnfinished, onCancelWorkout, onDismiss }: Props) {
+  const theme = useTheme();
   useEffect(() => {
     if (open) haptics.warn();
   }, [open]);
@@ -20,6 +23,7 @@ export function ConfirmFinish({ open, onCompleteUnfinished, onCancelWorkout, onD
   return (
     <Host style={styles.host}>
       <Alert
+        modifiers={[tint(theme.accent)]}
         title="Finish Workout?"
         isPresented={open}
         onIsPresentedChange={(presented) => {

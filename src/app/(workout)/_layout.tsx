@@ -32,6 +32,11 @@ export default function WorkoutLayout() {
           bar-button item above an expanded large title, never inside its row. */}
       <Stack.Screen name="index" options={{ title: "Home", headerShown: false }} />
       <Stack.Screen name="achievements" options={{ ...FULL_SHEET, title: "Achievements" }} />
+      {/* Home's analytics widget opens its sheets here, not in the Analytics
+          stack, so a tap on it never switches tabs. */}
+      <Stack.Screen name="home-widget" options={{ ...FULL_SHEET, title: "Replace Widget" }} />
+      <Stack.Screen name="home/muscles" options={{ ...DETAIL_SHEET, title: "Muscles worked" }} />
+      <Stack.Screen name="home/records" options={{ ...DETAIL_SHEET, title: "Personal records" }} />
       {/* The logger and the recap of the session it finishes, in this one
           sheet. See `WorkoutStage` for why they are not two. */}
       <Stack.Screen name="active" options={{ ...FULL_SHEET, title: "" }} />

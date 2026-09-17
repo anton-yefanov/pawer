@@ -17,7 +17,7 @@ import {
   type SeriesPoint,
 } from "@/lib/analytics-series";
 
-const HEIGHT = 180;
+const DEFAULT_HEIGHT = 180;
 
 // The kit pads the plot by 10pt, then the label width, then an 8pt gap, and
 // right-aligns the labels against that gap. The plot starts at `AXIS_GUTTER`
@@ -75,6 +75,7 @@ export function AreaChart({
   labels = true,
   tip = false,
   formatAxis,
+  height = DEFAULT_HEIGHT,
 }: {
   points: readonly SeriesPoint[];
   bucket: Bucket;
@@ -88,6 +89,7 @@ export function AreaChart({
   tip?: boolean;
   /** A terser `formatValue` for the y-axis ticks. */
   formatAxis?: (value: number) => string;
+  height?: number;
 }) {
   const theme = useTheme();
   const [width, setWidth] = useState(0);
@@ -102,7 +104,7 @@ export function AreaChart({
 
   return (
     <View
-      style={{ height: HEIGHT }}
+      style={{ height }}
       onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
     >
       {width > 0 && (
@@ -111,7 +113,7 @@ export function AreaChart({
           xKey="x"
           yKey="y"
           width={width}
-          height={HEIGHT}
+          height={height}
           curve="monotone"
           areaFill={{
             fromColor: color,

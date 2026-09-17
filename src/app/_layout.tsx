@@ -9,8 +9,11 @@ import { Onboarding } from '@/components/onboarding/onboarding';
 import { TelemetrySync } from '@/components/telemetry-sync';
 import { DatabaseProvider } from '@/db/provider';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useTheme } from '@/hooks/use-theme';
 import { AutofillWeightProvider } from '@/lib/autofill-weight';
+import { BodySexProvider } from '@/lib/body-sex';
 import { FinishReminderProvider } from '@/lib/finish-reminder';
+import { HomeWidgetProvider } from '@/lib/home-widget';
 import { KeyboardProvider } from '@/lib/keyboard-provider';
 import { LibraryLayoutProvider } from '@/lib/library-layout';
 import { WorkoutActivityProvider } from '@/lib/live-activity';
@@ -40,17 +43,21 @@ function TabLayout() {
           <PurchasesProvider>
             <ThemePreferenceProvider>
               <WeightUnitProvider>
-                <OnboardingProvider>
-                  <AutofillWeightProvider>
-                    <WarmupStatsProvider>
-                      <FinishReminderProvider>
-                        <LibraryLayoutProvider>
-                          <ThemedApp />
-                        </LibraryLayoutProvider>
-                      </FinishReminderProvider>
-                    </WarmupStatsProvider>
-                  </AutofillWeightProvider>
-                </OnboardingProvider>
+                <BodySexProvider>
+                  <OnboardingProvider>
+                    <AutofillWeightProvider>
+                      <WarmupStatsProvider>
+                        <FinishReminderProvider>
+                          <LibraryLayoutProvider>
+                            <HomeWidgetProvider>
+                              <ThemedApp />
+                            </HomeWidgetProvider>
+                          </LibraryLayoutProvider>
+                        </FinishReminderProvider>
+                      </WarmupStatsProvider>
+                    </AutofillWeightProvider>
+                  </OnboardingProvider>
+                </BodySexProvider>
               </WeightUnitProvider>
             </ThemePreferenceProvider>
           </PurchasesProvider>
@@ -64,9 +71,11 @@ function TabLayout() {
 /** Separate component so the navigation theme can read the stored preference. */
 function ThemedApp() {
   const colorScheme = useColorScheme();
+  const theme = useTheme();
+  const base = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={{ ...base, colors: { ...base.colors, primary: theme.accent } }}>
       <RestTimerProvider>
         <WorkoutActivityProvider>
           <SplashReady />

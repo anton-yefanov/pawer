@@ -1,5 +1,5 @@
 import { Host, Image, Menu, Picker, Section, Text, ZStack } from '@expo/ui/swift-ui';
-import { buttonStyle, contentShape, font, frame, shapes, tag } from '@expo/ui/swift-ui/modifiers';
+import { buttonStyle, contentShape, font, frame, shapes, tag, tint } from '@expo/ui/swift-ui/modifiers';
 import { View } from 'react-native';
 
 import { sfSymbol, type IconName } from '@/components/icon';
@@ -86,7 +86,7 @@ export function ExerciseFacetMenu({
           // Menu builds internally, which is what draws the grey disc behind
           // the glyph on press-and-hold. Press feedback here is the glass
           // capsule's own (`isInteractive`), so the disc is pure duplication.
-          modifiers={[buttonStyle('plain')]}
+          modifiers={[buttonStyle('plain'), tint(theme.accent)]}
           label={
             /*
               A Menu's tap target is exactly its label — `frame` on the Menu

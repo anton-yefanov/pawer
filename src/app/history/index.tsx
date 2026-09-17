@@ -6,6 +6,7 @@ import { FlatList, StyleSheet, View } from 'react-native';
 import { EmptyState } from '@/components/empty-state';
 import { Card, Separator } from '@/components/grouped-list';
 import { WorkoutLogRow } from '@/components/history/workout-log-row';
+import { TabTitle, TAB_TITLE_INSET } from '@/components/tab-title';
 import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -46,8 +47,13 @@ export default function HistoryScreen() {
       data={months}
       keyExtractor={(month) => month.key}
       style={{ backgroundColor: theme.background }}
-      contentContainerStyle={styles.content}
-      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={[styles.content, { paddingTop: TAB_TITLE_INSET }]}
+      contentInsetAdjustmentBehavior="never"
+      ListHeaderComponent={
+        <View style={styles.title}>
+          <TabTitle title="History" />
+        </View>
+      }
       renderItem={({ item }) => (
         <MonthSection
           workouts={item.workouts}
@@ -106,6 +112,9 @@ function MonthSection({
 const styles = StyleSheet.create({
   content: {
     paddingBottom: BottomTabInset + Spacing.four,
+  },
+  title: {
+    paddingHorizontal: Spacing.three,
   },
   section: {
     paddingBottom: Spacing.two,

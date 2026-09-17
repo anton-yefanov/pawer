@@ -1,5 +1,8 @@
 import { DatePicker, HStack, Host, Spacer } from '@expo/ui/swift-ui';
+import { tint } from '@expo/ui/swift-ui/modifiers';
 import { StyleSheet } from 'react-native';
+
+import { useTheme } from '@/hooks/use-theme';
 
 /**
  * Compact SwiftUI `DatePicker` — tapping the value opens the system wheel in a
@@ -23,6 +26,8 @@ export function StartTimePicker({
   onChange: (next: Date) => void;
   max?: Date;
 }) {
+  const theme = useTheme();
+
   return (
     <Host style={styles.host} ignoreSafeArea="all">
       <HStack>
@@ -32,6 +37,7 @@ export function StartTimePicker({
           range={{ end: max }}
           displayedComponents={['date', 'hourAndMinute']}
           onDateChange={onChange}
+          modifiers={[tint(theme.accent)]}
         />
       </HStack>
     </Host>

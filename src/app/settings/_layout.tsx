@@ -1,7 +1,7 @@
 import { Stack } from "expo-router";
 
 import { tabBarScreenLayout } from "@/components/app-tabs";
-import { stackScreenOptions, surfacePageOptions, TAB_ROOT_HEADER } from "@/constants/navigation";
+import { stackScreenOptions, surfacePageOptions } from "@/constants/navigation";
 import { FULL_SHEET, SHEET } from "@/constants/sheet";
 import { useTheme } from "@/hooks/use-theme";
 
@@ -12,7 +12,7 @@ export default function SettingsLayout() {
     <Stack screenOptions={stackScreenOptions(theme)} screenLayout={tabBarScreenLayout}>
       <Stack.Screen
         name="index"
-        options={{ title: "Settings", ...TAB_ROOT_HEADER }}
+        options={{ title: "Settings", headerShown: false }}
       />
       <Stack.Screen name="support" options={FULL_SHEET} />
       <Stack.Screen name="import" options={FULL_SHEET} />
