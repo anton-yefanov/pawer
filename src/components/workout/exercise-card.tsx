@@ -19,7 +19,7 @@ import {
 } from '@/components/workout/exercise-reorder';
 import { ExerciseMenu } from '@/components/workout/exercise-menu';
 import { NoteInput } from '@/components/workout/note-input';
-import { RestCountdownRow } from '@/components/workout/rest-countdown-row';
+import { RestSlot } from '@/components/workout/rest-countdown-row';
 import { fieldWidth, SET_COLUMNS, SetRow } from '@/components/workout/set-row';
 import { SupersetBadge } from '@/components/workout/superset-badge';
 import { SHEET_INNER_RADIUS } from '@/constants/sheet';
@@ -78,7 +78,9 @@ export function ExerciseCard({
   // which would write the note straight back.
   const removingNote = useRef(false);
   const [headerHeight, setHeaderHeight] = useState(0);
-  const [bodyHeight, setBodyHeight] = useState(0);
+  // A shared value, not state: the rest row grows the body frame by frame, and
+  // each of those frames re-measures it.
+  const bodyHeight = useSharedValue(0);
   const restSeconds = exercise.restSeconds ?? defaultRestSeconds;
   const trackingType = trackingTypeOf(exercise.trackingType);
   const { fields } = TRACKING[trackingType];
@@ -122,10 +124,16 @@ export function ExerciseCard({
     backgroundColor: interpolateColor(progress.value, [0, 1], [theme.background, theme.surface]),
   }));
 
-  const body = useAnimatedStyle(() => ({
-    height: interpolate(progress.value, [0, 1], [bodyHeight, 0]),
-    opacity: interpolate(progress.value, [0, 1], [1, 0]),
-  }));
+  // Unfolded, the body sizes itself, so a rest row opening inside it can push
+  // it taller; the measured height only matters once a fold starts.
+  const body = useAnimatedStyle(() =>
+    progress.value === 0 || bodyHeight.value === 0
+      ? { height: 'auto', opacity: 1 }
+      : {
+          height: interpolate(progress.value, [0, 1], [bodyHeight.value, 0]),
+          opacity: interpolate(progress.value, [0, 1], [1, 0]),
+        },
+  );
 
   /**
    * Only an unfolded row can be measured. A folded one is clipped to nothing,
@@ -203,8 +211,12 @@ export function ExerciseCard({
         </Animated.View>
       </GestureDetector>
 
-      <Animated.View style={[styles.collapsible, bodyHeight > 0 && body]}>
-        <View onLayout={(event) => measure(event, setBodyHeight)}>
+      <Animated.View style={[styles.collapsible, body]}>
+        <View onLayout={(event) =>
+            measure(event, (height) => {
+              bodyHeight.value = height;
+            })
+          }>
           <View style={[styles.card, { backgroundColor: theme.surface }]}>
             {notesOpen && (
               <NoteInput
@@ -252,7 +264,7 @@ export function ExerciseCard({
                   actions={actions}
                   onComplete={onComplete}
                 />
-                {restingSetId === set.id && <RestCountdownRow ref={restRowRef} />}
+                {onComplete && <RestSlot open={restingSetId === set.id} ref={restRowRef} />}
               </Fragment>
             ))}
 
