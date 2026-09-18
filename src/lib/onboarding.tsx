@@ -8,7 +8,7 @@ const ONBOARDING_KEY = 'onboarding_complete';
 
 type OnboardingValue = {
   done: boolean;
-  complete: () => Promise<void>;
+  complete: (beforeDismiss?: () => Promise<void>) => Promise<void>;
   /** Debug-only, for replaying the flow while it is being built. */
   reset: () => Promise<void>;
 };
@@ -47,9 +47,11 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
   const value: OnboardingValue = {
     done,
-    complete: async () => {
-      setDone(true);
+    complete: async (beforeDismiss) => {
       await setSetting(db, ONBOARDING_KEY, String(Date.now()));
+      // Keep the overlay mounted for its reveal, after the durable write succeeds.
+      await beforeDismiss?.();
+      setDone(true);
     },
     reset: async () => {
       setDone(false);

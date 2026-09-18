@@ -19,6 +19,7 @@ export type PaywallOutcome = 'purchased' | 'dismissed' | 'error';
  * it is the whole point of measuring which placements convert.
  */
 export type PaywallSource =
+  | 'onboarding'
   | 'template_limit'
   | 'custom_exercise_limit'
   | 'analytics_period'
@@ -43,7 +44,7 @@ export async function presentPaywall(source: PaywallSource): Promise<PaywallOutc
 
 async function present(): Promise<PaywallOutcome> {
   try {
-    return outcomeOf(await RevenueCatUI.presentPaywall());
+    return outcomeOf(await RevenueCatUI.presentPaywall({ displayCloseButton: true }));
   } catch (error) {
     report('paywall', error, { phase: 'present' });
     return 'error';

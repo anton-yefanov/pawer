@@ -1,94 +1,217 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import Animated, {
+  Easing,
+  LinearTransition,
+  useReducedMotion,
+  withDelay,
+  withTiming,
+  ZoomIn,
+  ZoomOut,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { CircleButton, CIRCLE_BUTTON_SIZE } from '@/components/circle-button';
+import { CIRCLE_BUTTON_SIZE, CircleButton } from '@/components/circle-button';
+import { FloatingSurface } from '@/components/floating-surface';
 import { Icon, type IconName } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-export const STEP_COUNT = 3;
-
-type Props = {
-  index: number;
-  /** Sits above the title, tinted accent — the step's subject at a glance. */
-  icon: IconName;
+export function Step({
+  title,
+  body,
+  art,
+  choices,
+  children,
+  eyebrow,
+}: {
   title: string;
-  /** Several strings render as separate paragraphs. */
-  body: string | string[];
-  /** Sits directly under the copy, above the slack — a choice to make before
-   *  the bottom slot's button becomes useful. */
+  body?: string;
+  /** Takes whatever height the page has left above the title, so the choices sit by the button. */
+  art?: ReactNode;
   choices?: ReactNode;
-  /** The bottom slot: the buttons that leave the step. */
-  children: ReactNode;
-  /** Absent on the first step, which has nowhere to go back to. */
-  onBack?: () => void;
-};
-
-export function Step({ index, icon, title, body, choices, children, onBack }: Props) {
+  children?: ReactNode;
+  eyebrow?: string;
+}) {
   const insets = useSafeAreaInsets();
-  const theme = useTheme();
-  const paragraphs = Array.isArray(body) ? body : [body];
-
   return (
-    <View
-      style={[
-        styles.page,
-        { paddingTop: insets.top + Spacing.four, paddingBottom: insets.bottom + Spacing.four },
-      ]}>
-      <View style={styles.content}>
-        <View style={styles.header}>
-          {onBack ? (
-            <View style={styles.back}>
-              <CircleButton symbol="chevron.left" label="Back" onPress={onBack} />
-            </View>
-          ) : null}
-          <ThemedText type="footnote" weight="semibold" themeColor="textSecondary">
-            {`Step ${index + 1} of ${STEP_COUNT}`}
+    <View style={[styles.column, styles.page, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.content, art != null && styles.contentWithArt]}
+        showsVerticalScrollIndicator={false}
+      >
+        {art != null && <View style={styles.art}>{art}</View>}
+        {eyebrow && (
+          <ThemedText type="footnote" weight="semibold" themeColor="accent">
+            {eyebrow}
           </ThemedText>
-        </View>
-
-        <View style={styles.copy}>
-          <View style={styles.icon}>
-            <Icon name={icon} size={44} tintColor={theme.accent} />
-          </View>
-          <ThemedText type="title1">{title}</ThemedText>
-          {paragraphs.map((paragraph, position) => (
-            <ThemedText
-              key={paragraph}
-              style={position > 0 && styles.followingParagraph}>
-              {paragraph}
-            </ThemedText>
-          ))}
-          {choices ? <View style={styles.choices}>{choices}</View> : null}
-        </View>
-
-        <View style={styles.bottom}>{children}</View>
-      </View>
+        )}
+        <ThemedText accessibilityRole="header" type="largeTitle">
+          {title}
+        </ThemedText>
+        {body && (
+          <ThemedText type="callout" themeColor="textSecondary">
+            {body}
+          </ThemedText>
+        )}
+        {choices && <View style={styles.choices}>{choices}</View>}
+      </ScrollView>
+      {children && <View style={styles.bottom}>{children}</View>}
     </View>
   );
 }
 
+/** The picture above a question: a placeholder until an answer is picked, then that answer's. */
+export function ChoiceArt({ icon, placeholder }: { icon: IconName | null; placeholder: IconName }) {
+  const theme = useTheme();
+  const reducedMotion = useReducedMotion();
+  return (
+    <View
+      style={[
+        styles.artTile,
+        { backgroundColor: icon ? theme.accentTint : theme.backgroundElement },
+      ]}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <Animated.View
+        key={icon ?? 'placeholder'}
+        style={styles.artIcon}
+        entering={reducedMotion ? undefined : ZoomIn.duration(260).easing(Easing.out(Easing.cubic))}
+        exiting={reducedMotion ? undefined : ZoomOut.duration(160)}
+      >
+        <Icon
+          name={icon ?? placeholder}
+          size={ART_ICON}
+          tintColor={icon ? theme.accent : theme.textTertiary}
+        />
+      </Animated.View>
+    </View>
+  );
+}
+
+/** Outside the sliding pages, so it stays put while they move under it. */
+export function StepHeader({
+  index,
+  count,
+  onBack,
+}: {
+  index: number;
+  count: number;
+  onBack?: () => void;
+}) {
+  const insets = useSafeAreaInsets();
+  const theme = useTheme();
+  const reducedMotion = useReducedMotion();
+  return (
+    <View style={[styles.column, styles.header, { paddingTop: insets.top + 12 }]}>
+      <View style={styles.back}>
+        {onBack && (
+          <Animated.View
+            entering={reducedMotion ? undefined : drop(0)}
+            exiting={reducedMotion ? undefined : lift}
+          >
+            <CircleButton symbol="chevron.left" label="Back" onPress={onBack} />
+          </Animated.View>
+        )}
+      </View>
+      {/* The welcome page is the cover and the commitment is the finish line; the bar
+          only accompanies the steps in between. */}
+      {index > 0 && index < count - 1 && (
+        <Animated.View
+          style={styles.progressSlot}
+          entering={reducedMotion ? undefined : drop(60)}
+          exiting={reducedMotion ? undefined : lift}
+        >
+          <FloatingSurface
+            style={styles.progress}
+            accessibilityRole="progressbar"
+            accessibilityValue={{ min: 0, max: count, now: index + 1 }}
+            accessibilityLabel="Onboarding progress"
+          >
+            <Animated.View
+              layout={LinearTransition}
+              style={[
+                styles.progressFill,
+                { width: `${((index + 1) / count) * 100}%`, backgroundColor: theme.accent },
+              ]}
+            />
+          </FloatingSurface>
+        </Animated.View>
+      )}
+    </View>
+  );
+}
+
+// Transform only: fading a glass surface in would flatten it.
+const OFFSTAGE = -120;
+const ARRIVE = { duration: 420, easing: Easing.out(Easing.cubic) };
+
+function drop(delay: number) {
+  return () => {
+    'worklet';
+    return {
+      initialValues: { transform: [{ translateY: OFFSTAGE }, { scale: 0.9 }] },
+      animations: {
+        transform: [
+          { translateY: withDelay(delay, withTiming(0, ARRIVE)) },
+          { scale: withDelay(delay, withTiming(1, ARRIVE)) },
+        ],
+      },
+    };
+  };
+}
+
+function lift() {
+  'worklet';
+  return {
+    initialValues: { transform: [{ translateY: 0 }, { scale: 1 }] },
+    animations: {
+      transform: [
+        { translateY: withTiming(OFFSTAGE, { duration: 220 }) },
+        { scale: withTiming(0.9, { duration: 220 }) },
+      ],
+    },
+  };
+}
+
+const PROGRESS_INSET = 16;
+const ART_TILE = 180;
+const ART_ICON = 84;
+
 const styles = StyleSheet.create({
-  page: { ...StyleSheet.absoluteFill, paddingHorizontal: Spacing.four },
-  content: { flex: 1, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
-  header: {
+  column: { width: '100%', maxWidth: 560, alignSelf: 'center', paddingHorizontal: 24 },
+  page: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  // Holds the row's height on the welcome page, where it is empty.
+  back: { width: CIRCLE_BUTTON_SIZE, height: CIRCLE_BUTTON_SIZE },
+  // No `overflow: 'hidden'` — like CircleButton, clipping would trap the glass's stretch.
+  progressSlot: { flex: 1 },
+  progress: {
     height: CIRCLE_BUTTON_SIZE,
+    borderRadius: CIRCLE_BUTTON_SIZE / 2,
+    padding: PROGRESS_INSET,
+    justifyContent: 'center',
+  },
+  progressFill: {
+    height: CIRCLE_BUTTON_SIZE - PROGRESS_INSET * 2,
+    minWidth: CIRCLE_BUTTON_SIZE - PROGRESS_INSET * 2,
+    borderRadius: (CIRCLE_BUTTON_SIZE - PROGRESS_INSET * 2) / 2,
+  },
+  scroll: { flex: 1 },
+  content: { flexGrow: 1, justifyContent: 'center', paddingVertical: 20, gap: 12 },
+  contentWithArt: { paddingBottom: 12 },
+  art: { flex: 1, minHeight: ART_TILE + 24, alignItems: 'center', justifyContent: 'center' },
+  artTile: {
+    width: ART_TILE,
+    height: ART_TILE,
+    borderRadius: 48,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.three,
   },
-  // Absolute so the step count stays centred on the page, not on the space left
-  // over beside the button.
-  back: { position: 'absolute', left: 0 },
-  // The copy takes all the slack so it holds the middle of the page on every
-  // step, which is what keeps the bottom slot in one place.
-  copy: { flex: 1, justifyContent: 'center', gap: Spacing.three },
-  icon: { alignSelf: 'flex-start' },
-  followingParagraph: { marginTop: Spacing.two },
-  choices: { marginTop: Spacing.five },
-  // Every step ends here, so the primary button lands in the same place on all
-  // of them — anything a step wants to say around it goes in the copy instead.
-  bottom: { gap: Spacing.two },
+  artIcon: { position: 'absolute' },
+  choices: { marginTop: 12, gap: 10 },
+  bottom: { gap: 8, paddingTop: 12 },
 });

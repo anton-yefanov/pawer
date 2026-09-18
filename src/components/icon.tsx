@@ -34,6 +34,7 @@ import { FolderMinusIcon } from "phosphor-react-native/src/icons/FolderMinus";
 import { FolderPlusIcon } from "phosphor-react-native/src/icons/FolderPlus";
 import { GearIcon } from "phosphor-react-native/src/icons/Gear";
 import { HandWavingIcon } from "phosphor-react-native/src/icons/HandWaving";
+import { HandPointingIcon } from "phosphor-react-native/src/icons/HandPointing";
 import { HouseIcon } from "phosphor-react-native/src/icons/House";
 import { ImageIcon } from "phosphor-react-native/src/icons/Image";
 import { InfoIcon } from "phosphor-react-native/src/icons/Info";
@@ -86,6 +87,11 @@ type IconEntry = {
  * rather than against it.
  */
 const ICONS = {
+  "hand.point.up.fill": {
+    symbol: { ios: "hand.point.up.fill", android: "touch_app" },
+    glyph: HandPointingIcon,
+    weight: "fill",
+  },
   "arrow.down": {
     symbol: { ios: "arrow.down", android: "arrow_downward" },
     glyph: ArrowDownIcon,
