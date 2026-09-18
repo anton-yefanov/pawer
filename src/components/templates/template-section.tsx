@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+  type ViewStyle,
+} from "react-native";
 import Animated, {
   useAnimatedStyle,
   withTiming,
@@ -13,7 +19,11 @@ import {
   FolderCard,
   type FolderCardData,
 } from "@/components/templates/folder-card";
-import { slotHeight } from "@/components/templates/grid-card";
+import {
+  CARD_BORDER,
+  COVER_SCALE,
+  slotHeight,
+} from "@/components/templates/grid-card";
 import {
   TemplateCard,
   type TemplateCardData,
@@ -25,7 +35,9 @@ import { useTheme } from "@/hooks/use-theme";
 import * as haptics from "@/lib/haptics";
 
 export const COLUMNS = 2;
-export const GAP = Spacing.two;
+const ROW_GAP = Spacing.two;
+/** Zero because the two cells' own margins around their covers are already the gap. */
+const COLUMN_GAP = 0;
 /**
  * Room for a card's shadow inside the collapsible's clip box. Cancelled by an
  * equal negative margin, so the grid sits exactly where it did without it.
@@ -61,7 +73,7 @@ export function TemplateSection({
   return (
     <View style={styles.section}>
       <View style={styles.header}>
-        <ThemedText type="title2">{title}</ThemedText>
+        <ThemedText type="title1">{title}</ThemedText>
         {showAdd && <AddMenu />}
         {collapsible && (
           <CollapseToggle
@@ -181,19 +193,19 @@ export function CardGrid({
       template,
     })),
   ];
-  const { cellWidth, cellHeight, gridHeight } = useGridMetrics(cells.length);
+  const { cellWidth, cellHeight, frame } = useGridMetrics(cells.length);
 
   return draggable ? (
     <DraggableGrid
       cells={cells}
       cellWidth={cellWidth}
       cellHeight={cellHeight}
-      gridHeight={gridHeight}
+      frame={frame}
       folderCount={folders.length}
       menuFor={menuFor}
     />
   ) : (
-    <View style={{ height: gridHeight }}>
+    <View style={frame}>
       {cells.map((cell, index) => (
         <View
           key={cell.key}
@@ -217,22 +229,26 @@ function useGridMetrics(count: number) {
   const cellWidth = cardCellWidth(screenWidth);
   const cellHeight = slotHeight(cellWidth);
   const rows = Math.ceil(count / COLUMNS);
-  const gridHeight = rows === 0 ? 0 : rows * cellHeight + (rows - 1) * GAP;
-  return { cellWidth, cellHeight, gridHeight };
+  const gridHeight = rows === 0 ? 0 : rows * cellHeight + (rows - 1) * ROW_GAP;
+  const frame = {
+    height: gridHeight,
+    marginHorizontal: -coverInset(cellWidth) * EDGE_BLEED,
+  };
+  return { cellWidth, cellHeight, gridHeight, frame };
 }
 
 function DraggableGrid({
   cells,
   cellWidth,
   cellHeight,
-  gridHeight,
+  frame,
   folderCount,
   menuFor,
 }: {
   cells: readonly Cell[];
   cellWidth: number;
   cellHeight: number;
-  gridHeight: number;
+  frame: ViewStyle;
   folderCount: number;
   menuFor?: (cell: Cell) => React.ReactNode;
 }) {
@@ -243,7 +259,8 @@ function DraggableGrid({
     drag.registerGrid({
       cellWidth,
       cellHeight,
-      gap: GAP,
+      columnGap: COLUMN_GAP,
+      rowGap: ROW_GAP,
       columns: COLUMNS,
       folderCount,
       itemCount: cells.length,
@@ -251,7 +268,7 @@ function DraggableGrid({
   }, [cellHeight, cellWidth, cells.length, drag, folderCount]);
 
   return (
-    <View style={{ height: gridHeight }}>
+    <View style={frame}>
       {cells.map((cell, index) => (
         <View
           key={cell.key}
@@ -302,15 +319,32 @@ function Placed({
   );
 }
 
-/** A grid cell's width on a screen with the standard side gutter. */
+const MARGIN = (1 - COVER_SCALE) / 2;
+
+/** How far a cover sits inside its cell's side edge. */
+function coverInset(cellWidth: number): number {
+  return CARD_BORDER + (cellWidth - CARD_BORDER * 2) * MARGIN;
+}
+
+/**
+ * How much of a cell's cover inset the grid bleeds past the side gutter: at 1
+ * the outer covers sit on the gutter itself, which reads as crowding the edge.
+ */
+const EDGE_BLEED = 0.5;
+
 export function cardCellWidth(screenWidth: number): number {
-  return (screenWidth - Spacing.three * 2 - GAP) / COLUMNS;
+  const span = screenWidth - Spacing.three * 2 - COLUMN_GAP * (COLUMNS - 1);
+  const bleed = 2 * EDGE_BLEED;
+  return (
+    (span + bleed * CARD_BORDER * (1 - 2 * MARGIN)) /
+    (COLUMNS - bleed * MARGIN)
+  );
 }
 
 function slotOffset(index: number, cellWidth: number, cellHeight: number) {
   return {
-    left: (index % COLUMNS) * (cellWidth + GAP),
-    top: Math.floor(index / COLUMNS) * (cellHeight + GAP),
+    left: (index % COLUMNS) * (cellWidth + COLUMN_GAP),
+    top: Math.floor(index / COLUMNS) * (cellHeight + ROW_GAP),
   };
 }
 

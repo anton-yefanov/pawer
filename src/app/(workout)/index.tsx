@@ -148,7 +148,7 @@ export default function StartWorkoutScreen() {
           />
 
           <TemplateSection
-            title="Library"
+            title="Templates Library"
             templates={looseBuiltInCards}
             folders={libraryFolders}
             collapsible

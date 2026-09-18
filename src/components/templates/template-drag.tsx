@@ -56,7 +56,8 @@ type Frame = {
 type Grid = {
   cellWidth: number;
   cellHeight: number;
-  gap: number;
+  columnGap: number;
+  rowGap: number;
   columns: number;
   folderCount: number;
   itemCount: number;
@@ -65,7 +66,8 @@ type Grid = {
 const NO_GRID: Grid = {
   cellWidth: 0,
   cellHeight: 0,
-  gap: 0,
+  columnGap: 0,
+  rowGap: 0,
   columns: 1,
   folderCount: 0,
   itemCount: 0,
@@ -179,9 +181,9 @@ export function TemplateDragProvider({
 
       beginDrag: (id, index, touchX, touchY) => {
         'worklet';
-        const { cellWidth, cellHeight, gap, columns } = grid.value;
-        originX.value = (index % columns) * (cellWidth + gap) + touchX;
-        originY.value = Math.floor(index / columns) * (cellHeight + gap) + touchY;
+        const { cellWidth, cellHeight, columnGap, rowGap, columns } = grid.value;
+        originX.value = (index % columns) * (cellWidth + columnGap) + touchX;
+        originY.value = Math.floor(index / columns) * (cellHeight + rowGap) + touchY;
         draggingId.value = id;
         fromIndex.value = index;
         dropIndex.value = IDLE;
@@ -296,10 +298,10 @@ export function useCellMotion(id: string, index: number) {
       else if (to < from && index >= to && index < from) displaced = index + 1;
     }
 
-    const { cellWidth, cellHeight, gap, columns } = drag.grid.value;
-    const shiftX = ((displaced % columns) - (index % columns)) * (cellWidth + gap);
+    const { cellWidth, cellHeight, columnGap, rowGap, columns } = drag.grid.value;
+    const shiftX = ((displaced % columns) - (index % columns)) * (cellWidth + columnGap);
     const shiftY =
-      (Math.floor(displaced / columns) - Math.floor(index / columns)) * (cellHeight + gap);
+      (Math.floor(displaced / columns) - Math.floor(index / columns)) * (cellHeight + rowGap);
 
     // Settling: the grid has just re-rendered with everyone in their new slot,
     // so the offsets are already zero. Animating to zero from here would slide
@@ -338,9 +340,9 @@ function slotAt(grid: Grid, x: number, y: number, kind: DragKind): number {
   'worklet';
   if (grid.itemCount === 0 || grid.cellHeight === 0) return IDLE;
 
-  const rawColumn = Math.floor(x / (grid.cellWidth + grid.gap));
+  const rawColumn = Math.floor(x / (grid.cellWidth + grid.columnGap));
   const column = Math.min(Math.max(rawColumn, 0), grid.columns - 1);
-  const row = Math.max(0, Math.floor(y / (grid.cellHeight + grid.gap)));
+  const row = Math.max(0, Math.floor(y / (grid.cellHeight + grid.rowGap)));
   const index = row * grid.columns + column;
 
   const low = kind === 'folder' ? 0 : grid.folderCount;
@@ -352,8 +354,8 @@ function slotAt(grid: Grid, x: number, y: number, kind: DragKind): number {
 function folderFrames(folders: ReadonlyMap<string, number>, grid: Grid): Frame[] {
   return [...folders].map(([id, index]) => ({
     id,
-    x: (index % grid.columns) * (grid.cellWidth + grid.gap),
-    y: Math.floor(index / grid.columns) * (grid.cellHeight + grid.gap),
+    x: (index % grid.columns) * (grid.cellWidth + grid.columnGap),
+    y: Math.floor(index / grid.columns) * (grid.cellHeight + grid.rowGap),
     width: grid.cellWidth,
     height: grid.cellHeight,
   }));

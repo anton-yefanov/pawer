@@ -175,7 +175,7 @@ const QUESTIONS = {
         id: 'bodyweight',
         title: 'Just my bodyweight',
         detail: 'Floor space is all you need',
-        icon: 'figure.strengthtraining.traditional',
+        icon: 'figure.arms.open',
       },
     ],
   },
@@ -194,19 +194,19 @@ const QUESTIONS = {
     choices: [
       {
         id: 20,
-        title: 'About 20 minutes',
-        detail: 'The essentials. Make them count',
+        title: 'About 30 minutes',
+        detail: 'The essentials',
         icon: 'bolt.fill',
       },
       {
         id: 35,
-        title: 'About 35 minutes',
+        title: 'About 45 minutes',
         detail: 'Room to focus on every movement',
         icon: 'clock',
       },
       {
         id: 50,
-        title: 'About 50 minutes',
+        title: 'About an hour',
         detail: 'More room for volume and recovery',
         icon: 'dumbbell.fill',
       },
@@ -308,7 +308,9 @@ function OnboardingFlow() {
   }, []);
 
   useEffect(() => {
-    if (!restoring) track('onboarding_step_viewed', { name: step });
+    if (!restoring) track('onboarding_step_viewed', { name: step, index, count: steps.length });
+    // Once per step, not again when the import branch shifts the count under it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, restoring]);
   useEffect(() => {
     void AccessibilityInfo.isScreenReaderEnabled().then(setScreenReader);
@@ -346,7 +348,19 @@ function OnboardingFlow() {
     setBusy(true);
     setError(null);
     try {
-      savePersonalPlan(answers as PlanAnswers, db, TINT_FOLDER[tint]);
+      const chosen = answers as PlanAnswers;
+      savePersonalPlan(chosen, db, TINT_FOLDER[tint]);
+      const focus = [...(chosen.focus ?? [])].sort();
+      track('onboarding_plan_created', {
+        goal: chosen.goal,
+        experience: chosen.experience,
+        equipment: chosen.equipment,
+        days: chosen.days,
+        minutes: chosen.minutes,
+        focus: focus.join(',') || 'none',
+        focus_count: focus.length,
+        used_other_app: usedApps === true,
+      });
       direction.set(1);
       setStep('paywall');
     } catch (cause) {
@@ -608,7 +622,7 @@ function OnboardingFlow() {
         art={<PlanFolder color={TINT_FOLDER[tint]} />}
       >
         <BigButton
-          title={busy ? 'Saving Your Plan…' : 'Make It Mine'}
+          title={busy ? 'Saving Your Plan…' : 'Start My Plan'}
           onPress={() => void preparePlan()}
           disabled={busy}
         />

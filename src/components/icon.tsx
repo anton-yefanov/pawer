@@ -195,6 +195,10 @@ const ICONS = {
     symbol: { ios: "ellipsis", android: "more_horiz" },
     glyph: DotsThreeIcon,
   },
+  "figure.arms.open": {
+    symbol: { ios: "figure.arms.open", android: "accessibility_new" },
+    glyph: PersonArmsSpreadIcon,
+  },
   "figure.strengthtraining.traditional": {
     symbol: { ios: "figure.strengthtraining.traditional", android: "exercise" },
     // Phosphor has no weightlifting figure. This one labels the muscle facet,

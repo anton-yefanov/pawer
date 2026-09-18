@@ -3,6 +3,7 @@ import PostHog from 'posthog-react-native';
 
 import type { AchievementTier } from '@/constants/achievement-tiers';
 import type { ImportSource } from '@/lib/import/types';
+import type { PlanAnswers } from '@/lib/personal-plan';
 import type { PaywallOutcome, PaywallSource } from '@/lib/paywall';
 import type { TrackingType } from '@/lib/tracking-types';
 import type { WeightUnit } from '@/lib/units';
@@ -53,7 +54,17 @@ if (!client) console.warn('[telemetry] no posthog.apiKey in app.json extra; anal
  * failed analytics write must never cost a user their workout.
  */
 type TelemetryEvents = {
-  onboarding_step_viewed: { name: string };
+  onboarding_step_viewed: { name: string; index: number; count: number };
+  onboarding_plan_created: {
+    goal: PlanAnswers['goal'];
+    experience: PlanAnswers['experience'];
+    equipment: PlanAnswers['equipment'];
+    days: PlanAnswers['days'];
+    minutes: PlanAnswers['minutes'];
+    focus: string;
+    focus_count: number;
+    used_other_app: boolean;
+  };
   onboarding_completed: { notifications_granted: boolean };
   workout_started: { source: 'empty' | 'template' | 'repeat' };
   workout_finished: Record<never, never>;
