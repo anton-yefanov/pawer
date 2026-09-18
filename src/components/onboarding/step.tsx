@@ -24,6 +24,7 @@ export function Step({
   choices,
   children,
   eyebrow,
+  centered = false,
 }: {
   title: string;
   body?: string;
@@ -32,26 +33,34 @@ export function Step({
   choices?: ReactNode;
   children?: ReactNode;
   eyebrow?: string;
+  centered?: boolean;
 }) {
   const insets = useSafeAreaInsets();
+  const align = centered && styles.centered;
   return (
     <View style={[styles.column, styles.page, { paddingBottom: Math.max(insets.bottom, 16) }]}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.content, art != null && styles.contentWithArt]}
+        contentContainerStyle={[
+          styles.content,
+          art != null && styles.contentWithArt,
+          centered && styles.contentCentered,
+        ]}
         showsVerticalScrollIndicator={false}
+        // Still scrolls when a page genuinely overflows (a long import review, a small phone).
+        alwaysBounceVertical={false}
       >
         {art != null && <View style={styles.art}>{art}</View>}
         {eyebrow && (
-          <ThemedText type="footnote" weight="semibold" themeColor="accent">
+          <ThemedText type="footnote" weight="semibold" themeColor="accent" style={align}>
             {eyebrow}
           </ThemedText>
         )}
-        <ThemedText accessibilityRole="header" type="largeTitle">
+        <ThemedText accessibilityRole="header" type="largeTitle" style={align}>
           {title}
         </ThemedText>
         {body && (
-          <ThemedText type="callout" themeColor="textSecondary">
+          <ThemedText type="callout" themeColor="textSecondary" style={align}>
             {body}
           </ThemedText>
         )}
@@ -183,7 +192,8 @@ const ART_ICON = 84;
 const styles = StyleSheet.create({
   column: { width: '100%', maxWidth: 560, alignSelf: 'center', paddingHorizontal: 24 },
   page: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  // The same breathing room above the scrolling page as `bottom` leaves below it.
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingBottom: 12 },
   // Holds the row's height on the welcome page, where it is empty.
   back: { width: CIRCLE_BUTTON_SIZE, height: CIRCLE_BUTTON_SIZE },
   // No `overflow: 'hidden'` — like CircleButton, clipping would trap the glass's stretch.
@@ -202,6 +212,8 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { flexGrow: 1, justifyContent: 'center', paddingVertical: 20, gap: 12 },
   contentWithArt: { paddingBottom: 12 },
+  // A statement rather than a form: narrower lines, more air at the sides.
+  contentCentered: { paddingHorizontal: 16, gap: 16 },
   art: { flex: 1, minHeight: ART_TILE + 24, alignItems: 'center', justifyContent: 'center' },
   artTile: {
     width: ART_TILE,
@@ -213,5 +225,6 @@ const styles = StyleSheet.create({
   },
   artIcon: { position: 'absolute' },
   choices: { marginTop: 12, gap: 10 },
+  centered: { textAlign: 'center' },
   bottom: { gap: 8, paddingTop: 12 },
 });

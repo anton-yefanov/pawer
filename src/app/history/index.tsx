@@ -1,16 +1,21 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 
-import { EmptyState } from '@/components/empty-state';
 import { Card, Separator } from '@/components/grouped-list';
 import { WorkoutLogRow } from '@/components/history/workout-log-row';
+import { Icon } from '@/components/icon';
 import { TabTitle, TAB_TITLE_INSET } from '@/components/tab-title';
 import { ThemedText } from '@/components/themed-text';
+import { ActiveWorkoutPrompt } from '@/components/workout/active-workout-prompt';
+import { BigButton } from '@/components/workout/big-button';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import * as haptics from '@/lib/haptics';
+import { guard } from '@/lib/observability';
 import { useIncludeWarmup } from '@/lib/warmup-stats';
+import { startEmptyWorkout } from '@/lib/workout-actions';
 import {
   finishedWorkoutExercisesQuery,
   finishedWorkoutsQuery,
@@ -33,7 +38,7 @@ export default function HistoryScreen() {
   // workout.
   const byWorkout = useMemo(
     () => groupBy(exerciseRows ?? [], (row) => row.workoutId),
-    [exerciseRows]
+    [exerciseRows],
   );
 
   // The query is already newest-first, so the months come out in order for free.
@@ -42,35 +47,79 @@ export default function HistoryScreen() {
     return [...grouped].map(([key, workouts]) => ({ key, workouts }));
   }, [data]);
 
+  const [blockedBy, setBlockedBy] = useState<string | null>(null);
+
+  // Presented inside this tab, like "Perform Again", rather than jumping to Home.
+  const open = (id: string) => router.push({ pathname: '/history/workout-active', params: { id } });
+
+  const startEmpty = async () => {
+    const result = await guard('workout', startEmptyWorkout(), {
+      title: 'Couldn’t start workout',
+      message: 'Please try again.',
+    });
+    if (!result) return;
+    if (result.status === 'blocked') {
+      setBlockedBy(result.workoutId);
+      return;
+    }
+    haptics.press();
+    open(result.workoutId);
+  };
+
+  // Held back until the query answers, so a full history doesn't flash empty.
+  const empty = data !== undefined && months.length === 0;
+
   return (
-    <FlatList
-      data={months}
-      keyExtractor={(month) => month.key}
-      style={{ backgroundColor: theme.background }}
-      contentContainerStyle={[styles.content, { paddingTop: TAB_TITLE_INSET }]}
-      contentInsetAdjustmentBehavior="never"
-      ListHeaderComponent={
-        <View style={styles.title}>
-          <TabTitle title="History" />
+    <View style={styles.screen}>
+      <FlatList
+        data={months}
+        keyExtractor={(month) => month.key}
+        style={{ backgroundColor: theme.background }}
+        contentContainerStyle={[styles.content, { paddingTop: TAB_TITLE_INSET }]}
+        contentInsetAdjustmentBehavior="never"
+        ListHeaderComponent={
+          <View style={styles.title}>
+            <TabTitle title="History" />
+          </View>
+        }
+        renderItem={({ item }) => (
+          <MonthSection
+            workouts={item.workouts}
+            exercisesFor={(id) => byWorkout.get(id) ?? []}
+            onOpen={(id) =>
+              router.push({
+                pathname: '/history/workout-details',
+                params: { id },
+              })
+            }
+          />
+        )}
+        scrollEnabled={!empty}
+      />
+      {empty && (
+        <View style={styles.empty} pointerEvents="box-none">
+          <Icon name="clock.arrow.circlepath" size={64} tintColor={theme.textTertiary} />
+          <ThemedText type="title2" weight="bold" style={styles.emptyTitle}>
+            No Workouts Yet
+          </ThemedText>
+          <ThemedText type="body" themeColor="textSecondary" style={styles.emptyText}>
+            Every workout you finish lands here, with its sets, volume and records.
+          </ThemedText>
+          <View style={styles.emptyButton}>
+            <BigButton title="Start an Empty Workout" onPress={() => void startEmpty()} />
+          </View>
         </View>
-      }
-      renderItem={({ item }) => (
-        <MonthSection
-          workouts={item.workouts}
-          exercisesFor={(id) => byWorkout.get(id) ?? []}
-          onOpen={(id) =>
-            router.push({ pathname: '/history/workout-details', params: { id } })
-          }
-        />
       )}
-      ListEmptyComponent={
-        <EmptyState
-          icon="clock.arrow.circlepath"
-          text="No finished workouts yet"
-          style={styles.empty}
-        />
-      }
-    />
+      <ActiveWorkoutPrompt
+        open={blockedBy != null}
+        onResume={() => {
+          const id = blockedBy;
+          setBlockedBy(null);
+          if (id) open(id);
+        }}
+        onDismiss={() => setBlockedBy(null)}
+      />
+    </View>
   );
 }
 
@@ -126,7 +175,16 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.four,
     paddingBottom: Spacing.two,
   },
+  screen: { flex: 1 },
+  // Laid over the whole screen rather than under the title, so the message sits
+  // at the screen's true centre — as on Analytics.
   empty: {
-    paddingVertical: Spacing.six,
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.three,
   },
+  emptyTitle: { marginTop: Spacing.three, textAlign: 'center' },
+  emptyText: { marginTop: Spacing.two, maxWidth: 280, textAlign: 'center' },
+  emptyButton: { marginTop: Spacing.four },
 });

@@ -95,6 +95,19 @@ export function useThemePreference(): ThemePreferenceValue {
   return value;
 }
 
+const SchemeOverrideContext = createContext<'light' | 'dark' | null>(null);
+
+/** Pins everything under it to one scheme whatever the preference — for a page that is always dark. */
+export function ColorSchemeOverride({
+  scheme,
+  children,
+}: {
+  scheme: 'light' | 'dark';
+  children: ReactNode;
+}) {
+  return <SchemeOverrideContext value={scheme}>{children}</SchemeOverrideContext>;
+}
+
 /**
  * Falls back to the device scheme when read outside the provider, so the
  * loading and error screens `DatabaseProvider` renders before it mounts still
@@ -103,7 +116,9 @@ export function useThemePreference(): ThemePreferenceValue {
 export function useResolvedColorScheme(): 'light' | 'dark' {
   const device = useDeviceColorScheme();
   const stored = use(ThemePreferenceContext);
+  const forced = use(SchemeOverrideContext);
 
+  if (forced) return forced;
   if (!stored || stored.preference === 'system') return device === 'dark' ? 'dark' : 'light';
   return stored.preference;
 }

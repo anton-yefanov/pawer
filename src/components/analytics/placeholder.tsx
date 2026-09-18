@@ -1,8 +1,10 @@
 import { StyleSheet, View } from "react-native";
 
+import { BLOCK_HEADER_OFFSET } from "@/components/analytics/analytics-block";
 import { Icon } from "@/components/icon";
 import { ThemedText } from "@/components/themed-text";
-import { Spacing } from "@/constants/theme";
+import { CardRaised, Spacing } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useTheme } from "@/hooks/use-theme";
 import type { SeriesPoint } from "@/lib/analytics-series";
 
@@ -43,6 +45,7 @@ export function CardPlaceholder({
   children: React.ReactNode;
 }) {
   const theme = useTheme();
+  const raised = CardRaised[useColorScheme()];
 
   return (
     <View style={styles.fill}>
@@ -51,7 +54,14 @@ export function CardPlaceholder({
       </View>
       <View pointerEvents="none" style={styles.center}>
         <View
-          style={[styles.pill, { backgroundColor: theme.backgroundElement }]}
+          style={[
+            styles.pill,
+            raised,
+            {
+              backgroundColor: theme.backgroundElement,
+              borderColor: theme.backgroundSelected,
+            },
+          ]}
         >
           <Icon name="lock.fill" size={14} tintColor={theme.textSecondary} />
           <ThemedText
@@ -72,6 +82,9 @@ const styles = StyleSheet.create({
   preview: { opacity: 0.55 },
   center: {
     ...StyleSheet.absoluteFill,
+    // Reaches up behind the header so the pill sits at the card's centre, not
+    // the body's.
+    top: -BLOCK_HEADER_OFFSET,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -81,6 +94,7 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
-    borderRadius: 12,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
   },
 });

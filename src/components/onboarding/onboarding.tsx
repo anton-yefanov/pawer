@@ -8,8 +8,10 @@ import {
   View,
 } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import Animated, {
   Easing,
+  interpolateColor,
   type SharedValue,
   useAnimatedProps,
   useAnimatedStyle,
@@ -27,13 +29,18 @@ import { Pressable } from '@/components/pressable';
 import { MenuRow } from '@/components/settings/menu-row';
 import { ThemedText } from '@/components/themed-text';
 import { BigButton } from '@/components/workout/big-button';
-import { Spacing } from '@/constants/theme';
+import { Colors, Spacing } from '@/constants/theme';
 import { TINT_OPTIONS } from '@/constants/tints';
 import { useTheme } from '@/hooks/use-theme';
 import { db } from '@/db/client';
 import { getSetting } from '@/db/seed';
 import * as haptics from '@/lib/haptics';
-import { openLegalDocument, PRIVACY_POLICY_URL } from '@/lib/legal';
+import {
+  openLegalDocument,
+  PRIVACY_POLICY_URL,
+  TERMS_OF_SERVICE_URL,
+  WORKOUT_IMPORT_TOOL_URL,
+} from '@/lib/legal';
 import { ensureNotificationPermission } from '@/lib/notifications';
 import { BODY_SEXES, useBodySexPreference } from '@/lib/body-sex';
 import { attempt, report } from '@/lib/observability';
@@ -42,13 +49,24 @@ import { buildPersonalPlan, isPlanAnswers, type PlanAnswers } from '@/lib/person
 import { usePro } from '@/lib/purchases';
 import { PERSONAL_PLAN_KEY, savePersonalPlan } from '@/lib/save-personal-plan';
 import { track } from '@/lib/telemetry';
-import { useThemePreference } from '@/lib/theme-preference';
+import { ColorSchemeOverride, useThemePreference } from '@/lib/theme-preference';
 import { WEIGHT_UNITS, useWeightUnitPreference } from '@/lib/weight-unit';
 
 import { AnatomyPreview } from './appearance';
-import { ImportSourceChoices } from './import-source-choices';
 import { PaywallPage } from './paywall-page';
+import { PlanFolder, TINT_FOLDER } from './plan-folder';
+import { WelcomeHero } from './welcome-hero';
+import { CommitButton, HOLD_MS } from './commit-button';
+import { FocusGrid, toggleFocus } from './focus-grid';
 import { ChoiceArt, Step, StepHeader } from './step';
+
+const PEEK_RADIUS = 110;
+
+const GOAL_PHRASE: Record<PlanAnswers['goal'], string> = {
+  muscle: 'build muscle',
+  strength: 'get stronger',
+  consistency: 'make training a habit',
+};
 
 const SAVE_FAILED = {
   title: 'Couldn’t save that',
@@ -56,11 +74,13 @@ const SAVE_FAILED = {
 };
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+const AnimatedRect = Animated.createAnimatedComponent(Rect);
 type StepName =
   | 'welcome'
   | 'history'
   | 'import'
   | 'goal'
+  | 'focus'
   | 'experience'
   | 'equipment'
   | 'days'
@@ -74,6 +94,7 @@ const STEPS: StepName[] = [
   'welcome',
   'history',
   'goal',
+  'focus',
   'experience',
   'equipment',
   'days',
@@ -93,19 +114,19 @@ const QUESTIONS = {
       {
         id: 'muscle',
         title: 'Build muscle',
-        detail: 'Make every rep count.',
+        detail: 'Make every rep count',
         icon: 'dumbbell.fill',
       },
       {
         id: 'strength',
         title: 'Get stronger',
-        detail: 'Build confidence under the weight.',
+        detail: 'Build confidence under the weight',
         icon: 'bolt.fill',
       },
       {
         id: 'consistency',
         title: 'Build a lasting habit',
-        detail: 'A routine you’ll want to come back to.',
+        detail: 'A routine you’ll want to come back to',
         icon: 'calendar',
       },
     ],
@@ -117,54 +138,54 @@ const QUESTIONS = {
       {
         id: 'new',
         title: 'I’m new to strength training',
-        detail: 'Simple movements. A manageable start.',
+        detail: 'Simple movements. A manageable start',
         icon: 'hand.wave.fill',
       },
       {
         id: 'returning',
         title: 'I have some experience',
-        detail: 'I know the basics or I’m coming back.',
+        detail: 'I know the basics or I’m coming back',
         icon: 'arrow.clockwise',
       },
       {
         id: 'experienced',
         title: 'I train regularly',
-        detail: 'Ready for a more demanding routine.',
+        detail: 'Ready for a more demanding routine',
         icon: 'dumbbell.fill',
       },
     ],
   },
   equipment: {
     icon: 'dumbbell.fill',
-    title: 'Your training setup.',
+    title: 'Your training setup',
     choices: [
       {
         id: 'gym',
         title: 'A fully equipped gym',
-        detail: 'Machines, cables and free weights.',
+        detail: 'Machines, cables and free weights',
         icon: 'dumbbell.fill',
       },
       {
         id: 'dumbbells',
         title: 'Dumbbells and a bench',
-        detail: 'A pair of weights. Plenty of possibilities.',
+        detail: 'A pair of weights. Plenty of possibilities',
         icon: 'house.fill',
       },
       {
         id: 'bodyweight',
         title: 'Just my bodyweight',
-        detail: 'Floor space is all you need.',
+        detail: 'Floor space is all you need',
         icon: 'figure.strengthtraining.traditional',
       },
     ],
   },
   days: {
     icon: 'calendar',
-    title: 'Make room for your goals.',
+    title: 'Make room for your goals',
     choices: [
-      { id: 2, title: '2 days', detail: 'A steady start with room to recover.', icon: 'calendar' },
-      { id: 3, title: '3 days', detail: 'A balanced rhythm for the week.', icon: 'calendar' },
-      { id: 4, title: '4 days', detail: 'More time to make training your own.', icon: 'calendar' },
+      { id: 2, title: '2 days', detail: 'A steady start with room to recover', icon: 'calendar' },
+      { id: 3, title: '3 days', detail: 'A balanced rhythm for the week', icon: 'calendar' },
+      { id: 4, title: '4 days', detail: 'More time to make training your own', icon: 'calendar' },
     ],
   },
   minutes: {
@@ -174,25 +195,25 @@ const QUESTIONS = {
       {
         id: 20,
         title: 'About 20 minutes',
-        detail: 'The essentials. Make them count.',
+        detail: 'The essentials. Make them count',
         icon: 'bolt.fill',
       },
       {
         id: 35,
         title: 'About 35 minutes',
-        detail: 'Room to focus on every movement.',
+        detail: 'Room to focus on every movement',
         icon: 'clock',
       },
       {
         id: 50,
         title: 'About 50 minutes',
-        detail: 'More room for volume and recovery.',
+        detail: 'More room for volume and recovery',
         icon: 'dumbbell.fill',
       },
     ],
   },
 } satisfies Record<
-  keyof PlanAnswers,
+  Exclude<keyof PlanAnswers, 'focus'>,
   {
     /** The placeholder art until an answer is picked. */
     icon: IconName;
@@ -226,24 +247,33 @@ function OnboardingFlow() {
   const busyRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [screenReader, setScreenReader] = useState(false);
-  const [holding, setHolding] = useState(false);
   const [revealing, setRevealing] = useState(false);
   const [origin, setOrigin] = useState({ x: width / 2, y: height * 0.7 });
-  const holdRef = useRef<View>(null);
-  const progress = useSharedValue(0);
   const radius = useSharedValue(0);
   const contentOpacity = useSharedValue(1);
   // Read by the exiting page's worklet after the commit, so it can't come from props.
   const direction = useSharedValue<1 | -1>(1);
-  const ringStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 + progress.get() * 0.2 }],
-    opacity: 0.15 + progress.get() * 0.35,
-  }));
   const contentStyle = useAnimatedStyle(() => ({ opacity: contentOpacity.get() }));
+  // Land on Home under the promise page, after the paywall has come and gone — that is
+  // the screen the hold peeks at and the reveal opens onto.
+  useEffect(() => {
+    if (step === 'commit') router.navigate('/');
+  }, [router, step]);
+
+  // The backdrop dusks to black under the promise page as it slides in.
+  const dusk = useSharedValue(0);
+  useEffect(() => {
+    dusk.set(withTiming(step === 'commit' ? 1 : 0, { duration: 420 }));
+  }, [dusk, step]);
+  const backdropProps = useAnimatedProps(() => ({
+    fill: interpolateColor(dusk.get(), [0, 1], [theme.background, Colors.dark.background]),
+  }));
   const circleProps = useAnimatedProps(() => ({ r: reducedMotion ? 0 : radius.get() }));
   const revealStyle = useAnimatedStyle(() => ({
     opacity: reducedMotion ? contentOpacity.get() : 1,
   }));
+  // The commit page is painted by the masked layer rather than the overlay, so the hold can cut into it.
+  const unveiling = revealing || step === 'commit';
   const importing =
     step === 'import' &&
     (pathname.startsWith('/settings/import') || pathname === '/settings/new-exercise');
@@ -316,8 +346,7 @@ function OnboardingFlow() {
     setBusy(true);
     setError(null);
     try {
-      savePersonalPlan(answers as PlanAnswers);
-      router.navigate('/');
+      savePersonalPlan(answers as PlanAnswers, db, TINT_FOLDER[tint]);
       direction.set(1);
       setStep('paywall');
     } catch (cause) {
@@ -334,8 +363,6 @@ function OnboardingFlow() {
     busyRef.current = true;
     setBusy(true);
     setError(null);
-    setHolding(false);
-    haptics.press();
     try {
       await complete(
         () =>
@@ -368,25 +395,21 @@ function OnboardingFlow() {
     }
   }
 
-  function startHold() {
-    if (busyRef.current) return;
-    holdRef.current?.measureInWindow((x, y, w, h) => setOrigin({ x: x + w / 2, y: y + h / 2 }));
-    setHolding(true);
-    haptics.tap();
-    progress.set(withTiming(1, { duration: 900 }));
-  }
-  function releaseHold() {
-    if (busyRef.current) return;
-    setHolding(false);
-    progress.set(withTiming(0, { duration: 160 }));
+  // While the finger is down the app starts showing through around the button;
+  // letting go closes it again, finishing the hold opens it the rest of the way.
+  function peek(at: { x: number; y: number }) {
+    if (busyRef.current || reducedMotion) return;
+    setOrigin(at);
+    radius.set(withTiming(PEEK_RADIUS, { duration: HOLD_MS, easing: Easing.in(Easing.cubic) }));
   }
 
   const common = {
     index,
     count: steps.length,
-    onBack: index > 0 && !busy && step !== 'commit' && step !== 'paywall' ? back : undefined,
+    // Stays mounted while busy — `go` already ignores it then, and unmounting replays its entrance.
+    onBack: index > 0 && step !== 'commit' && step !== 'paywall' ? back : undefined,
   };
-  const questionKey = step in QUESTIONS ? (step as keyof PlanAnswers) : null;
+  const questionKey = step in QUESTIONS ? (step as keyof typeof QUESTIONS) : null;
   let page;
   if (questionKey) {
     const question = QUESTIONS[questionKey];
@@ -421,36 +444,48 @@ function OnboardingFlow() {
         />
       </Step>
     );
+  } else if (step === 'focus') {
+    const focus = answers.focus ?? [];
+    page = (
+      <Step
+        title="Any muscle groups you want to focus on?"
+        choices={
+          <FocusGrid
+            selected={focus}
+            onToggle={(area) => {
+              haptics.select();
+              setAnswers((current) => ({
+                ...current,
+                focus: toggleFocus(current.focus ?? [], area),
+              }));
+            }}
+          />
+        }
+      >
+        <BigButton
+          title={focus.length > 0 ? 'Continue' : 'No Focus Area'}
+          variant={focus.length > 0 ? 'filled' : 'tinted'}
+          onPress={() => {
+            setAnswers((current) => ({ ...current, focus }));
+            go(steps[index + 1]);
+          }}
+          disabled={busy}
+        />
+      </Step>
+    );
   } else if (step === 'welcome') {
     page = (
       <Step
-        eyebrow="YOUR NEXT CHAPTER"
-        title={'Your next chapter\nstarts here.'}
-        choices={
-          <View style={[styles.preview, { backgroundColor: theme.surface }]}>
-            <Icon name="folder.fill" size={42} tintColor={theme.accent} />
-            <ThemedText type="title3">Your Personal Plan</ThemedText>
-            <ThemedText type="subhead" themeColor="textSecondary">
-              Your goal. Your schedule. Your starting point.
-            </ThemedText>
-            <View style={styles.feature}>
-              <Icon name="checkmark" size={16} tintColor={theme.accent} />
-              <ThemedText type="footnote">Ready-to-use workouts, made for you</ThemedText>
-            </View>
-          </View>
-        }
+        centered
+        title={'Your next chapter\nstarts here'}
+        body="A plan built around your goal, your schedule and your starting point"
+        art={<WelcomeHero color={TINT_FOLDER[tint]} />}
       >
         <BigButton title="Build My Plan" onPress={() => go('history')} />
-        <Footnote>Your workout data stays on your device.</Footnote>
-        <Pressable
-          accessibilityRole="link"
-          onPress={() => void openLegalDocument(PRIVACY_POLICY_URL)}
-          style={styles.textButton}
-        >
-          <ThemedText type="caption1" themeColor="textSecondary">
-            Anonymous usage & diagnostics · Privacy Policy
-          </ThemedText>
-        </Pressable>
+        <View style={styles.legal}>
+          <LegalLink title="Terms of Service" url={TERMS_OF_SERVICE_URL} />
+          <LegalLink title="Privacy Policy" url={PRIVACY_POLICY_URL} />
+        </View>
       </Step>
     );
   } else if (step === 'history') {
@@ -469,7 +504,7 @@ function OnboardingFlow() {
           <>
             <Choice
               title="Yes, I’ve used another app"
-              detail="Bring your progress into Pawer."
+              detail="Bring your progress into Pawer"
               selected={usedApps === true}
               onPress={() => {
                 haptics.select();
@@ -478,7 +513,7 @@ function OnboardingFlow() {
             />
             <Choice
               title="No, I’m starting here"
-              detail="Your first entry is waiting."
+              detail="Your first entry is waiting"
               selected={usedApps === false}
               onPress={() => {
                 haptics.select();
@@ -500,7 +535,7 @@ function OnboardingFlow() {
   } else if (step === 'preferences') {
     page = (
       <Step
-        title="Make Pawer feel like you."
+        title="Make Pawer feel like you"
         art={<AnatomyPreview sex={sex} />}
         choices={
           // The grouped card carries its own sheet-width inset; this page already pads its edges.
@@ -540,8 +575,8 @@ function OnboardingFlow() {
   } else if (step === 'notifications') {
     page = (
       <Step
-        title="Know when rest is over."
-        body="Pawer can send a notification the moment your rest timer ends, so you can put your phone down between sets."
+        title="Know when rest is over"
+        body="Pawer can send a notification the moment your rest timer ends, so you can put your phone down between sets"
         art={<ChoiceArt placeholder="bell.badge.fill" icon={notificationsGranted ? 'bell.badge.fill' : null} />}
       >
         <BigButton
@@ -565,103 +600,63 @@ function OnboardingFlow() {
       </Step>
     );
   } else if (step === 'plan' && plan) {
+    const minutes = Math.max(...plan.workouts.map((workout) => workout.estimatedMinutes));
     page = (
       <Step
-        eyebrow="THIS IS YOUR STARTING LINE"
-        title="Meet your personal plan."
-        choices={
-          <>
-            <View style={[styles.preview, { backgroundColor: theme.surface }]}>
-              <ThemedText type="title3">Your Personal Plan</ThemedText>
-              {plan.workouts.map((workout, i) => (
-                <View key={workout.name} style={styles.planRow}>
-                  <View style={[styles.number, { backgroundColor: theme.accentTint }]}>
-                    <ThemedText weight="bold" themeColor="accent">
-                      {String.fromCharCode(65 + i)}
-                    </ThemedText>
-                  </View>
-                  <View style={styles.flex}>
-                    <ThemedText type="headline">{workout.name}</ThemedText>
-                    <ThemedText type="footnote" themeColor="textSecondary">
-                      {workout.exercises.length} exercises ·{' '}
-                      {workout.exercises.reduce((sum, exercise) => sum + exercise.sets, 0)} working
-                      sets · ~{workout.estimatedMinutes} min
-                    </ThemedText>
-                  </View>
-                  <Icon name="checkmark" size={18} tintColor={theme.accent} />
-                </View>
-              ))}
-            </View>
-            <ThemedText type="footnote" themeColor="textSecondary">
-              {plan.schedule}
-            </ThemedText>
-            <ThemedText type="footnote" themeColor="textSecondary">
-              {plan.effort}
-            </ThemedText>
-          </>
-        }
+        title="Your plan is ready"
+        body={`${plan.workouts.length} workouts · ${plan.days} days a week · ~${minutes} min`}
+        art={<PlanFolder color={TINT_FOLDER[tint]} />}
       >
         <BigButton
           title={busy ? 'Saving Your Plan…' : 'Make It Mine'}
           onPress={() => void preparePlan()}
           disabled={busy}
         />
-        <Footnote>Your plan is included. No subscription required.</Footnote>
       </Step>
     );
   } else if (step === 'paywall') {
     page = isPro ? null : <PaywallPage onDone={() => go('commit')} />;
   } else {
     page = (
-      <Step
-        eyebrow="A PROMISE TO YOURSELF"
-        title="Your goals deserve a first day."
-        body="I’ll show up for myself, follow my dreams, and work toward my goals. One workout at a time."
-        choices={
-          <View style={styles.commitment}>
-            <View ref={holdRef} collapsable={false}>
-              <Animated.View
-                pointerEvents="none"
-                style={[styles.halo, { backgroundColor: theme.accent }, ringStyle]}
-              />
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Commit to my goals and open Pawer"
-                accessibilityHint={
-                  screenReader ? 'Double tap to confirm.' : 'Hold for one second to confirm.'
-                }
-                accessibilityActions={[{ name: 'activate', label: 'Confirm my commitment' }]}
-                onAccessibilityAction={() => void finish()}
-                disabled={busy}
-                delayLongPress={900}
-                onPressIn={startHold}
-                onPressOut={releaseHold}
-                onLongPress={() => void finish()}
-                onPress={() => {
-                  if (screenReader) void finish();
-                }}
-                style={[styles.holdButton, { backgroundColor: theme.accent }]}
-              >
-                <Icon name="hand.point.up.fill" size={48} tintColor={theme.accentContent} />
-              </Pressable>
+      // The one dark page, whatever the appearance: the promise is a moment, not another form.
+      <ColorSchemeOverride scheme="dark">
+        <StatusBar style="light" />
+        <Step
+          centered
+          eyebrow="MY PROMISE"
+          title="I promise to follow my goals"
+          choices={
+            <View style={styles.promise}>
+              {ready && (
+                <ThemedText type="title3" weight="regular" style={styles.center}>
+                  I’ll show up {answers.days} days a week, {answers.minutes} minutes at a time, to{' '}
+                  {GOAL_PHRASE[answers.goal!]}
+                </ThemedText>
+              )}
+              <ThemedText type="callout" themeColor="textSecondary" style={styles.center}>
+                Some days will be hard. I’ll show up anyway
+              </ThemedText>
             </View>
-            <ThemedText type="headline" themeColor="accent">
-              {busy
-                ? 'Welcome to your next chapter.'
-                : holding
-                  ? 'This is your moment…'
-                  : screenReader
-                    ? 'Double tap to begin'
-                    : 'Touch and hold to begin'}
+          }
+        >
+          <View style={styles.commitment}>
+            <CommitButton
+              busy={busy}
+              screenReader={screenReader}
+              onHoldStart={peek}
+              onHoldCancel={() => {
+                // A lift right as the hold completes must not pull the reveal back shut.
+                if (busyRef.current) return;
+                radius.set(withTiming(0, { duration: 260, easing: Easing.out(Easing.cubic) }));
+              }}
+              onCommit={() => void finish()}
+            />
+            <ThemedText type="headline" themeColor={busy ? 'accent' : 'textSecondary'}>
+              {busy ? 'Welcome to Pawer' : screenReader ? 'Double tap to sign' : 'Hold to sign'}
             </ThemedText>
-            <Footnote>
-              {holding
-                ? 'Keep holding. You’re almost there.'
-                : 'Your plan is ready. Your first workout is next.'}
-            </Footnote>
           </View>
-        }
-      />
+        </Step>
+      </ColorSchemeOverride>
     );
   }
 
@@ -672,11 +667,11 @@ function OnboardingFlow() {
         styles.overlay,
         {
           display: importing ? 'none' : 'flex',
-          backgroundColor: revealing ? 'transparent' : theme.background,
+          backgroundColor: unveiling ? 'transparent' : theme.background,
         },
       ]}
     >
-      {revealing && (
+      {unveiling && (
         <Animated.View style={[StyleSheet.absoluteFill, revealStyle]} pointerEvents="none">
           <Svg width={width} height={height} style={StyleSheet.absoluteFill} pointerEvents="none">
             <Defs>
@@ -697,10 +692,10 @@ function OnboardingFlow() {
                 />
               </Mask>
             </Defs>
-            <Rect
+            <AnimatedRect
               width={width}
               height={height}
-              fill={theme.background}
+              animatedProps={backdropProps}
               mask="url(#onboarding-reveal)"
             />
           </Svg>
@@ -790,27 +785,85 @@ function Choice({
 }
 function ImportStep({ onNext }: { onNext: () => void }) {
   const state = useImportReview(onNext);
-  return (
-    <Step
-      eyebrow="KEEP YOUR MOMENTUM"
-      title={state.file ? 'Here’s what we found.' : 'Your effort comes with you.'}
-      choices={
-        state.file ? (
+  if (state.file) {
+    return (
+      <Step
+        title="Here’s what we found"
+        choices={
           <View style={styles.bleed}>
             <ImportReview state={state} />
           </View>
+        }
+      >
+        {state.workouts.length > 0 ? (
+          <ImportButton state={state} />
         ) : (
-          <ImportSourceChoices onChoose={() => void state.choose()} />
-        )
+          <BigButton title="Continue" onPress={onNext} />
+        )}
+        <BigButton title="Skip for Now" variant="tinted" onPress={onNext} />
+      </Step>
+    );
+  }
+  return (
+    <Step
+      title="Your effort comes with you"
+      art={<ChoiceArt placeholder="square.and.arrow.down" icon="square.and.arrow.down" />}
+      choices={
+        <>
+          <ActionRow
+            title="Upload CSV"
+            detail="From Pawer, Strong or Hevy"
+            trailing="chevron.right"
+            onPress={() => void state.choose()}
+          />
+          <ActionRow
+            title="Convert any format"
+            detail="Turn notes or another app’s export into a CSV"
+            trailing="arrow.up.right"
+            onPress={() => void attempt('import', openLegalDocument(WORKOUT_IMPORT_TOOL_URL))}
+          />
+        </>
       }
     >
-      {state.file && state.workouts.length > 0 ? (
-        <ImportButton state={state} />
-      ) : (
-        <BigButton title="Continue" onPress={onNext} />
-      )}
       <BigButton title="Skip for Now" variant="tinted" onPress={onNext} />
     </Step>
+  );
+}
+
+/** A `Choice` that does something instead of selecting — same card, an arrow where the check would be. */
+function ActionRow({
+  title,
+  detail,
+  trailing,
+  onPress,
+}: {
+  title: string;
+  detail: string;
+  trailing: IconName;
+  onPress: () => void;
+}) {
+  const theme = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${title}. ${detail}`}
+      onPress={() => {
+        haptics.tap();
+        onPress();
+      }}
+      style={({ pressed }) => [
+        styles.choice,
+        { backgroundColor: theme.surface, borderColor: 'transparent', opacity: pressed ? 0.7 : 1 },
+      ]}
+    >
+      <View style={styles.flex}>
+        <ThemedText type="headline">{title}</ThemedText>
+        <ThemedText type="footnote" themeColor="textSecondary">
+          {detail}
+        </ThemedText>
+      </View>
+      <Icon name={trailing} size={16} tintColor={theme.textTertiary} />
+    </Pressable>
   );
 }
 
@@ -837,11 +890,17 @@ function slideOut(direction: SharedValue<1 | -1>, width: number) {
   };
 }
 
-function Footnote({ children }: { children: string }) {
+function LegalLink({ title, url }: { title: string; url: string }) {
   return (
-    <ThemedText type="footnote" themeColor="textSecondary" style={styles.center}>
-      {children}
-    </ThemedText>
+    <Pressable
+      accessibilityRole="link"
+      onPress={() => void attempt('onboarding', openLegalDocument(url))}
+      style={styles.textButton}
+    >
+      <ThemedText type="footnote" themeColor="textSecondary">
+        {title}
+      </ThemedText>
+    </Pressable>
   );
 }
 
@@ -866,27 +925,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  preview: { padding: 24, borderRadius: 26, gap: 16 },
-  feature: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   center: { textAlign: 'center' },
   textButton: { minHeight: 32, alignItems: 'center', justifyContent: 'center' },
-  planRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  number: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  commitment: { alignItems: 'center', gap: 24, paddingVertical: 24 },
-  holdButton: {
-    width: 112,
-    height: 112,
-    borderRadius: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  halo: { position: 'absolute', width: 132, height: 132, borderRadius: 66, left: -10, top: -10 },
+  legal: { flexDirection: 'row', justifyContent: 'center', gap: 24 },
+  commitment: { alignItems: 'center', gap: 20, paddingBottom: 8 },
+  promise: { gap: 16 },
   bleed: { marginHorizontal: -Spacing.three },
   swatch: { width: 22, height: 22, borderRadius: 11 },
   error: { position: 'absolute', top: 100, left: 24, right: 24, borderRadius: 16, padding: 16 },

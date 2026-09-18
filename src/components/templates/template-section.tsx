@@ -316,7 +316,9 @@ function slotOffset(index: number, cellWidth: number, cellHeight: number) {
 
 const styles = StyleSheet.create({
   section: {
-    gap: Spacing.two,
+    // Sized so the space under a title reads the same as the space under a
+    // grid, where the screen's Spacing.four meets the card labels' descent.
+    gap: Spacing.four + Spacing.one,
   },
   header: {
     flexDirection: "row",
@@ -341,8 +343,8 @@ const styles = StyleSheet.create({
   },
   empty: {
     // Asymmetric so the whitespace reads even: the section's own gap adds
-    // Spacing.two above, the screen's gap between sections Spacing.four below.
-    paddingTop: Spacing.five,
+    // 28pt above, the screen's gap between sections Spacing.four below.
+    paddingTop: Spacing.two + Spacing.one,
     paddingBottom: Spacing.three,
   },
 });

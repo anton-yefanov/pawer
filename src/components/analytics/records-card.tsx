@@ -26,6 +26,9 @@ const PLACEHOLDER_ROWS = [
   { name: "Bench Press", kind: "heaviest_weight", value: 80 },
   { name: "Back Squat", kind: "best_1rm", value: 120 },
   { name: "Deadlift", kind: "best_volume", value: 4200 },
+  { name: "Pull-up", kind: "most_reps", value: 15 },
+  { name: "Overhead Press", kind: "heaviest_weight", value: 55 },
+  { name: "Barbell Row", kind: "best_1rm", value: 90 },
 ] as const;
 
 export function RecordsCard({ slot }: { slot: BlockSlot }) {
