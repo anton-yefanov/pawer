@@ -45,7 +45,7 @@ import { ensureNotificationPermission } from '@/lib/notifications';
 import { BODY_SEXES, useBodySexPreference } from '@/lib/body-sex';
 import { attempt, report } from '@/lib/observability';
 import { useOnboarding } from '@/lib/onboarding';
-import { buildPersonalPlan, isPlanAnswers, type PlanAnswers } from '@/lib/personal-plan';
+import { buildPersonalPlan, isPlanAnswers, SESSION_MINUTES, type PlanAnswers } from '@/lib/personal-plan';
 import { usePro } from '@/lib/purchases';
 import { PERSONAL_PLAN_KEY, savePersonalPlan } from '@/lib/save-personal-plan';
 import { track } from '@/lib/telemetry';
@@ -614,11 +614,10 @@ function OnboardingFlow() {
       </Step>
     );
   } else if (step === 'plan' && plan) {
-    const minutes = Math.max(...plan.workouts.map((workout) => workout.estimatedMinutes));
     page = (
       <Step
         title="Your plan is ready"
-        body={`${plan.workouts.length} workouts · ${plan.days} days a week · ~${minutes} min`}
+        body={`${plan.workouts.length} workouts · ${plan.days} days a week · ~${SESSION_MINUTES[plan.minutes]} min`}
         art={<PlanFolder color={TINT_FOLDER[tint]} />}
       >
         <BigButton
@@ -643,7 +642,7 @@ function OnboardingFlow() {
             <View style={styles.promise}>
               {ready && (
                 <ThemedText type="title3" weight="regular" style={styles.center}>
-                  I’ll show up {answers.days} days a week, {answers.minutes} minutes at a time, to{' '}
+                  I’ll show up {answers.days} days a week, {SESSION_MINUTES[answers.minutes!]} minutes at a time, to{' '}
                   {GOAL_PHRASE[answers.goal!]}
                 </ThemedText>
               )}

@@ -1,6 +1,10 @@
+import * as StoreReview from 'expo-store-review';
 import { Linking } from 'react-native';
 
-import { attempt } from '@/lib/observability';
+import { db } from '@/db/client';
+import { getSetting, setSetting } from '@/db/seed';
+
+import { attempt, report } from '@/lib/observability';
 import { track } from '@/lib/telemetry';
 
 /** The App Store Connect "Apple ID" for Pawer. Public, permanent, not a secret. */
@@ -26,4 +30,25 @@ export async function openReview(): Promise<void> {
 
   track('review_opened', { source: 'settings' });
   await attempt('settings', Linking.openURL(url), OPEN_FAILED);
+}
+
+const PROMPTED_KEY = 'review_prompted';
+
+// Asking while the sheet is still animating away can land the system alert on a
+// view controller that is being torn down, and iOS then drops it silently.
+const AFTER_DISMISS_MS = 700;
+
+/**
+ * The system rating sheet, once per install, after the first finished workout.
+ * The flag is written before asking because iOS decides on its own whether to
+ * show anything and never says — a retry would just spend the yearly quota.
+ */
+export async function requestReviewOnce(): Promise<void> {
+  if (await getSetting(db, PROMPTED_KEY)) return;
+  if (!(await StoreReview.isAvailableAsync())) return;
+  await setSetting(db, PROMPTED_KEY, String(Date.now()));
+
+  setTimeout(() => {
+    StoreReview.requestReview().catch((error: unknown) => report('settings', error));
+  }, AFTER_DISMISS_MS);
 }
