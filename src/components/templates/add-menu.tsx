@@ -6,6 +6,7 @@ import { StyleSheet } from 'react-native';
 import { CIRCLE_BUTTON_SIZE, GlassCircle } from '@/components/circle-button';
 import { promptNewFolder } from '@/components/templates/card-actions';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { allowNewTemplate } from '@/lib/pro-gates';
 import { usePro } from '@/lib/purchases';
 import { guard } from '@/lib/observability';
@@ -20,7 +21,7 @@ export function AddMenu() {
   };
 
   return (
-    <GlassCircle accessibilityLabel="Add">
+    <GlassCircle accessibilityLabel={t('templates:add')}>
       <Host style={styles.addHost} ignoreSafeArea="all">
         <Menu
           modifiers={[buttonStyle('plain')]}
@@ -36,12 +37,12 @@ export function AddMenu() {
           }
         >
           <Button
-            label="New Template"
+            label={t('templates:newTemplate')}
             systemImage="doc.badge.plus"
             onPress={() => void newTemplate()}
           />
           <Button
-            label="New Folder"
+            label={t('templates:newFolder')}
             systemImage="folder.badge.plus"
             onPress={() => promptNewFolder()}
           />

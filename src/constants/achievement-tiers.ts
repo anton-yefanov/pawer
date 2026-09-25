@@ -1,3 +1,5 @@
+import { t } from '@/i18n';
+
 /**
  * The five rungs every achievement ladder has, and the only place their artwork
  * lives. `multiplier` scales the exercise's base value from
@@ -27,7 +29,7 @@ export type BadgeMaterialColors = {
 
 export type AchievementTier = {
   id: 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond';
-  name: string;
+  readonly name: string;
   numeral: string;
   multiplier: number;
   material: BadgeMaterialColors;
@@ -36,7 +38,9 @@ export type AchievementTier = {
 export const TIERS: readonly AchievementTier[] = [
   {
     id: 'bronze',
-    name: 'Tier I',
+    get name() {
+      return t('achievements:tier', { numeral: 'I' });
+    },
     numeral: 'I',
     multiplier: 0.5,
     material: {
@@ -48,7 +52,9 @@ export const TIERS: readonly AchievementTier[] = [
   },
   {
     id: 'silver',
-    name: 'Tier II',
+    get name() {
+      return t('achievements:tier', { numeral: 'II' });
+    },
     numeral: 'II',
     multiplier: 0.75,
     material: {
@@ -60,7 +66,9 @@ export const TIERS: readonly AchievementTier[] = [
   },
   {
     id: 'gold',
-    name: 'Tier III',
+    get name() {
+      return t('achievements:tier', { numeral: 'III' });
+    },
     numeral: 'III',
     multiplier: 1,
     material: {
@@ -72,7 +80,9 @@ export const TIERS: readonly AchievementTier[] = [
   },
   {
     id: 'platinum',
-    name: 'Tier IV',
+    get name() {
+      return t('achievements:tier', { numeral: 'IV' });
+    },
     numeral: 'IV',
     multiplier: 1.3,
     material: {
@@ -84,7 +94,9 @@ export const TIERS: readonly AchievementTier[] = [
   },
   {
     id: 'diamond',
-    name: 'Tier V',
+    get name() {
+      return t('achievements:tier', { numeral: 'V' });
+    },
     numeral: 'V',
     multiplier: 1.7,
     material: {

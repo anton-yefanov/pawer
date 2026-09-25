@@ -18,6 +18,7 @@ import { ThemedText } from "@/components/themed-text";
 import { TAB_CONTENT_INSET } from "@/constants/navigation";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { t } from "@/i18n";
 import { openReview } from "@/lib/app-store-review";
 import { useAutofillWeightPreference } from "@/lib/autofill-weight";
 import { BODY_SEXES, useBodySexPreference } from "@/lib/body-sex";
@@ -49,23 +50,23 @@ import { ensureNotificationPermission } from "@/lib/notifications";
 import { attempt, guard } from "@/lib/observability";
 
 const SAVE_FAILED = {
-  title: "Couldn’t save setting",
-  message: "Please try again.",
+  title: t("settings:saveFailed"),
+  message: t("common:error.tryAgain"),
 };
 
 const EXPORT_FAILED = {
-  title: "Couldn’t export your data",
-  message: "Please try again.",
+  title: t("settings:exportFailed"),
+  message: t("common:error.tryAgain"),
 };
 
 const DELETE_FAILED = {
-  title: "Couldn’t delete your data",
-  message: "Please try again.",
+  title: t("settings:deleteFailed"),
+  message: t("common:error.tryAgain"),
 };
 
 const RESTORE_MESSAGES = {
-  restored: `Your purchase is back. ${PRO_NAME} is unlocked.`,
-  nothing: "No previous purchase was found on this account.",
+  restored: t("settings:restore.restored", { pro: PRO_NAME }),
+  nothing: t("settings:restore.nothing"),
 } as const;
 
 export default function SettingsScreen() {
@@ -114,27 +115,27 @@ export default function SettingsScreen() {
     );
     if (workouts === undefined) return;
     notice({
-      title: "Delete Account?",
+      title: t("settings:delete.title"),
       message:
         workouts > 0
-          ? `This permanently erases ${workouts === 1 ? "your workout" : `all ${workouts} workouts`}, templates, custom exercises and settings from this device. It can’t be undone, so consider exporting your workouts first.\n\n${PRO_NAME} stays with your Apple ID and can be restored.`
-          : `This permanently erases your templates, custom exercises and settings from this device. It can’t be undone.\n\n${PRO_NAME} stays with your Apple ID and can be restored.`,
+          ? t("settings:delete.messageWithWorkouts", { count: workouts, pro: PRO_NAME })
+          : t("settings:delete.message", { pro: PRO_NAME }),
       actions: [
         ...(workouts > 0
           ? [
               {
-                label: "Export Data First",
+                label: t("settings:delete.exportFirst"),
                 onPress: () =>
                   void onExportPressed().then(() => confirmDelete()),
               },
             ]
           : []),
         {
-          label: "Delete Everything",
+          label: t("settings:delete.confirm"),
           role: "destructive" as const,
           onPress: () => void deleteAccount(),
         },
-        { label: "Cancel", role: "cancel" as const, onPress: () => {} },
+        { label: t("common:action.cancel"), role: "cancel" as const, onPress: () => {} },
       ],
     });
   };
@@ -159,11 +160,11 @@ export default function SettingsScreen() {
         contentInsetAdjustmentBehavior="never"
       >
         <View style={styles.title}>
-          <TabTitle title="Settings" />
+          <TabTitle title={t("settings:title")} />
         </View>
-        <Section title="App">
+        <Section title={t("settings:section.app")}>
           <MenuRow
-            label="Appearance"
+            label={t("settings:row.appearance")}
             leading={<RowIcon name="circle.lefthalf.filled" />}
             options={THEME_PREFERENCES}
             selected={preference}
@@ -174,7 +175,7 @@ export default function SettingsScreen() {
           />
           <Separator inset={ROW_ICON_INSET} />
           <MenuRow
-            label="Tint Color"
+            label={t("settings:row.tint")}
             leading={<RowIcon name="paintpalette" />}
             options={TINT_OPTIONS}
             selected={tint}
@@ -186,9 +187,9 @@ export default function SettingsScreen() {
           />
         </Section>
 
-        <Section title="Workouts">
+        <Section title={t("settings:section.workouts")}>
           <MenuRow
-            label="Weight Unit"
+            label={t("settings:row.weightUnit")}
             leading={<RowIcon name="dumbbell" />}
             options={WEIGHT_UNITS}
             selected={unit}
@@ -199,7 +200,7 @@ export default function SettingsScreen() {
           />
           <Separator inset={ROW_ICON_INSET} />
           <MenuRow
-            label="Body Diagram"
+            label={t("settings:row.bodyDiagram")}
             leading={<RowIcon name="figure.strengthtraining.traditional" />}
             options={BODY_SEXES}
             selected={sex}
@@ -210,25 +211,25 @@ export default function SettingsScreen() {
           />
           <Separator inset={ROW_ICON_INSET} />
           <ToggleRow
-            label="Autofill Weight"
+            label={t("settings:row.autofillWeight")}
             leading={<RowIcon name="wand.and.stars" />}
             accessory={
-              <InfoButton topic="autofill-weight" label="Autofill Weight" />
+              <InfoButton topic="autofill-weight" label={t("settings:row.autofillWeight")} />
             }
             value={autofillWeight}
             onChange={setAutofillWeight}
           />
           <Separator inset={ROW_ICON_INSET} />
           <ToggleRow
-            label="Include Warmup in Stats"
+            label={t("settings:row.includeWarmup")}
             leading={<RowIcon name="flame" />}
             value={includeWarmup}
             onChange={setIncludeWarmup}
           />
           <Separator inset={ROW_ICON_INSET} />
           <MenuRow
-            label="Finish Reminder"
-            title="Remind me after being inactive for"
+            label={t("settings:row.finishReminder")}
+            title={t("settings:row.finishReminderTitle")}
             leading={<RowIcon name="timer" />}
             options={FINISH_REMINDER_OPTIONS}
             selected={finishReminder}
@@ -243,10 +244,10 @@ export default function SettingsScreen() {
           />
           <Separator inset={ROW_ICON_INSET} />
           <MenuRow
-            label="Rest Sound"
-            title="Play when rest is over"
+            label={t("settings:row.restSound")}
+            title={t("settings:row.restSoundTitle")}
             leading={<RowIcon name="speaker.wave.2" />}
-            accessory={<InfoButton topic="rest-sound" label="Rest Sound" />}
+            accessory={<InfoButton topic="rest-sound" label={t("settings:row.restSound")} />}
             options={REST_SOUNDS}
             selected={restSound}
             onSelect={(id) => {
@@ -257,16 +258,16 @@ export default function SettingsScreen() {
           />
         </Section>
 
-        <Section title="Workout Data">
+        <Section title={t("settings:section.data")}>
           <DisclosureRow
-            label="Import Data"
+            label={t("settings:row.import")}
             leading={<RowIcon name="square.and.arrow.down" />}
             chevron={false}
             onPress={() => router.push("/settings/import")}
           />
           <Separator inset={ROW_ICON_INSET} />
           <DisclosureRow
-            label="Export Data"
+            label={t("settings:row.export")}
             leading={<RowIcon name="square.and.arrow.up" loading={exporting} />}
             chevron={false}
             onPress={() => void onExportPressed()}
@@ -276,20 +277,20 @@ export default function SettingsScreen() {
         <Section title={PRO_NAME}>
           {isPro ? (
             <DisclosureRow
-              label="Manage Subscription"
+              label={t("settings:row.manageSubscription")}
               leading={<RowIcon name="bolt" />}
               onPress={() => void presentCustomerCenter()}
             />
           ) : (
             <>
               <DisclosureRow
-                label={`Upgrade to ${PRO_NAME}`}
+                label={t("settings:row.upgrade", { pro: PRO_NAME })}
                 leading={<RowIcon name="bolt" />}
                 onPress={() => void presentPaywall("settings")}
               />
               <Separator inset={ROW_ICON_INSET} />
               <DisclosureRow
-                label="Restore Purchases"
+                label={t("settings:row.restore")}
                 leading={<RowIcon name="arrow.clockwise" loading={restoring} />}
                 onPress={() => void onRestorePressed()}
               />
@@ -297,23 +298,23 @@ export default function SettingsScreen() {
           )}
         </Section>
 
-        <Section title="About">
+        <Section title={t("settings:section.about")}>
           <DisclosureRow
-            label="Support"
+            label={t("settings:row.support")}
             leading={<RowIcon name="questionmark.circle" />}
             onPress={() => router.push("/settings/support")}
           />
           <Separator inset={ROW_ICON_INSET} />
           <DisclosureRow
-            label="Rate Pawer on App Store"
+            label={t("settings:row.rate")}
             leading={<RowIcon name="star" />}
             onPress={() => void openReview()}
           />
         </Section>
 
-        <Section title="Account">
+        <Section title={t("settings:section.account")}>
           <DisclosureRow
-            label="Delete Account"
+            label={t("settings:row.deleteAccount")}
             leading={<RowIcon name="trash" loading={deleting} destructive />}
             chevron={false}
             destructive
@@ -324,17 +325,17 @@ export default function SettingsScreen() {
         <View style={styles.footer}>
           <View style={styles.madeWith}>
             <ThemedText type="footnote" themeColor="textTertiary">
-              Made with
+              {t("settings:footer.madeWith")}
             </ThemedText>
             <Emoji value="❤️" size={13} />
             <ThemedText type="footnote" themeColor="textTertiary">
-              and
+              {t("settings:footer.and")}
             </ThemedText>
             <Emoji value="☕" size={13} />
           </View>
           <View style={styles.links}>
-            <FooterLink label="Terms" url={TERMS_OF_SERVICE_URL} />
-            <FooterLink label="Privacy" url={PRIVACY_POLICY_URL} />
+            <FooterLink label={t("settings:footer.terms")} url={TERMS_OF_SERVICE_URL} />
+            <FooterLink label={t("settings:footer.privacy")} url={PRIVACY_POLICY_URL} />
           </View>
         </View>
       </ScrollView>
@@ -347,7 +348,7 @@ export default function SettingsScreen() {
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={() => setMenuOpen(false)}
-          accessibilityLabel="Dismiss menu"
+          accessibilityLabel={t("settings:dismissMenu")}
         />
       )}
     </View>
@@ -361,8 +362,8 @@ function FooterLink({ label, url }: { label: string; url: string }) {
       hitSlop={Spacing.two}
       onPress={() =>
         void attempt("settings", openLegalDocument(url), {
-          title: `Couldn’t open ${label}`,
-          message: "Please try again.",
+          title: t("settings:openFailed", { label }),
+          message: t("common:error.tryAgain"),
         })
       }
       style={({ pressed }) => pressed && styles.pressed}

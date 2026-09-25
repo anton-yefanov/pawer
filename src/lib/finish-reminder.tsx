@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { createContext, use, useEffect, useRef, useState, type ReactNode } from 'react';
 
+import { t } from '@/i18n';
 import { db } from '@/db/client';
 import { getSetting, setSetting } from '@/db/seed';
 import { useAppStateActive, useAppStateBackground } from '@/hooks/use-app-state-active';
@@ -35,14 +36,21 @@ const STATE_KEY = 'finish_reminder';
 
 export type FinishReminderOption = '10' | '20' | '30' | '60' | 'never';
 
-export const FINISH_REMINDER_OPTIONS: { id: FinishReminderOption; label: string; short: string }[] =
-  [
-    { id: '10', label: '10 Minutes', short: '10 min' },
-    { id: '20', label: '20 Minutes', short: '20 min' },
-    { id: '30', label: '30 Minutes', short: '30 min' },
-    { id: '60', label: '60 Minutes', short: '60 min' },
-    { id: 'never', label: 'Never', short: 'Never' },
-  ];
+export const FINISH_REMINDER_OPTIONS = (
+  ['10', '20', '30', '60', 'never'] as const satisfies readonly FinishReminderOption[]
+).map((id) => ({
+  id,
+  get label() {
+    return id === 'never'
+      ? t('settings:finishReminder.never')
+      : t('settings:finishReminder.minutes', { count: Number(id) });
+  },
+  get short() {
+    return id === 'never'
+      ? t('settings:finishReminder.never')
+      : t('settings:finishReminder.minutesShort', { count: Number(id) });
+  },
+}));
 
 const DEFAULT_OPTION: FinishReminderOption = '30';
 
@@ -139,8 +147,10 @@ export function FinishReminderProvider({ children }: { children: ReactNode }) {
       Date.now() + MIN_LEAD_MS
     );
     const notificationId = await scheduleNotification({
-      title: 'Still working out?',
-      body: `${workout.name?.trim() || 'Your workout'} is still running. Tap to finish it.`,
+      title: t('notifications:finishReminder.title'),
+      body: t('notifications:finishReminder.body', {
+        name: workout.name?.trim() || t('notifications:finishReminder.fallbackName'),
+      }),
       date: fireAt,
       channelId: REMINDER_CHANNEL_ID,
       interruptionLevel: 'active',

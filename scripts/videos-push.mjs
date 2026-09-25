@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Uploads the compressed clips to Vercel Blob. 106 MB of encoded video is not
+ * Uploads the compressed clips to Vercel Blob. 78 MB of encoded video is not
  * something git should carry, and re-encoding it from the vendor originals
  * takes the better part of an hour — see CLAUDE.md §Assets.
  */

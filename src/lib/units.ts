@@ -5,6 +5,8 @@
 
 import { getLocales } from 'expo-localization';
 
+import { t } from '@/i18n';
+
 export type WeightUnit = 'kg' | 'lb';
 export type DistanceUnit = 'km' | 'mi';
 
@@ -40,6 +42,10 @@ const locale = getLocales()[0];
 const DECIMAL = locale?.decimalSeparator ?? '.';
 const GROUPING = locale?.digitGroupingSeparator ?? ',';
 
+export function unitLabel(unit: WeightUnit | DistanceUnit | 't'): string {
+  return t(`units.${unit}`);
+}
+
 export function formatDecimal(value: number): string {
   return String(Math.round(value * 100) / 100).replace('.', DECIMAL);
 }
@@ -50,7 +56,7 @@ function formatGrouped(value: number): string {
 
 export function formatWeight(kg: number | null, unit: WeightUnit): string {
   if (kg == null) return '—';
-  return `${formatDecimal(roundForDisplay(kgToDisplay(kg, unit), unit))} ${unit}`;
+  return `${formatDecimal(roundForDisplay(kgToDisplay(kg, unit), unit))} ${unitLabel(unit)}`;
 }
 
 /**
@@ -64,15 +70,15 @@ export function formatTonnage(kg: number, unit: WeightUnit, compact = false): st
   if (unit === 'kg' && value >= 1000) {
     // Compact is for axis ticks, which are round numbers: `5 t`, not `5.00 t`.
     const tonnes = compact ? formatDecimal(value / 1000) : (value / 1000).toFixed(2).replace('.', DECIMAL);
-    return `${tonnes} t`;
+    return `${tonnes} ${unitLabel('t')}`;
   }
-  if (compact && value >= 1000) return `${formatDecimal(value / 1000)}k ${unit}`;
-  return `${formatGrouped(value)} ${unit}`;
+  if (compact && value >= 1000) return `${formatDecimal(value / 1000)}k ${unitLabel(unit)}`;
+  return `${formatGrouped(value)} ${unitLabel(unit)}`;
 }
 
 /** Splits `1,240 kg` into its parts so a display can set the unit apart. */
 export function splitMeasure(text: string): { value: string; unit?: string } {
-  const match = /^(.*\S)\s([a-z]+)$/i.exec(text);
+  const match = /^(.*\S)\s(\p{L}+)$/u.exec(text);
   return match ? { value: match[1], unit: match[2] } : { value: text };
 }
 
@@ -94,7 +100,7 @@ export function displayToMeters(value: number, unit: DistanceUnit): number {
 
 export function formatDistance(meters: number | null, unit: DistanceUnit): string {
   if (meters == null) return '—';
-  return `${formatDecimal(metersToDisplay(meters, unit))} ${unit}`;
+  return `${formatDecimal(metersToDisplay(meters, unit))} ${unitLabel(unit)}`;
 }
 
 /**

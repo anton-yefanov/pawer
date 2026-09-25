@@ -4,6 +4,8 @@ import { PrChip } from '@/components/pr-chip';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
+import { formatDate } from '@/lib/format';
 import * as haptics from '@/lib/haptics';
 import type { FinishedWorkoutExercise, HistoryRow } from '@/lib/workout-queries';
 import { formatHoursMinutes } from '@/lib/workout-stats';
@@ -41,18 +43,18 @@ export function WorkoutLogRow({
       <View style={styles.body}>
         <View style={styles.titleRow}>
           <ThemedText type="headline" style={styles.name} numberOfLines={1}>
-            {workout.name?.trim() || 'Workout'}
+            {workout.name?.trim() || t('workout:defaultName')}
           </ThemedText>
           {workout.prCount > 0 && <PrChip label={String(workout.prCount)} />}
         </View>
         {shown.map((exercise, index) => (
           <ThemedText key={`${exercise.position}-${index}`} type="footnote" numberOfLines={1}>
-            {exercise.setCount}x {exercise.name}
+            {t('history:setsOfExercise', { count: exercise.setCount, name: exercise.name })}
           </ThemedText>
         ))}
         {hidden > 0 && (
           <ThemedText type="footnote" themeColor="textSecondary">
-            +{hidden} more
+            {t('history:more', { count: hidden })}
           </ThemedText>
         )}
       </View>
@@ -80,7 +82,7 @@ function DateBadge({ epochMs }: { epochMs: number }) {
           },
         ]}>
         <ThemedText type="caption1" weight="medium" themeColor="textTertiary">
-          {date.toLocaleDateString(undefined, { weekday: 'short' })}
+          {formatDate(date, { weekday: 'short' })}
         </ThemedText>
       </View>
       <View style={[styles.day, { backgroundColor: theme.backgroundElement }]}>

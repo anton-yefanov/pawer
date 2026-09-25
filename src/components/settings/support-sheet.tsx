@@ -12,18 +12,19 @@ import { SHEET_BOTTOM_INSET, SHEET_INNER_RADIUS, SHEET_SCROLL } from '@/constant
 import { Spacing } from '@/constants/theme';
 import { useSheetAutoFocus } from '@/hooks/use-sheet-autofocus';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { notice } from '@/lib/notice';
 import { attempt } from '@/lib/observability';
 import { loadSupportIdentity, sendSupportMessage } from '@/lib/support';
 
 const SEND_FAILED = {
-  title: 'Couldn’t send',
-  message: 'Please check your connection and try again.',
+  title: t('settings:support.sendFailed'),
+  message: t('common:error.checkConnection'),
 };
 
 const SENT = {
-  title: 'Thanks!',
-  message: 'Your message is on its way. If you left an email address, you’ll hear back.',
+  title: t('settings:support.sentTitle'),
+  message: t('settings:support.sentMessage'),
 };
 
 /**
@@ -74,7 +75,7 @@ export function SupportSheet() {
   return (
     <>
       <SheetHeader
-        title="Support"
+        title={t('settings:row.support')}
         left={<CloseButton onPress={() => router.back()} />}
         right={
           <HeaderConfirmButton
@@ -97,7 +98,7 @@ export function SupportSheet() {
               ref={nameRef}
               value={name}
               onChangeText={setName}
-              placeholder="Name"
+              placeholder={t('settings:support.name')}
               style={styles.input}
               autoFocus={nameAutoFocus}
               autoCapitalize="words"
@@ -112,7 +113,7 @@ export function SupportSheet() {
               ref={emailRef}
               value={email}
               onChangeText={setEmail}
-              placeholder="Email (optional)"
+              placeholder={t('settings:support.email')}
               style={styles.input}
               keyboardType="email-address"
               autoCapitalize="none"
@@ -129,7 +130,7 @@ export function SupportSheet() {
               <ThemedTextInput
                 value={message}
                 onChangeText={setMessage}
-                placeholder="Report a bug or suggest a feature"
+                placeholder={t('settings:support.message')}
                 style={styles.messageInput}
                 multiline
                 textAlignVertical="top"

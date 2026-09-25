@@ -14,6 +14,7 @@ import {
   placeholderSeries,
 } from "@/components/analytics/placeholder";
 import { Spacing } from "@/constants/theme";
+import { t } from "@/i18n";
 import { metricSeriesQuery, type MetricRow } from "@/lib/analytics-queries";
 import { buildSeries } from "@/lib/analytics-series";
 import { useIncludeWarmup } from "@/lib/warmup-stats";
@@ -54,7 +55,9 @@ export function MetricChart({
     <AnalyticsBlock
       slot={slot}
       title={title}
-      subtitle={empty ? "No workouts yet" : `${format(total)} total`}
+      subtitle={
+        empty ? t("analytics:noWorkouts") : t("analytics:total", { value: format(total) })
+      }
       period={period}
       onPeriodChange={(next) => {
         setSelected(null);
@@ -75,7 +78,7 @@ export function MetricChart({
           />
         </View>
       ) : (
-        <CardPlaceholder text="Log a workout to unlock">
+        <CardPlaceholder text={t("analytics:locked")}>
           <View style={styles.body}>
             <AreaChart
               points={preview}

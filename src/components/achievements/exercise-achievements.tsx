@@ -6,6 +6,7 @@ import { TIER_COUNT } from '@/constants/achievement-tiers';
 import { SHEET_INNER_RADIUS } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import {
   formatLadderValue,
   LADDER_TITLES,
@@ -66,7 +67,7 @@ export function ExerciseAchievements({
                 )}
                 {ladder.best > 0 && (
                   <ThemedText type="footnote" themeColor="textTertiary" numeric style={styles.best}>
-                    Best {formatLadderValue(ladder.metric, ladder.best, unit)}
+                    {t('achievements:best', { value: formatLadderValue(ladder.metric, ladder.best, unit) })}
                   </ThemedText>
                 )}
               </View>

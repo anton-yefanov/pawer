@@ -24,6 +24,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { formatDuration } from '@/lib/units';
 
 const SIZE = 32;
@@ -109,13 +110,13 @@ export function ExerciseMenu({
               }>
               <Button
                 systemImage={hasNote ? 'text.badge.minus' : 'note.text'}
-                label={hasNote ? 'Remove note' : 'Add note'}
+                label={hasNote ? t('workout:menu.removeNote') : t('workout:menu.addNote')}
                 onPress={onToggleNote}
               />
 
-              <Menu label="Rest timers" systemImage="timer">
+              <Menu label={t('workout:menu.restTimers')} systemImage="timer">
                 <Picker
-                  label="Rest timer"
+                  label={t('workout:menu.restTimer')}
                   selection={restSeconds === null ? DEFAULT : String(restSeconds)}
                   onSelectionChange={(value) =>
                     onChangeRest(String(value) === DEFAULT ? null : Number(value))
@@ -123,7 +124,7 @@ export function ExerciseMenu({
                   <Text modifiers={[tag(DEFAULT)]}>{formatDuration(defaultRestSeconds)}</Text>
                   {choices.map((seconds) => (
                     <Text key={seconds} modifiers={[tag(String(seconds))]}>
-                      {seconds === 0 ? 'Off' : formatDuration(seconds)}
+                      {seconds === 0 ? t('workout:menu.off') : formatDuration(seconds)}
                     </Text>
                   ))}
                 </Picker>
@@ -131,13 +132,13 @@ export function ExerciseMenu({
                 <Divider />
                 <Button
                   systemImage="slider.horizontal.3"
-                  label="Custom"
+                  label={t('workout:menu.custom')}
                   onPress={() => setCustomOpen(true)}
                 />
               </Menu>
 
               {(candidates.length > 0 || inSuperset) && (
-                <Menu label="Superset" systemImage="arrow.triangle.2.circlepath">
+                <Menu label={t('workout:menu.superset')} systemImage="arrow.triangle.2.circlepath">
                   {[
                     ...candidates.map((row) => (
                       <Button key={row.id} label={row.name} onPress={() => onJoinSuperset(row.id)} />
@@ -149,7 +150,7 @@ export function ExerciseMenu({
                             key="superset-leave"
                             role="destructive"
                             systemImage="xmark"
-                            label="Remove from superset"
+                            label={t('workout:menu.leaveSuperset')}
                             onPress={onLeaveSuperset}
                           />,
                         ]
@@ -162,7 +163,7 @@ export function ExerciseMenu({
               <Button
                 role="destructive"
                 systemImage="trash"
-                label="Remove exercise"
+                label={t('workout:menu.removeExercise')}
                 onPress={onRemove}
               />
             </Menu>

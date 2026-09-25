@@ -1,16 +1,21 @@
+import { t } from '@/i18n';
+
 export type PeriodId = 'd7' | 'd30' | 'd90' | 'd180' | 'y1' | 'all';
 
 /** Epoch ms, half-open `[from, to)`. */
 export type DateRange = { from: number; to: number };
 
-export const PERIODS: readonly { id: PeriodId; label: string; short: string }[] = [
-  { id: 'd7', label: 'Last 7 days', short: '7D' },
-  { id: 'd30', label: 'Last 30 days', short: '30D' },
-  { id: 'd90', label: 'Last 90 days', short: '3M' },
-  { id: 'd180', label: 'Last 180 days', short: '6M' },
-  { id: 'y1', label: 'Last year', short: '1Y' },
-  { id: 'all', label: 'All time', short: 'All' },
-];
+export const PERIODS = (['d7', 'd30', 'd90', 'd180', 'y1', 'all'] as const satisfies readonly PeriodId[]).map(
+  (id) => ({
+    id,
+    get label() {
+      return t(`analytics:period.${id}.label`);
+    },
+    get short() {
+      return t(`analytics:period.${id}.short`);
+    },
+  })
+);
 
 export const DEFAULT_PERIOD: PeriodId = 'd7';
 

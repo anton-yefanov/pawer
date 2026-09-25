@@ -20,6 +20,7 @@ import { CloseButton, HeaderPillButton } from '@/components/workout/workout-shee
 import { asCardColor, type CardColor } from '@/constants/card-colors';
 import { SHEET_BOTTOM_INSET, SHEET_SCROLL, SHEET_TOP_INSET } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
+import { t } from '@/i18n';
 import {
   asCardArtwork,
   type CardArtwork,
@@ -40,8 +41,8 @@ import { notice } from '@/lib/notice';
 import { attempt, report } from '@/lib/observability';
 
 const SAVE_FAILED = {
-  title: 'Couldn’t save',
-  message: 'That change wasn’t saved. Please try again.',
+  title: t('common:error.saveFailed'),
+  message: t('templates:changeFailed'),
 };
 
 export default function CustomizeScreen() {
@@ -112,8 +113,8 @@ export default function CustomizeScreen() {
       // full disk. The spinner used to stop and nothing else happened.
       report('photos', error, { phase: 'import-cover' });
       notice({
-        title: 'Couldn’t use that photo',
-        message: 'Please pick a different one.',
+        title: t('templates:photoFailed.title'),
+        message: t('templates:photoFailed.message'),
       });
     } finally {
       setImporting(null);
@@ -171,7 +172,7 @@ export default function CustomizeScreen() {
         symbol="trash"
         symbolSize={18}
         size={CLEAR_BUTTON_SIZE}
-        label="Clear artwork"
+        label={t('templates:clearArtwork')}
         feedback="press"
         onPress={() => {
           if (mode === 'media') setPickedPhoto(null);
@@ -222,7 +223,7 @@ export default function CustomizeScreen() {
           {mode === 'exercises' ? (
             exerciseArt.length === 0 && (
               <ThemedText type="footnote" themeColor="textTertiary" style={styles.hint}>
-                Exercises previews will be shown on template cover when you add them
+                {t('templates:exercisesHint')}
               </ThemedText>
             )
           ) : (
@@ -243,7 +244,7 @@ export default function CustomizeScreen() {
           <CloseButton onPress={close} />
         </View>
         <View style={styles.save}>
-          <HeaderPillButton title="Save" onPress={() => void save()} />
+          <HeaderPillButton title={t('common:action.save')} onPress={() => void save()} />
         </View>
       </SheetOverlay>
     </>

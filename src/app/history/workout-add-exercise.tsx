@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ExerciseLibrary } from '@/components/exercise-library';
 import { SheetGrabber } from '@/components/sheet-grabber';
 import { SHEET_BOTTOM_INSET, SHEET_TOP_INSET } from '@/constants/sheet';
+import { t } from '@/i18n';
 import { addExerciseToWorkout } from '@/lib/workout-actions';
 import { attempt } from '@/lib/observability';
 
@@ -21,8 +22,8 @@ export default function HistoryAddExerciseScreen() {
         detailHref={(exercise) => ({ pathname: '/history/workout-exercise', params: { id: exercise.id } })}
         onSelect={(exercise) => {
           void attempt('workout', addExerciseToWorkout(id, exercise.id), {
-            title: 'Couldn’t add exercise',
-            message: 'Please try again.',
+            title: t('history:addExerciseFailed'),
+            message: t('common:error.tryAgain'),
           }).then((added) => added && router.back());
         }}
       />

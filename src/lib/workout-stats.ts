@@ -1,3 +1,5 @@
+import { t } from '@/i18n';
+import { formatDate, formatTime } from '@/lib/format';
 import { isWorkSet } from '@/lib/set-types';
 import { isValidSet, TRACKING, trackingTypeOf, type TrackingType } from '@/lib/tracking-types';
 import { formatDuration } from '@/lib/units';
@@ -13,13 +15,15 @@ export function formatHoursMinutes(ms: number): string {
   const minutes = Math.max(0, Math.floor(ms / 60_000));
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
-  if (days > 0) return `${days}d ${hours % 24}h`;
-  return hours === 0 ? `${minutes}m` : `${hours}h ${minutes % 60}m`;
+  if (days > 0) return t('common:span.daysHours', { days, hours: hours % 24 });
+  return hours === 0
+    ? t('common:span.minutes', { minutes })
+    : t('common:span.hoursMinutes', { hours, minutes: minutes % 60 });
 }
 
 /** "August 2026" — the history list's section header. */
 export function formatMonth(epochMs: number): string {
-  return new Date(epochMs).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  return formatDate(epochMs, { month: 'long', year: 'numeric' });
 }
 
 /** Carries the year so two Augusts a year apart never land in one section. */
@@ -35,7 +39,7 @@ export function monthKey(epochMs: number): string {
 export function formatDay(epochMs: number): string {
   const date = new Date(epochMs);
   const thisYear = date.getFullYear() === new Date().getFullYear();
-  return date.toLocaleDateString(undefined, {
+  return formatDate(date, {
     day: 'numeric',
     month: 'short',
     year: thisYear ? undefined : 'numeric',
@@ -45,13 +49,12 @@ export function formatDay(epochMs: number): string {
 /** "Sat, 8 Aug at 17:53" */
 export function formatStartTime(epochMs: number): string {
   const date = new Date(epochMs);
-  const day = date.toLocaleDateString(undefined, {
+  const day = formatDate(date, {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
   });
-  const time = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-  return `${day} at ${time}`;
+  return t('common:dateAtTime', { day, time: formatTime(date) });
 }
 
 /**

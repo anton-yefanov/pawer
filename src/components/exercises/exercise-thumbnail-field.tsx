@@ -8,6 +8,7 @@ import { ThemedText } from '@/components/themed-text';
 import { SHEET_INNER_RADIUS } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { CLIP_ASPECT, exercisePhotoSource } from '@/lib/exercise-photos';
 import * as haptics from '@/lib/haptics';
 
@@ -47,14 +48,14 @@ export function ExerciseThumbnailField({
                 symbol="arrow.triangle.2.circlepath"
                 symbolSize={18}
                 size={BUTTON_SIZE}
-                label="Replace thumbnail"
+                label={t('exercises:thumbnail.replace')}
                 onPress={onPick}
               />
               <CircleButton
                 symbol="trash"
                 symbolSize={18}
                 size={BUTTON_SIZE}
-                label="Remove thumbnail"
+                label={t('exercises:thumbnail.remove')}
                 feedback="press"
                 onPress={onRemove}
               />
@@ -67,14 +68,14 @@ export function ExerciseThumbnailField({
               onPick();
             }}
             accessibilityRole="button"
-            accessibilityLabel="Upload thumbnail"
+            accessibilityLabel={t('exercises:thumbnail.upload')}
             style={({ pressed }) => [
               styles.upload,
               { backgroundColor: theme.accent },
               pressed && styles.pressed,
             ]}>
             <ThemedText type="subhead" weight="semibold" themeColor="accentContent">
-              Upload thumbnail
+              {t('exercises:thumbnail.upload')}
             </ThemedText>
           </Pressable>
         )}

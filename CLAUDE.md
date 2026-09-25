@@ -25,6 +25,7 @@ npm run db:generate      # drizzle-kit generate — after any src/db/schema.ts e
 npm run build:seed       # rebuild src/db/seed/exercises.json from the purchased metadata.json
 npm run build:sounds     # synthesize the rest-timer tones into assets/sounds/ (committed; app.json lists them)
 npm run build:emoji      # rebuild src/constants/emoji-data.ts from emoji-datasource
+npm run build:content    # regenerate the English content catalogs in src/i18n/content/en from the seed
 npm run build:images     # vendor posters -> shipped webp (see §Assets)
 npm run build:videos     # vendor mp4 -> assets/exercise-videos/, ~45 min (see §Assets)
 npm run videos:pull      # mirror the encoded clips down from Vercel Blob — needed before prebuild
@@ -101,9 +102,9 @@ These are cheap now and painful to retrofit — hold them for every new table:
 
 Illustrations are never referenced by path from a screen. `src/lib/exercise-media.ts` is the only resolver (Metro needs static `require` literals, so any real lookup map must be generated or written out).
 
-**Every exercise is a video, and the video ships in the app.** The purchased library at `assets/new_exercises_data/` ships 412 clips, 412 posters and `metadata.json`; the vendor originals are 889 MB and gitignored. `npm run build:videos` re-encodes them to `assets/exercise-videos/<tag>/<slug>.mp4` — HEVC 1084×600 CRF 26, no audio, ~106 MB for the set — and `npm run build:images` copies the posters and cuts a 150px square thumb from each, writing `src/lib/exercise-media-map.ts` as it goes.
+**Every exercise is a video, and the video ships in the app.** The purchased library at `assets/new_exercises_data/` ships 412 clips, 412 posters and `metadata.json`; the vendor originals are 889 MB and gitignored. `npm run build:videos` re-encodes them to `assets/exercise-videos/<tag>/<slug>.mp4` — 10-bit HEVC 1084×600 CRF 30, no audio, ~78 MB for the set — and `npm run build:images` copies the posters and cuts a 150px square thumb from each, writing `src/lib/exercise-media-map.ts` as it goes.
 
-**Clips are ordinary bundled assets.** `EXERCISE_MEDIA[slug].video` is a `require()` of the mp4, so Metro pulls all 412 into the binary the same way it pulls the posters — no download, no progress UI, no network path to fail. That costs ~106 MB of app size, which was a deliberate trade against the complexity of on-demand delivery: an earlier version shipped the clips as twelve iOS On-Demand Resource asset packs and it is gone, so don't reintroduce `NSBundleResourceRequest`, a config plugin, or a download provider.
+**Clips are ordinary bundled assets.** `EXERCISE_MEDIA[slug].video` is a `require()` of the mp4, so Metro pulls all 412 into the binary the same way it pulls the posters — no download, no progress UI, no network path to fail. That costs ~78 MB of app size, which was a deliberate trade against the complexity of on-demand delivery: an earlier version shipped the clips as twelve iOS On-Demand Resource asset packs and it is gone, so don't reintroduce `NSBundleResourceRequest`, a config plugin, or a download provider.
 
 The posters ship too, at 3.7 MB. A clip needs a moment to produce its first frame, and `ExerciseVideo` draws the still underneath until `onFirstFrameRender` fires, so a sheet never opens on a black rectangle.
 
@@ -161,6 +162,20 @@ An active workout mirrors itself onto the Lock Screen and Dynamic Island through
 Two rules hold it together. **A `'widget'` function is stringified by Babel and re-evaluated in the extension's own runtime**, where the only bindings are the `@expo/ui/swift-ui` globals — it can close over nothing, so every colour, unit and string arrives pre-formatted as a prop. And **neither clock is ever pushed**: elapsed time and rest are both `Text` with a `timerInterval`, off `workouts.startedAt` and the rest timer's `endsAt`, ticked by SwiftUI — the same trick `src/components/workout/rest-timer-button.tsx` uses in-app. `dateStyle="timer"` is the trap to avoid: it reads `1:17:26` in the Dynamic Island but "1 hour, 17 minutes" in the banner. Updates carry only set/volume/exercise state and are shallow-compared first, because set rows are rewritten on every debounced keystroke and ActivityKit throttles chatty callers.
 
 Sizing is the other trap. Every view in a slot stretches to fill unless given an explicit `frame` — that is what drags the Dynamic Island pill across the whole screen — and `fixedSize` does not help, it collapses a `timerInterval` to nothing. A clock's frame must also clear the width SwiftUI reserves for the *widest* value in its range, not the value on screen. The compact pill can never be narrower than the sensor housing between its two halves, so it carries only glyphs; the clock lives in the expanded layout.
+
+### Localization
+
+English is the only language shipped, but no user-facing string lives in a component. `src/i18n/index.ts` initialises one i18next instance synchronously and exports `t`; there is no `useTranslation`. **The language follows iOS** — the device language or the per-app one in Settings › Pawer — and iOS relaunches the app when it changes, so the language is fixed for a process and a module-level `t()` (in a constant, a table, a notification body) is correct. `LOCALE` pairs that language with the device region and is what `src/lib/format.ts` hands to `Intl`; every date on screen goes through `formatDate`/`formatTime` there, never `toLocale*String(undefined, …)`. Number separators still come from the region in `units.ts`, and unit suffixes from `units.*` in the catalog.
+
+- UI copy lives in `src/i18n/locales/en/<namespace>.json`, one namespace per area, registered in `src/i18n/resources.ts`. Keys are typed (`src/i18n/i18next.d.ts`), so a missing key fails `npm run typecheck`. Always use the `ns:key` form. Counts go through i18next plurals (`key_one`/`key_other` with `count`) — never `n === 1 ? … : …`.
+- A lookup table of labels uses `labels()` from `@/i18n` or a `get label()` getter, so callers keep indexing it the same way.
+- `i18next/no-literal-string` (eslint) fails on literal JSX text and on literal `title`/`label`/`placeholder`/`accessibilityLabel`-style props in `src/app` and `src/components`. It can't see `.ts` files, so an alert or notice built in `src/lib` is on you.
+- **Stored values stay English.** Equipment, muscles, category, `setType`, PR `kind`, telemetry events and Sentry scopes are vocabulary, not copy: SQL filters on them. They are translated only at display — `equipmentLabel`/`muscleLabel` in `src/lib/exercise-vocabulary.ts`, `muscleGroupLabel` for the diagram.
+- **Library content is keyed by `sourceId`.** `src/i18n/content/<lang>/{exercises,templates,folders}.json` hold the names (and extra search tags) of everything the app ships. English is generated by `npm run build:content` (and by `build:seed`) — never authored; a translation is a sibling folder with the same shape. The seed writes the current language's names into the library-owned `name` columns and records `seed_language` in `settings`, so a language change is a re-seed on the next launch, exactly like a `SEED_VERSION` bump. Custom exercises are never touched. `search_text` always carries the English name and tags too, and import matching and the CSV export always use the English name (`englishExerciseName`), because Strong, Hevy and our own importer speak English.
+- `npm run build:emoji`'s vocabulary is English-only; a localized emoji search needs CLDR annotations for that language.
+- To check that nothing escaped extraction, start Metro with `EXPO_PUBLIC_PSEUDO_LOCALE=1` in a dev build: every translated string renders accented, padded ~35% and wrapped in `⟦ ⟧`, so bare English is a miss and clipping is a layout that won't survive German.
+
+Adding a language: translate `src/i18n/locales/en/*` and `src/i18n/content/en/*` into a `<lang>` folder, register it in `resources.ts` and `content.ts`, add `src/i18n/native/<lang>.json` (Info.plist strings) to `app.json` `locales`, then localize the RevenueCat paywall and the App Store listing in their own dashboards. Android's Nunito covers Latin and Cyrillic only.
 
 ### UI conventions
 

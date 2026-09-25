@@ -20,6 +20,7 @@ import { ExerciseBreakdown, SummaryStats } from '@/components/workout/workout-re
 import { SHEET_SCROLL, SHEET_TOP_INSET } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { markEarned } from '@/lib/achievement-news';
 import * as haptics from '@/lib/haptics';
 import { attempt } from '@/lib/observability';
@@ -135,15 +136,15 @@ export function WorkoutSummary({ id, onDone }: { id: string; onDone: () => void 
       <ScrollView {...SHEET_SCROLL} style={styles.scroll} contentContainerStyle={styles.content}>
         <Animated.View entering={settle(0)}>
           <ThemedText type="title2" style={styles.title}>
-            Nice work!
+            {t('workout:summary.niceWork')}
           </ThemedText>
         </Animated.View>
 
         <Animated.View entering={settle(1)}>
           <ThemedText themeColor="textSecondary" style={styles.title}>
             {badges.length > 0
-              ? `You have earned ${badges.length} new achievement${badges.length === 1 ? '' : 's'}`
-              : workout.name?.trim() || 'Workout'}
+              ? t('workout:summary.earned', { count: badges.length })
+              : workout.name?.trim() || t('workout:defaultName')}
           </ThemedText>
         </Animated.View>
 
@@ -175,7 +176,7 @@ export function WorkoutSummary({ id, onDone }: { id: string; onDone: () => void 
 
       <SheetFooter>
         <Animated.View entering={raiseDone}>
-          <BigButton title="Done" onPress={onDone} />
+          <BigButton title={t('common:action.done')} onPress={onDone} />
         </Animated.View>
       </SheetFooter>
     </View>

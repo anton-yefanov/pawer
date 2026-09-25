@@ -1,4 +1,4 @@
-export type PaywallOutcome = 'purchased' | 'dismissed' | 'error';
+export type PaywallOutcome = 'purchased' | 'dismissed' | 'pending' | 'error';
 
 export type PaywallSource =
   | 'onboarding'

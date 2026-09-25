@@ -13,6 +13,7 @@ import { Spacing } from '@/constants/theme';
 import { useDebouncedWrite } from '@/hooks/use-debounced-write';
 import { ThemedTextInput } from '@/components/themed-text-input';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { useAutofillWeight } from '@/lib/autofill-weight';
 import * as haptics from '@/lib/haptics';
 import type { LoggedSet, LoggingActions } from '@/lib/logging-model';
@@ -198,7 +199,11 @@ export function SetRow({ set, label, previous, unit, trackingType, actions, onCo
           }}
           accessibilityHint={
             missing.length > 0
-              ? `Enter ${missing.map((field) => FIELD_NAMES[field]).join(' or ')} to complete this set`
+              ? t('workout:set.completeHint', {
+                  fields: missing
+                    .map((field) => t(`workout:set.field.${field}`))
+                    .join(t('workout:set.fieldOr')),
+                })
               : undefined
           }
           style={({ pressed }) => [
@@ -231,7 +236,7 @@ export function SetRow({ set, label, previous, unit, trackingType, actions, onCo
         if (removingNote.current) return;
         return actions.setSetNotes(set.id, next.trim() || null);
       }}
-      placeholder="Note"
+      placeholder={t('workout:set.note')}
       minHeight={28}
       autoFocus={(set.notes ?? '') === ''}
       style={[styles.note, { backgroundColor: set.completed ? theme.successMuted : theme.surface }]}
@@ -270,7 +275,7 @@ export function SetRow({ set, label, previous, unit, trackingType, actions, onCo
                   toggleNote();
                 }}
                 accessibilityRole="button"
-                accessibilityLabel={hasNote ? 'Remove note' : 'Add note'}
+                accessibilityLabel={hasNote ? t('workout:menu.removeNote') : t('workout:menu.addNote')}
                 style={({ pressed }) => [styles.actionFill, pressed && styles.pressed]}>
                 <Icon
                   name={hasNote ? 'text.badge.minus' : 'note.text'}
@@ -293,7 +298,7 @@ export function SetRow({ set, label, previous, unit, trackingType, actions, onCo
                   actions.deleteSet(set.id);
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="Delete set"
+                accessibilityLabel={t('workout:set.delete')}
                 style={({ pressed }) => [styles.actionFill, pressed && styles.pressed]}>
                 <Icon name="trash" size={18} tintColor={theme.accentContent} />
               </GesturePressable>
@@ -350,13 +355,6 @@ function GainBadge({ label, children }: { label: string | null; children: React.
     </View>
   );
 }
-
-const FIELD_NAMES: Record<SetField, string> = {
-  weight: 'weight',
-  reps: 'reps',
-  duration: 'time',
-  distance: 'distance',
-};
 
 type FieldCell = {
   display: (set: TrackedSet, unit: WeightUnit) => string;

@@ -28,6 +28,7 @@ import { SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useProgressiveMount } from '@/hooks/use-progressive-mount';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { useLiveRows } from '@/lib/use-live-rows';
 import { useWeightUnit } from '@/lib/weight-unit';
 import * as haptics from '@/lib/haptics';
@@ -83,8 +84,8 @@ const WORKOUT_ACTIONS: Omit<LoggingActions, 'joinSuperset' | 'leaveSuperset'> = 
  */
 function persist(work: Promise<unknown>): Promise<boolean> {
   return attempt('sets', work, {
-    title: 'Couldn’t save',
-    message: 'Your last change wasn’t saved. Please try again.',
+    title: t('common:error.saveFailed'),
+    message: t('workout:saveFailedMessage'),
   });
 }
 
@@ -228,8 +229,8 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
 
     await attempt('rest-timer', rest.cancel());
     const finished = await attempt('workout', finishWorkout(id), {
-      title: 'Couldn’t finish workout',
-      message: 'Your sets are saved. Please try finishing again.',
+      title: t('workout:finishFailed.title'),
+      message: t('workout:finishFailed.message'),
     });
     if (!finished) return;
 
@@ -243,8 +244,8 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
 
   const save = async () => {
     const saved = await attempt('workout', saveWorkoutEdits(id), {
-      title: 'Couldn’t save changes',
-      message: 'Please try again.',
+      title: t('workout:saveChangesFailed'),
+      message: t('common:error.tryAgain'),
     });
     if (!saved) return;
     haptics.complete();
@@ -254,8 +255,8 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
   const cancel = async () => {
     await attempt('rest-timer', rest.cancel());
     const cancelled = await attempt('workout', cancelWorkout(id), {
-      title: 'Couldn’t discard workout',
-      message: 'Please try again.',
+      title: t('workout:discardFailed'),
+      message: t('common:error.tryAgain'),
     });
     if (!cancelled) return;
     // Tracked here rather than in `cancelWorkout`, which `deleteWorkout` also
@@ -267,7 +268,7 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
   const onCancelPressed = () => {
     const name = workout.name?.trim() ?? '';
     const empty =
-      (name === '' || name === 'Workout') &&
+      (name === '' || name === t('workout:defaultName')) &&
       !workout.notes?.trim() &&
       exercises.length === 0;
     if (empty) void cancel();
@@ -284,7 +285,7 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
       <SheetHeader
         title={
           mode === 'edit' ? (
-            workout.name?.trim() || 'Workout'
+            workout.name?.trim() || t('workout:defaultName')
           ) : (
             <ElapsedTime startedAt={workout.startedAt} />
           )
@@ -298,7 +299,7 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
         }
         right={
           mode === 'edit' ? (
-            <HeaderPillButton title="Save" onPress={() => void save()} />
+            <HeaderPillButton title={t('common:action.save')} onPress={() => void save()} />
           ) : (
             <FinishButton onPress={onFinishPressed} />
           )
@@ -354,14 +355,14 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
             ))}
 
             <ReorderDim>
-              <BigButton title="Add Exercise" symbol="plus.circle" onPress={onAddExercise} />
+              <BigButton title={t('workout:addExercise')} symbol="plus.circle" onPress={onAddExercise} />
             </ReorderDim>
 
 
 
             {mode === 'active' && (
               <ReorderDim>
-                <BigButton title="Cancel Workout" variant="danger" onPress={onCancelPressed} />
+                <BigButton title={t('workout:finish.cancelWorkout')} variant="danger" onPress={onCancelPressed} />
               </ReorderDim>
             )}
           </View>
@@ -374,10 +375,10 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
 
         <ConfirmAlert
           open={confirmingCancel}
-          title="Cancel workout?"
-          message="Are you sure you want to cancel this workout? All progress will be lost."
-          confirmLabel="Cancel workout"
-          dismissLabel="Don't cancel"
+          title={t('workout:cancel.title')}
+          message={t('workout:cancel.message')}
+          confirmLabel={t('workout:cancel.confirm')}
+          dismissLabel={t('workout:cancel.dismiss')}
           onConfirm={() => {
             setConfirmingCancel(false);
             void cancel();
@@ -387,8 +388,8 @@ export function WorkoutLogger({ id, mode, onOpenExercise, onAddExercise, onDone 
 
         <ConfirmAlert
           open={confirmingFinish}
-          title="Finish workout?"
-          confirmLabel="Finish"
+          title={t('workout:finish.confirmTitle')}
+          confirmLabel={t('workout:finish.confirm')}
           confirmRole="default"
           onConfirm={() => {
             setConfirmingFinish(false);

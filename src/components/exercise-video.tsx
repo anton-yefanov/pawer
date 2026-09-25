@@ -4,6 +4,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { ArtPlaceholder } from '@/components/art-placeholder';
 import { SHEET_INNER_RADIUS } from '@/constants/sheet';
 import { useTheme } from '@/hooks/use-theme';
 import { type ExerciseArt, exercisePoster, exerciseVideo } from '@/lib/exercise-media';
@@ -35,7 +36,11 @@ export function ExerciseVideo({ art }: { art: ExerciseArt }) {
 
   return (
     <View style={[styles.frame, { backgroundColor: theme.backgroundElement }]}>
-      {poster && <Image source={poster} style={StyleSheet.absoluteFill} contentFit="cover" />}
+      {poster ? (
+        <Image source={poster} style={StyleSheet.absoluteFill} contentFit="cover" />
+      ) : (
+        <ArtPlaceholder />
+      )}
       {video !== null && (
         <VideoView
           player={player}

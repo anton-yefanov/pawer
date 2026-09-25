@@ -1,3 +1,4 @@
+import { t } from '@/i18n';
 import type { DateRange } from '@/lib/analytics-period';
 
 export type Delta = { percent: number; direction: 'up' | 'down' | 'flat' };
@@ -35,7 +36,9 @@ export function delta(current: number, previous: number): Delta | null {
 
 /** The sign lives in the arrow glyph, so the text carries only the magnitude. */
 export function formatDelta(value: Delta): string {
-  return value.direction === 'flat' ? 'no change' : `${value.percent}%`;
+  return value.direction === 'flat'
+    ? t('analytics:delta.flat')
+    : t('analytics:delta.percent', { percent: value.percent });
 }
 
 const DAY_MS = 86_400_000;
@@ -45,7 +48,6 @@ const DAY_MS = 86_400_000;
  */
 export function comparisonLabel(range: DateRange): string {
   const days = Math.max(1, Math.round((range.to - range.from) / DAY_MS));
-  if (days === 365 || days === 366) return 'previous year';
-  if (days === 1) return 'previous day';
-  return `previous ${days} days`;
+  if (days === 365 || days === 366) return t('analytics:comparison.year');
+  return t('analytics:comparison.days', { count: days });
 }

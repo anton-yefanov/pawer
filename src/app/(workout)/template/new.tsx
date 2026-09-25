@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 
 import { TemplateEditor } from '@/components/templates/template-editor';
+import { t } from '@/i18n';
 import { createTemplate } from '@/lib/template-actions';
 import { resetDraft } from '@/lib/template-draft';
 
@@ -9,7 +10,7 @@ export default function NewTemplateScreen() {
 
   return (
     <TemplateEditor
-      title="New Template"
+      title={t('common:screen.newTemplate')}
       onSave={({ name, exercises }) => createTemplate({ name, exercises }).then(() => undefined)}
     />
   );

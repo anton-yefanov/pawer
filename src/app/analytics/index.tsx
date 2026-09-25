@@ -15,6 +15,7 @@ import {
 import { BigButton } from "@/components/workout/big-button";
 import { BottomTabInset, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { t } from "@/i18n";
 import { useBlockLayout, type BlockId } from "@/lib/analytics-layout";
 import * as haptics from "@/lib/haptics";
 import { move } from "@/lib/order";
@@ -44,7 +45,7 @@ export default function AnalyticsScreen() {
         ...(index > 0
           ? [
               {
-                label: "Move Up",
+                label: t("analytics:block.moveUp"),
                 icon: "arrow.up" as const,
                 onPress: () => moveTo(index - 1),
               },
@@ -53,14 +54,14 @@ export default function AnalyticsScreen() {
         ...(index < count - 1
           ? [
               {
-                label: "Move Down",
+                label: t("analytics:block.moveDown"),
                 icon: "arrow.down" as const,
                 onPress: () => moveTo(index + 1),
               },
             ]
           : []),
         {
-          label: "Remove",
+          label: t("analytics:block.remove"),
           icon: "trash",
           destructive: true,
           separated: count > 1,
@@ -96,10 +97,10 @@ export default function AnalyticsScreen() {
           scrollEnabled={!reordering && !empty}
         >
           <View style={styles.title}>
-            <TabTitle title="Analytics">
+            <TabTitle title={t("common:tab.analytics")}>
               <CircleButton
                 symbol="plus"
-                label="Add Chart"
+                label={t("analytics:addChart")}
                 onPress={addChart}
               />
             </TabTitle>
@@ -117,17 +118,17 @@ export default function AnalyticsScreen() {
               tintColor={theme.textTertiary}
             />
             <ThemedText type="title2" weight="bold" style={styles.emptyTitle}>
-              See Your Progress
+              {t("analytics:empty.title")}
             </ThemedText>
             <ThemedText
               type="body"
               themeColor="textSecondary"
               style={styles.emptyText}
             >
-              Add a chart to follow your training and watch your strength grow.
+              {t("analytics:empty.body")}
             </ThemedText>
             <View style={styles.emptyButton}>
-              <BigButton title="Add Chart" onPress={addChart} />
+              <BigButton title={t("analytics:addChart")} onPress={addChart} />
             </View>
           </View>
         )}

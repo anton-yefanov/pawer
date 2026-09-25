@@ -22,6 +22,7 @@ import { Icon } from '@/components/icon';
 import { Spacing } from '@/constants/theme';
 import { ThemedTextInput } from '@/components/themed-text-input';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import type { ExerciseFilters, FacetMenu } from '@/lib/exercise-filters';
 import * as haptics from '@/lib/haptics';
 import { allowNewCustomExercise } from '@/lib/pro-gates';
@@ -209,7 +210,7 @@ export function ExerciseSearchBar({
                   onBack();
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="Back to muscle groups">
+                accessibilityLabel={t('exercises:search.backToGroups')}>
                 <Icon name="chevron.left" size={GLYPH_SIZE} weight={GLYPH_WEIGHT} tintColor={theme.text} />
               </Pressable>
             </View>
@@ -233,7 +234,7 @@ export function ExerciseSearchBar({
               onChangeText={(search) => onChange({ ...filters, search })}
               onFocus={() => onFocusChange(true)}
               onBlur={() => onFocusChange(false)}
-              placeholder="Search"
+              placeholder={t('exercises:search.placeholder')}
               style={styles.input}
               returnKeyType="search"
               clearButtonMode="while-editing"
@@ -253,7 +254,7 @@ export function ExerciseSearchBar({
                   onGridChange(!grid);
                 }}
                 accessibilityRole="button"
-                accessibilityLabel={grid ? 'Show as list' : 'Show as grid'}>
+                accessibilityLabel={grid ? t('exercises:search.showList') : t('exercises:search.showGrid')}>
                 <Icon
                   name={grid ? 'rectangle.grid.1x2' : 'square.grid.2x2'}
                   size={GLYPH_SIZE}
@@ -269,8 +270,8 @@ export function ExerciseSearchBar({
           <View style={styles.clip}>
             <View style={styles.capsuleContent}>
               <ExerciseFacetMenu
-                title="Equipment"
-                anyLabel="Any equipment"
+                title={t('exercises:search.equipment')}
+                anyLabel={t('exercises:search.anyEquipment')}
                 systemName="dumbbell"
                 menu={equipment}
                 value={filters.equipment}
@@ -296,7 +297,7 @@ export function ExerciseSearchBar({
                 });
               }}
               accessibilityRole="button"
-              accessibilityLabel="New exercise">
+              accessibilityLabel={t('exercises:search.newExercise')}>
               <Icon
                 name="plus"
                 size={GLYPH_SIZE}

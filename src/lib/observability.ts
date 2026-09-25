@@ -81,11 +81,21 @@ export function report(scope: Scope, error: unknown, tags?: Tags): void {
       sentryScope.setTag('scope', scope);
       sentryScope.setFingerprint(['{{ default }}', scope]);
       if (tags) sentryScope.setTags(tags);
-      Sentry.captureException(error instanceof Error ? error : new Error(String(error)));
+      Sentry.captureException(asError(error));
     });
   } catch {
     // Nothing left to report it to.
   }
+}
+
+// Native bridges (RevenueCat, JSI) reject with plain `{ code, message }`
+// objects, which `String()` flattens to "[object Object]".
+function asError(error: unknown): Error {
+  if (error instanceof Error) return error;
+  if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+    return new Error(error.message);
+  }
+  return new Error(String(error));
 }
 
 /**

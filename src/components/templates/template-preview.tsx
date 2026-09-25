@@ -22,6 +22,8 @@ import { HEADER_CIRCLE_SIZE } from '@/components/workout/workout-sheet-header';
 import { SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
+import { muscleLabel } from '@/lib/exercise-vocabulary';
 import * as haptics from '@/lib/haptics';
 import { usePro } from '@/lib/purchases';
 import { startWorkoutFromTemplate } from '@/lib/template-actions';
@@ -47,8 +49,8 @@ export function TemplatePreview({ id }: { id: string }) {
 
   const start = async () => {
     const result = await guard('workout', startWorkoutFromTemplate(id), {
-      title: 'Couldn’t start workout',
-      message: 'Please try again.',
+      title: t('workout:startFailed'),
+      message: t('common:error.tryAgain'),
     });
     if (!result) return;
     if (result.status === 'blocked') {
@@ -71,7 +73,7 @@ export function TemplatePreview({ id }: { id: string }) {
         right={
           template && !template.isBuiltIn ? (
             <CardMenu
-              accessibilityLabel={`${template.name} options`}
+              accessibilityLabel={t('common:optionsFor', { name: template.name })}
               actions={templateActions(template, { confirm, isPro })}
               size={HEADER_CIRCLE_SIZE}
             />
@@ -106,7 +108,7 @@ export function TemplatePreview({ id }: { id: string }) {
               </ThemedText>
               {exercise.primaryMuscles[0] && (
                 <ThemedText type="footnote" themeColor="textSecondary" style={styles.muscle}>
-                  {exercise.primaryMuscles[0]}
+                  {muscleLabel(exercise.primaryMuscles[0])}
                 </ThemedText>
               )}
             </View>
@@ -117,9 +119,9 @@ export function TemplatePreview({ id }: { id: string }) {
       <SheetOverlay>
         <SheetFooter style={styles.footer}>
           {template?.isBuiltIn ? (
-            <BigButton title="Save" onPress={() => void save()} />
+            <BigButton title={t('common:action.save')} onPress={() => void save()} />
           ) : (
-            <BigButton title="Start Workout" onPress={() => void start()} />
+            <BigButton title={t('templates:startWorkout')} onPress={() => void start()} />
           )}
         </SheetFooter>
 
@@ -128,7 +130,7 @@ export function TemplatePreview({ id }: { id: string }) {
           open={pending != null}
           title={pending?.title ?? ''}
           message={pending?.body ?? ''}
-          confirmLabel="Delete"
+          confirmLabel={t('common:action.delete')}
           onConfirm={() => {
             pending?.onConfirm();
             setPending(null);

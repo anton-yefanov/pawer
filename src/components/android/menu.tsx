@@ -17,6 +17,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Raised, Spacing } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import * as haptics from '@/lib/haptics';
 
 export type MenuItem = {
@@ -130,7 +131,7 @@ export function Menu({
           <Popover anchor={anchor}>
             {path.length > 0 && (
               <Row
-                label="Back"
+                label={t('common:action.back')}
                 color="textSecondary"
                 leading="chevron.left"
                 onPress={() => setPath((levels) => levels.slice(0, -1))}

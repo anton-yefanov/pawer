@@ -5,14 +5,15 @@ import { CircleButton, GlassCircle } from '@/components/circle-button';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import * as haptics from '@/lib/haptics';
 
 export function CloseButton({ onPress }: { onPress: () => void }) {
-  return <CircleButton symbol="xmark" symbolSize={18} label="Close" onPress={onPress} />;
+  return <CircleButton symbol="xmark" symbolSize={18} label={t('common:action.close')} onPress={onPress} />;
 }
 
 export function BackButton({ onPress }: { onPress: () => void }) {
-  return <CircleButton symbol="chevron.left" symbolSize={18} label="Back" onPress={onPress} />;
+  return <CircleButton symbol="chevron.left" symbolSize={18} label={t('common:action.back')} onPress={onPress} />;
 }
 
 /** Round accent confirm — the icon counterpart to `HeaderPillButton`. */
@@ -28,7 +29,7 @@ export function HeaderConfirmButton({
     <CircleButton
       symbol="checkmark"
       symbolSize={20}
-      label="Save"
+      label={t('common:action.save')}
       disabled={disabled}
       feedback="press"
       tintColor={disabled ? undefined : theme.accent}
@@ -72,7 +73,7 @@ export function HeaderPillButton({
 }
 
 export function FinishButton({ onPress }: { onPress: () => void }) {
-  return <HeaderPillButton title="Finish" onPress={onPress} />;
+  return <HeaderPillButton title={t('workout:finish.confirm')} onPress={onPress} />;
 }
 
 /**

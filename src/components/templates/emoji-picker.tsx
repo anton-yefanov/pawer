@@ -9,6 +9,7 @@ import { EMOJI, EMOJI_SECTIONS, type EmojiEntry } from '@/constants/emoji-data';
 import { SHEET_BOTTOM_INSET, SHEET_SCROLL, SHEET_TOP_INSET } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import * as haptics from '@/lib/haptics';
 
 const MIN_CELL = 52;
@@ -97,7 +98,7 @@ export function EmojiPicker({
             <ThemedTextInput
               value={query}
               onChangeText={setQuery}
-              placeholder="Search"
+              placeholder={t('exercises:search.placeholder')}
               autoCorrect={false}
               autoCapitalize="none"
               clearButtonMode="while-editing"
@@ -106,7 +107,7 @@ export function EmojiPicker({
             />
           </View>
           <Pressable onPress={onCancel} accessibilityRole="button" hitSlop={Spacing.two}>
-            <ThemedText themeColor="accent">Cancel</ThemedText>
+            <ThemedText themeColor="accent">{t('common:action.cancel')}</ThemedText>
           </Pressable>
         </View>
 

@@ -1,5 +1,6 @@
 import { Alert } from 'react-native';
 
+import { t } from '@/i18n';
 import type { PromptOptions } from '@/lib/text-prompt';
 
 /** `Alert.prompt` is a UIAlertController with a text field, and iOS-only. */
@@ -9,7 +10,7 @@ export function prompt({ title, confirmLabel, initialValue }: PromptOptions): Pr
       title,
       undefined,
       [
-        { text: 'Cancel', style: 'cancel', onPress: () => resolve('') },
+        { text: t('common:action.cancel'), style: 'cancel', onPress: () => resolve('') },
         { text: confirmLabel, onPress: (value?: string) => resolve(value ?? '') },
       ],
       'plain-text',

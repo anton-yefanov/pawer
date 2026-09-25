@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { Menu, type MenuItem } from "@/components/android/menu";
 import { Pill } from "@/components/exercises/pill";
 import { type IconName } from "@/components/icon";
+import { t } from "@/i18n";
 import {
   periodLabel,
   shortPeriodLabel,
@@ -48,7 +49,7 @@ export function PeriodMenu<Id extends PeriodId>({
     <View style={styles.host}>
       <Menu
         open={open}
-        title="Period"
+        title={t("exercises:period")}
         items={items}
         onClose={() => setOpen(false)}
       >

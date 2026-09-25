@@ -4,6 +4,7 @@ import { tabBarScreenLayout } from "@/components/app-tabs";
 import { stackScreenOptions } from "@/constants/navigation";
 import { DETAIL_SHEET, FULL_SHEET } from "@/constants/sheet";
 import { useTheme } from "@/hooks/use-theme";
+import { t } from "@/i18n";
 import { BlockLayoutProvider } from "@/lib/analytics-layout";
 
 export default function AnalyticsLayout() {
@@ -20,19 +21,19 @@ export default function AnalyticsLayout() {
             expanded large title's row. */}
         <Stack.Screen
           name="index"
-          options={{ title: "Analytics", headerShown: false }}
+          options={{ title: t("common:tab.analytics"), headerShown: false }}
         />
         <Stack.Screen
           name="add-block"
-          options={{ ...FULL_SHEET, title: "Add Chart" }}
+          options={{ ...FULL_SHEET, title: t("analytics:addChart") }}
         />
         <Stack.Screen
           name="muscles"
-          options={{ ...DETAIL_SHEET, title: "Muscles worked" }}
+          options={{ ...DETAIL_SHEET, title: t("common:screen.musclesWorked") }}
         />
         <Stack.Screen
           name="records"
-          options={{ ...DETAIL_SHEET, title: "Personal records" }}
+          options={{ ...DETAIL_SHEET, title: t("common:screen.personalRecords") }}
         />
       </Stack>
     </BlockLayoutProvider>

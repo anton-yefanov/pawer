@@ -4,6 +4,7 @@ import { Emoji } from '@/components/emoji';
 import { Icon } from '@/components/icon';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { MAX_EMOJI } from '@/lib/card-artwork';
 import * as haptics from '@/lib/haptics';
 
@@ -59,7 +60,7 @@ function Slot({
         }}
         disabled={!enabled}
         accessibilityRole="button"
-        accessibilityLabel={emoji ? `Replace ${emoji}` : 'Add emoji'}
+        accessibilityLabel={emoji ? t('templates:emoji.replace', { emoji }) : t('templates:emoji.add')}
         style={({ pressed }) => [
           styles.slot,
           { backgroundColor: theme.backgroundElement },
@@ -79,7 +80,7 @@ function Slot({
             onRemove();
           }}
           accessibilityRole="button"
-          accessibilityLabel={`Remove ${emoji}`}
+          accessibilityLabel={t('templates:emoji.remove', { emoji })}
           hitSlop={Spacing.two}
           style={[styles.remove, { backgroundColor: theme.textSecondary }]}>
           <Icon name="xmark" size={11} tintColor={theme.surface} />

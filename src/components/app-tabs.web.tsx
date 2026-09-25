@@ -15,6 +15,7 @@ import { ThemedView } from './themed-view';
 
 import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { t } from '@/i18n';
 
 export default function AppTabs() {
   return (
@@ -23,19 +24,19 @@ export default function AppTabs() {
       <TabList asChild>
         <CustomTabList>
           <TabTrigger name="history" href="/history" asChild>
-            <TabButton>History</TabButton>
+            <TabButton>{t('common:tab.history')}</TabButton>
           </TabTrigger>
           <TabTrigger name="exercises" href="/exercises" asChild>
-            <TabButton>Exercises</TabButton>
+            <TabButton>{t('common:tab.exercises')}</TabButton>
           </TabTrigger>
           <TabTrigger name="workout" href="/" asChild>
-            <TabButton>Workout</TabButton>
+            <TabButton>{t('common:tab.workout')}</TabButton>
           </TabTrigger>
           <TabTrigger name="analytics" href="/analytics" asChild>
-            <TabButton>Analytics</TabButton>
+            <TabButton>{t('common:tab.analytics')}</TabButton>
           </TabTrigger>
           <TabTrigger name="settings" href="/settings" asChild>
-            <TabButton>Settings</TabButton>
+            <TabButton>{t('common:tab.settings')}</TabButton>
           </TabTrigger>
         </CustomTabList>
       </TabList>
@@ -64,14 +65,14 @@ export function CustomTabList(props: TabListProps) {
     <View {...props} style={styles.tabListContainer}>
       <ThemedView type="surface" style={styles.innerContainer}>
         <ThemedText type="footnote" weight="semibold" style={styles.brandText}>
-          Expo Starter
+          {t('common:webBrand')}
         </ThemedText>
 
         {props.children}
 
         <ExternalLink href="https://docs.expo.dev" asChild>
           <Pressable style={styles.externalPressable}>
-            <ThemedText themeColor="accent">Docs</ThemedText>
+            <ThemedText themeColor="accent">{t('common:webDocs')}</ThemedText>
             <Icon
               tintColor={colors.text}
               name="arrow.up.right.square"

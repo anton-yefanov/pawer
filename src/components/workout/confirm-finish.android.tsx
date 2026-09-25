@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 
 import { Dialog } from '@/components/android/dialog';
+import { t } from '@/i18n';
 import * as haptics from '@/lib/haptics';
 
 type Props = {
@@ -18,13 +19,13 @@ export function ConfirmFinish({ open, onCompleteUnfinished, onCancelWorkout, onD
   return (
     <Dialog
       open={open}
-      title="Finish Workout?"
-      message="There are valid sets in this workout that have not been marked as complete."
+      title={t('workout:finish.title')}
+      message={t('workout:finish.unfinished')}
       onDismiss={onDismiss}
       actions={[
-        { label: 'Complete Unfinished Sets', onPress: onCompleteUnfinished },
-        { label: 'Cancel Workout', role: 'destructive', onPress: onCancelWorkout },
-        { label: 'Cancel', role: 'cancel', onPress: onDismiss },
+        { label: t('workout:finish.completeUnfinished'), onPress: onCompleteUnfinished },
+        { label: t('workout:finish.cancelWorkout'), role: 'destructive', onPress: onCancelWorkout },
+        { label: t('common:action.cancel'), role: 'cancel', onPress: onDismiss },
       ]}
     />
   );

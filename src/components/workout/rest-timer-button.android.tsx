@@ -14,6 +14,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Fonts } from '@/constants/theme';
 import { useAppStateActive } from '@/hooks/use-app-state-active';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { useRestTimer } from '@/lib/rest-timer';
 import { formatDuration } from '@/lib/units';
 
@@ -50,7 +51,7 @@ export function RestTimerButton({ onPress }: { onPress: () => void }) {
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel="Show rest timer"
+        accessibilityLabel={t('workout:rest.show')}
         style={StyleSheet.absoluteFill}
       />
     </GlassCircle>

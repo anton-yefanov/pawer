@@ -1,6 +1,8 @@
 import * as ImagePicker from 'expo-image-picker';
 import { Alert, Linking } from 'react-native';
 
+import { t } from '@/i18n';
+
 /**
  * One photo out of the system picker. Null when the user cancels, or leaves
  * access off.
@@ -16,11 +18,11 @@ export async function pickPhoto(): Promise<string | null> {
   if (!permission.granted) {
     if (!permission.canAskAgain) {
       Alert.alert(
-        'Photo access is off',
-        'Turn on photo access for pawer in Settings to use one of your photos here.',
+        t('common:photoAccess.title'),
+        t('common:photoAccess.message'),
         [
-          { text: 'Not Now', style: 'cancel' },
-          { text: 'Open Settings', onPress: () => void Linking.openSettings() },
+          { text: t('common:action.notNow'), style: 'cancel' },
+          { text: t('common:action.openSettings'), onPress: () => void Linking.openSettings() },
         ]
       );
     }

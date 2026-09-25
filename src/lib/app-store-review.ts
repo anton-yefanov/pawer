@@ -4,6 +4,7 @@ import { Linking } from 'react-native';
 import { db } from '@/db/client';
 import { getSetting, setSetting } from '@/db/seed';
 
+import { t } from '@/i18n';
 import { attempt, report } from '@/lib/observability';
 import { track } from '@/lib/telemetry';
 
@@ -12,10 +13,10 @@ const APP_STORE_ID = '6805974421';
 
 const REVIEW_PATH = `apps.apple.com/app/id${APP_STORE_ID}?action=write-review`;
 
-const OPEN_FAILED = {
-  title: 'Couldn’t open the App Store',
-  message: 'Please try again.',
-};
+const openFailed = () => ({
+  title: t('settings:review.openFailed'),
+  message: t('common:error.tryAgain'),
+});
 
 /**
  * `itms-apps` opens the App Store app straight onto the review composer with no
@@ -29,7 +30,7 @@ export async function openReview(): Promise<void> {
     : `https://${REVIEW_PATH}`;
 
   track('review_opened', { source: 'settings' });
-  await attempt('settings', Linking.openURL(url), OPEN_FAILED);
+  await attempt('settings', Linking.openURL(url), openFailed());
 }
 
 const PROMPTED_KEY = 'review_prompted';

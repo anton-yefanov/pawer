@@ -1,8 +1,10 @@
+import { t } from '@/i18n';
 import {
   distanceUnitFor,
   formatDistance,
   formatDuration,
   formatWeight,
+  unitLabel,
   type WeightUnit,
 } from '@/lib/units';
 
@@ -50,25 +52,23 @@ export const TRACKING: Record<TrackingType, Config> = {
   distance_duration: { fields: ['distance', 'duration'], weightSign: '', countsVolume: false },
 };
 
-export const TRACKING_LABELS: Record<TrackingType, { title: string }> = {
-  weight_reps: { title: 'Weight, Reps' },
-  weighted_bodyweight: { title: 'Bodyweight + Weight, Reps' },
-  assisted_bodyweight: { title: 'Assisted Bodyweight, Reps' },
-  bodyweight_reps: { title: 'Reps' },
-  duration: { title: 'Time' },
-  weight_duration: { title: 'Weight, Time' },
-  distance_duration: { title: 'Distance, Time' },
-};
+export function trackingLabel(type: TrackingType): string {
+  return t(`exercises:tracking.${type}`);
+}
 
 /** Order and grouping of the exercise-type picker. */
-export const TRACKING_SECTIONS: { title: string; types: readonly TrackingType[] }[] = [
-  { title: 'Strength', types: ['weight_reps', 'weight_duration'] },
+export const TRACKING_SECTIONS = [
+  { id: 'strength', types: ['weight_reps', 'weight_duration'] },
   {
-    title: 'Bodyweight',
+    id: 'bodyweight',
     types: ['weighted_bodyweight', 'assisted_bodyweight', 'bodyweight_reps', 'duration'],
   },
-  { title: 'Cardio', types: ['distance_duration'] },
-];
+  { id: 'cardio', types: ['distance_duration'] },
+] as const satisfies readonly { id: string; types: readonly TrackingType[] }[];
+
+export function trackingSectionTitle(id: (typeof TRACKING_SECTIONS)[number]['id']): string {
+  return t(`exercises:trackingSection.${id}`);
+}
 
 /**
  * `exercises.tracking_type` is plain text, and a row written by an older build
@@ -81,13 +81,13 @@ export function trackingTypeOf(value: string | null | undefined): TrackingType {
 export function headerLabel(field: SetField, type: TrackingType, unit: WeightUnit): string {
   switch (field) {
     case 'weight':
-      return `${TRACKING[type].weightSign}${unit}`;
+      return `${TRACKING[type].weightSign}${unitLabel(unit)}`;
     case 'reps':
-      return 'Reps';
+      return t('workout:column.reps');
     case 'duration':
-      return 'Time';
+      return t('workout:column.time');
     case 'distance':
-      return distanceUnitFor(unit);
+      return unitLabel(distanceUnitFor(unit));
   }
 }
 
@@ -97,7 +97,7 @@ export function formatPreviousSet(
   type: TrackingType,
   unit: WeightUnit
 ): string {
-  const reps = `${set.reps ?? 0} reps`;
+  const reps = t('workout:repsCount', { count: set.reps ?? 0 });
 
   switch (type) {
     case 'weight_reps':

@@ -1,4 +1,5 @@
 import { ConfirmAlert } from '@/components/workout/confirm-alert';
+import { t } from '@/i18n';
 
 /** Shown when a start action is refused because a session is already running. */
 export function ActiveWorkoutPrompt({
@@ -13,11 +14,11 @@ export function ActiveWorkoutPrompt({
   return (
     <ConfirmAlert
       open={open}
-      title="Workout in Progress"
-      message="You already have a workout going. Finish or cancel it before starting another."
-      confirmLabel="Open Workout"
+      title={t('workout:inProgress.title')}
+      message={t('workout:inProgress.message')}
+      confirmLabel={t('workout:inProgress.open')}
       confirmRole="default"
-      dismissLabel="Not Now"
+      dismissLabel={t('common:action.notNow')}
       onConfirm={onResume}
       onDismiss={onDismiss}
     />

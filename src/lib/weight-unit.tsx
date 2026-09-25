@@ -1,16 +1,22 @@
 import { createContext, use, useEffect, useState, type ReactNode } from 'react';
 
+import { t } from '@/i18n';
 import { db } from '@/db/client';
 import { getSetting, setSetting } from '@/db/seed';
-import type { WeightUnit } from '@/lib/units';
+import { unitLabel, type WeightUnit } from '@/lib/units';
 import { attempt } from '@/lib/observability';
 
 export const WEIGHT_UNIT_KEY = 'weight_unit';
 
-export const WEIGHT_UNITS: { id: WeightUnit; label: string; short: string }[] = [
-  { id: 'kg', label: 'Kilograms (kg)', short: 'kg' },
-  { id: 'lb', label: 'Pounds (lb)', short: 'lb' },
-];
+export const WEIGHT_UNITS = (['kg', 'lb'] as const).map((id) => ({
+  id,
+  get label() {
+    return t(`settings:weightUnit.${id}`);
+  },
+  get short() {
+    return unitLabel(id);
+  },
+}));
 
 type WeightUnitValue = {
   unit: WeightUnit;

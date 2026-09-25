@@ -16,6 +16,8 @@
 
 type SearchSource = {
   name: string;
+  /** Other names the row answers to — the English one, under a translated library. */
+  aliases?: string[] | null;
   tags?: string[] | null;
   primaryMuscles?: string[] | null;
   equipment?: string | null;
@@ -27,7 +29,7 @@ export function normalize(value: string): string {
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim();
 }
 
@@ -36,8 +38,9 @@ export function collapse(value: string): string {
 }
 
 /**
- * Tokens are stripped of everything but letters and digits, which also means a
- * query can never smuggle a `%` or `_` into the LIKE patterns built from it.
+ * Tokens are stripped of everything but letters and digits — in any script —
+ * which also means a query can never smuggle a `%` or `_` into the LIKE
+ * patterns built from it.
  */
 export function searchTokens(query: string): string[] {
   const normalized = normalize(query);
@@ -53,6 +56,7 @@ export function buildSearchText(exercise: SearchSource): string {
   const parts = new Set<string>([collapse(exercise.name), normalize(exercise.name)]);
 
   for (const source of [
+    ...(exercise.aliases ?? []),
     ...(exercise.tags ?? []),
     ...(exercise.primaryMuscles ?? []),
     exercise.equipment,

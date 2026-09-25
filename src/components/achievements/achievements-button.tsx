@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { CIRCLE_BUTTON_SIZE, CircleButton } from '@/components/circle-button';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { markDotSeen, useAchievementNews } from '@/lib/achievement-news';
 import { attempt } from '@/lib/observability';
 
@@ -20,7 +21,7 @@ export function AchievementsButton() {
     <View>
       <CircleButton
         symbol="trophy.fill"
-        label={news.dot ? 'Achievements, new' : 'Achievements'}
+        label={news.dot ? t('achievements:buttonNew') : t('common:screen.achievements')}
         onPress={() => {
           void attempt('settings', markDotSeen());
           router.push('/achievements');

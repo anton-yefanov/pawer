@@ -15,13 +15,13 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CircleButton } from '@/components/circle-button';
-import { EXERCISE_THUMB_SIZE, ExerciseThumb } from '@/components/exercise-thumb';
+import { ExerciseThumb } from '@/components/exercise-thumb';
 import { ExerciseSearchBar, SEARCH_BAR_CLEARANCE } from '@/components/exercise-search-bar';
 import { FloatingSurface } from '@/components/floating-surface';
 import { EmptyState } from '@/components/empty-state';
 import { Icon } from '@/components/icon';
 import { KeyboardDismissButton } from '@/components/keyboard-dismiss';
-import { MuscleGroupThumb } from '@/components/muscle-map/muscle-group-thumb';
+import { CustomGroupThumb, MuscleGroupThumb } from '@/components/muscle-map/muscle-group-thumb';
 import { Pressable as PressableButton } from '@/components/pressable';
 import { ThemedText } from '@/components/themed-text';
 import { SHEET_SCROLL } from '@/constants/sheet';
@@ -29,6 +29,7 @@ import { Spacing } from '@/constants/theme';
 import { db } from '@/db/client';
 import { exercises, type Exercise } from '@/db/schema';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import {
   activeFilterCount,
   exerciseFilterWhere,
@@ -41,6 +42,7 @@ import {
 } from '@/lib/exercise-filters';
 import { exercisePoster, reportMissingArt } from '@/lib/exercise-media';
 import { EXERCISE_GROUPS, exerciseGroup, type ExerciseGroup } from '@/lib/exercise-groups';
+import { equipmentLabel, muscleLabel } from '@/lib/exercise-vocabulary';
 import * as haptics from '@/lib/haptics';
 import { useLibraryLayout } from '@/lib/library-layout';
 import { claimCustomExercise } from '@/lib/new-exercise-handoff';
@@ -301,8 +303,8 @@ export function ExerciseLibrary({
             icon={isFiltered || group ? 'magnifyingglass' : 'dumbbell'}
             text={
               isFiltered || group
-                ? 'No exercises match these filters'
-                : 'No exercises. The library seeds on first launch.'
+                ? t('exercises:library.emptyFiltered')
+                : t('exercises:library.empty')
             }
             style={[styles.empty, emptyPadding]}
             pointerEvents="box-none">
@@ -325,7 +327,7 @@ export function ExerciseLibrary({
           exiting={FadeOut.duration(180)}
           style={styles.scrim}
           onPress={() => setFilterOpen(false)}
-          accessibilityLabel="Dismiss filters"
+          accessibilityLabel={t('exercises:library.dismissFilters')}
         />
       )}
 
@@ -396,14 +398,14 @@ function ClearFiltersButton({ onPress }: { onPress: () => void }) {
         accessibilityRole="button"
         style={({ pressed }) => [styles.clearBody, pressed && styles.clearPressed]}>
         <ThemedText type="subhead" weight="semibold" themeColor="accent">
-          Clear filters
+          {t('exercises:library.clearFilters')}
         </ThemedText>
       </PressableButton>
     </FloatingSurface>
   );
 }
 
-const CUSTOM_GROUP: ExerciseGroup = { id: 'custom', title: 'Custom' };
+const CUSTOM_GROUP: ExerciseGroup = { id: 'custom', title: t('exercises:library.custom') };
 
 function GroupRow({
   group,
@@ -437,7 +439,7 @@ function GroupRow({
             },
           ]}>
           {group === CUSTOM_GROUP ? (
-            <View style={styles.thumbSpace} />
+            <CustomGroupThumb />
           ) : (
             <MuscleGroupThumb group={group} />
           )}
@@ -463,7 +465,12 @@ function ExerciseRow({
   selected: boolean;
 }) {
   const theme = useTheme();
-  const detail = [exercise.equipment, exercise.primaryMuscles[0]].filter(Boolean).join(' · ');
+  const detail = [
+    exercise.equipment && equipmentLabel(exercise.equipment),
+    exercise.primaryMuscles[0] && muscleLabel(exercise.primaryMuscles[0]),
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   const body = ({ pressed }: { pressed: boolean }) => (
     <View
@@ -481,7 +488,7 @@ function ExerciseRow({
       {onSelect && detailHref && (
         <CircleButton
           symbol="info"
-          label={`About ${exercise.name}`}
+          label={t('exercises:about', { name: exercise.name })}
           onPress={() => router.push(detailHref(exercise))}
         />
       )}
@@ -526,7 +533,12 @@ function ExerciseTile({
 }) {
   const theme = useTheme();
   const poster = exercisePoster(exercise);
-  const detail = [exercise.equipment, exercise.primaryMuscles[0]].filter(Boolean).join(' · ');
+  const detail = [
+    exercise.equipment && equipmentLabel(exercise.equipment),
+    exercise.primaryMuscles[0] && muscleLabel(exercise.primaryMuscles[0]),
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   const body = ({ pressed }: { pressed: boolean }) => (
     <View>
@@ -554,7 +566,7 @@ function ExerciseTile({
               symbol="info"
               size={TILE_BUTTON_SIZE}
               symbolSize={16}
-              label={`About ${exercise.name}`}
+              label={t('exercises:about', { name: exercise.name })}
               onPress={() => router.push(detailHref(exercise))}
             />
           </View>
@@ -618,10 +630,6 @@ const styles = StyleSheet.create({
   },
   rowText: {
     flex: 1,
-  },
-  thumbSpace: {
-    width: EXERCISE_THUMB_SIZE,
-    height: EXERCISE_THUMB_SIZE,
   },
   separator: {
     height: StyleSheet.hairlineWidth,

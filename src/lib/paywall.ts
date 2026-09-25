@@ -1,5 +1,6 @@
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 
+import { t } from '@/i18n';
 import { notice } from '@/lib/notice';
 import { report } from '@/lib/observability';
 import { PRO_ENTITLEMENT } from '@/lib/purchases';
@@ -12,7 +13,7 @@ import { track } from '@/lib/telemetry';
  * nothing here has to update entitlement state itself.
  */
 
-export type PaywallOutcome = 'purchased' | 'dismissed' | 'error';
+export type PaywallOutcome = 'purchased' | 'dismissed' | 'pending' | 'error';
 
 /**
  * Which gate raised the paywall. RevenueCat's own events can't know this, and
@@ -35,8 +36,8 @@ export async function presentPaywall(source: PaywallSource): Promise<PaywallOutc
   // they get refused again with no explanation.
   if (outcome === 'error') {
     notice({
-      title: 'Purchase didn\u2019t complete',
-      message: 'Something went wrong. Please check your connection and try again.',
+      title: t('settings:paywall.purchaseFailed'),
+      message: t('common:error.connectionRetry'),
     });
   }
   return outcome;
@@ -71,8 +72,8 @@ export async function presentCustomerCenter(): Promise<void> {
   } catch (error) {
     report('paywall', error, { phase: 'customer-center' });
     notice({
-      title: 'Couldn\u2019t open subscriptions',
-      message: 'Please check your connection and try again.',
+      title: t('settings:paywall.subscriptionsFailed'),
+      message: t('common:error.checkConnection'),
     });
   }
 }

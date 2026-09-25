@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useDebouncedWrite } from '@/hooks/use-debounced-write';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { formatDuration } from '@/lib/units';
 
 const CELL_HEIGHT = 32;
@@ -81,7 +82,7 @@ export function DurationCell({
     <>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Duration"
+        accessibilityLabel={t('workout:column.duration')}
         onPress={() => setOpen(true)}
         style={[styles.cell, { width, backgroundColor: fill }]}>
         <ThemedText themeColor={value == null ? 'textSecondary' : 'text'}>
@@ -104,7 +105,7 @@ export function DurationCell({
           <View style={styles.centre} pointerEvents="box-none">
             <View style={[styles.dialog, { backgroundColor: theme.surface }]}>
               <ThemedText type="footnote" weight="semibold" themeColor="textSecondary">
-                Duration
+                {t('workout:column.duration')}
               </ThemedText>
 
               <View style={styles.wheels}>
@@ -130,7 +131,7 @@ export function DurationCell({
 
               <Pressable onPress={close} style={styles.done}>
                 <ThemedText type="footnote" weight="semibold" themeColor="accent">
-                  Done
+                  {t('common:action.done')}
                 </ThemedText>
               </Pressable>
             </View>

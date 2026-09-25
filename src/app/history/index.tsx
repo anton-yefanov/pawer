@@ -12,6 +12,7 @@ import { ActiveWorkoutPrompt } from '@/components/workout/active-workout-prompt'
 import { BigButton } from '@/components/workout/big-button';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import * as haptics from '@/lib/haptics';
 import { guard } from '@/lib/observability';
 import { useIncludeWarmup } from '@/lib/warmup-stats';
@@ -54,8 +55,8 @@ export default function HistoryScreen() {
 
   const startEmpty = async () => {
     const result = await guard('workout', startEmptyWorkout(), {
-      title: 'Couldn’t start workout',
-      message: 'Please try again.',
+      title: t('workout:startFailed'),
+      message: t('common:error.tryAgain'),
     });
     if (!result) return;
     if (result.status === 'blocked') {
@@ -79,7 +80,7 @@ export default function HistoryScreen() {
         contentInsetAdjustmentBehavior="never"
         ListHeaderComponent={
           <View style={styles.title}>
-            <TabTitle title="History" />
+            <TabTitle title={t('common:tab.history')} />
           </View>
         }
         renderItem={({ item }) => (
@@ -100,13 +101,13 @@ export default function HistoryScreen() {
         <View style={styles.empty} pointerEvents="box-none">
           <Icon name="clock.arrow.circlepath" size={64} tintColor={theme.textTertiary} />
           <ThemedText type="title2" weight="bold" style={styles.emptyTitle}>
-            No Workouts Yet
+            {t('history:empty.title')}
           </ThemedText>
           <ThemedText type="body" themeColor="textSecondary" style={styles.emptyText}>
-            Every workout you finish lands here, with its sets, volume and records.
+            {t('history:empty.body')}
           </ThemedText>
           <View style={styles.emptyButton}>
-            <BigButton title="Start an Empty Workout" onPress={() => void startEmpty()} />
+            <BigButton title={t('templates:home.startEmpty')} onPress={() => void startEmpty()} />
           </View>
         </View>
       )}
@@ -139,7 +140,7 @@ function MonthSection({
           {formatMonth(workouts[0].startedAt)}
         </ThemedText>
         <ThemedText type="footnote" weight="semibold" themeColor="textSecondary">
-          {workouts.length} {workouts.length === 1 ? 'Workout' : 'Workouts'}
+          {t('history:workoutCount', { count: workouts.length })}
         </ThemedText>
       </View>
       <Card>

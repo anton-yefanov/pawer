@@ -7,6 +7,7 @@ import {
 } from "@/constants/navigation";
 import { DETAIL_SHEET, FULL_SHEET } from "@/constants/sheet";
 import { useTheme } from "@/hooks/use-theme";
+import { t } from "@/i18n";
 
 /**
  * The workout sheets are duplicated here rather than pushed at the Workout
@@ -20,7 +21,7 @@ export default function HistoryLayout() {
     <Stack screenOptions={stackScreenOptions(theme)} screenLayout={tabBarScreenLayout}>
       <Stack.Screen
         name="index"
-        options={{ title: "History", headerShown: false }}
+        options={{ title: t("common:tab.history"), headerShown: false }}
       />
       <Stack.Screen
         name="workout-details"

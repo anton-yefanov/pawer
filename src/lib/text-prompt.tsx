@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { ThemedTextInput } from '@/components/themed-text-input';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 
 export type PromptOptions = {
   title: string;
@@ -99,7 +100,7 @@ export function PromptHost() {
           <View style={styles.actions}>
             <Pressable onPress={() => settle('')} style={styles.action}>
               <ThemedText type="body" themeColor="textSecondary">
-                Cancel
+                {t('common:action.cancel')}
               </ThemedText>
             </Pressable>
             <Pressable onPress={() => settle(value)} style={styles.action}>

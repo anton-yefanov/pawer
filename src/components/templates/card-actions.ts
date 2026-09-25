@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 
 import { type IconName } from '@/components/icon';
+import { t } from '@/i18n';
 import {
   createFolder,
   deleteFolder,
@@ -15,8 +16,8 @@ import { deleteTemplate, duplicateTemplate } from '@/lib/template-actions';
 import { attempt, guard } from '@/lib/observability';
 
 const FAILED = {
-  title: 'Couldn’t save',
-  message: 'That change wasn’t saved. Please try again.',
+  title: t('common:error.saveFailed'),
+  message: t('templates:changeFailed'),
 };
 
 export type CardAction = {
@@ -65,7 +66,7 @@ export function templateActions(
   { confirm, isPro }: { confirm: ConfirmDestructive; isPro: boolean },
 ): CardAction[] {
   const save: CardAction = {
-    label: 'Save',
+    label: t('templates:action.save'),
     icon: 'plus.square.on.square',
     onPress: () => void saveTemplateCopy(template.id, isPro),
   };
@@ -74,7 +75,7 @@ export function templateActions(
 
   const actions: CardAction[] = [
     {
-      label: 'Edit',
+      label: t('common:action.edit'),
       icon: 'pencil',
       onPress: () =>
         router.push({
@@ -83,7 +84,7 @@ export function templateActions(
         }),
     },
     {
-      label: 'Customize',
+      label: t('templates:action.customize'),
       icon: 'paintpalette',
       onPress: () =>
         router.push({
@@ -96,21 +97,21 @@ export function templateActions(
 
   if (template.folderId) {
     actions.push({
-      label: 'Remove from Folder',
+      label: t('templates:action.removeFromFolder'),
       icon: 'folder.badge.minus',
       onPress: () => void attempt('templates', removeTemplateFromFolder(template.id), FAILED),
     });
   }
 
   actions.push({
-    label: 'Delete',
+    label: t('common:action.delete'),
     icon: 'trash',
     destructive: true,
     separated: true,
     onPress: () =>
       confirm({
-        title: `Delete “${template.name}”?`,
-        body: 'Workouts you logged from it are kept.',
+        title: t('common:deleteNamed', { name: template.name }),
+        body: t('templates:deleteTemplateBody'),
         onConfirm: () => void attempt('templates', deleteTemplate(template.id), FAILED),
       }),
   });
@@ -130,7 +131,7 @@ export function folderActions(
 
   if (canAddFolder) {
     actions.push({
-      label: 'New Folder',
+      label: t('templates:newFolder'),
       icon: 'folder.badge.plus',
       onPress: () => promptNewFolder(folder.id),
     });
@@ -138,12 +139,12 @@ export function folderActions(
 
   actions.push(
     {
-      label: 'Rename',
+      label: t('templates:action.rename'),
       icon: 'pencil',
       onPress: () => promptRenameFolder(folder),
     },
     {
-      label: 'Customize',
+      label: t('templates:action.customize'),
       icon: 'paintpalette',
       onPress: () =>
         router.push({
@@ -155,21 +156,21 @@ export function folderActions(
 
   if (folder.parentId) {
     actions.push({
-      label: 'Remove from Folder',
+      label: t('templates:action.removeFromFolder'),
       icon: 'folder.badge.minus',
       onPress: () => void attempt('folders', removeFolderFromFolder(folder.id), FAILED),
     });
   }
 
   actions.push({
-    label: 'Delete',
+    label: t('common:action.delete'),
     icon: 'trash',
     destructive: true,
     separated: true,
     onPress: () =>
       confirm({
-        title: `Delete “${folder.name}”?`,
-        body: 'Everything inside is kept and moves up a level.',
+        title: t('common:deleteNamed', { name: folder.name }),
+        body: t('templates:deleteFolderBody'),
         onConfirm: () => void attempt('folders', deleteFolder(folder.id), FAILED),
       }),
   });
@@ -181,8 +182,8 @@ export function promptRenameFolder(folder: { id: string; name: string }): void {
   void attempt(
     'folders',
     prompt({
-      title: 'Rename Folder',
-      confirmLabel: 'Rename',
+      title: t('templates:renameFolder'),
+      confirmLabel: t('templates:action.rename'),
       initialValue: folder.name,
     }).then((value) => {
       const name = value.trim();
@@ -194,7 +195,7 @@ export function promptRenameFolder(folder: { id: string; name: string }): void {
 export function promptNewFolder(parentId: string | null = null): void {
   void attempt(
     'folders',
-    prompt({ title: 'New Folder', confirmLabel: 'Create' }).then((value) => {
+    prompt({ title: t('templates:newFolder'), confirmLabel: t('templates:action.create') }).then((value) => {
       const name = value.trim();
       if (name) return attempt('folders', createFolder(name, parentId), FAILED);
     }),

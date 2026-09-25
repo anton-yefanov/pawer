@@ -2,7 +2,9 @@ import { and, asc, isNull, ne, sql, type SQL } from 'drizzle-orm';
 
 import { exercises } from '@/db/schema';
 import seedExercises from '@/db/seed/exercises.json';
+import { LOCALE } from '@/i18n';
 import { exerciseGroup } from '@/lib/exercise-groups';
+import { equipmentLabel } from '@/lib/exercise-vocabulary';
 import { collapse, searchTokens } from '@/lib/exercise-search';
 
 /** Sentinel used by the native pickers for "no filter on this facet". */
@@ -123,7 +125,7 @@ export function exerciseSearchOrderBy(filters: ExerciseFilters): SQL[] {
   ];
 }
 
-/** "body only" → "Body Only" */
-export function titleCase(value: string): string {
-  return value.replace(/\b\w/g, (c) => c.toUpperCase());
+/** "cable machine" → "Cable Machine", in whatever language the label is in. */
+export function equipmentMenuLabel(value: string): string {
+  return equipmentLabel(value).replace(/(^|\s)\p{L}/gu, (c) => c.toLocaleUpperCase(LOCALE));
 }

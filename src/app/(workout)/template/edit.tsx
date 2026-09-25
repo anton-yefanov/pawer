@@ -2,6 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useLayoutEffect, useRef } from 'react';
 
 import { TemplateEditor } from '@/components/templates/template-editor';
+import { t } from '@/i18n';
 import { setTypeOf } from '@/lib/set-types';
 import { updateTemplate } from '@/lib/template-actions';
 import { blankSet, loadDraft, resetDraft } from '@/lib/template-draft';
@@ -62,7 +63,7 @@ export default function EditTemplateScreen() {
 
   return (
     <TemplateEditor
-      title="Edit Template"
+      title={t('common:screen.editTemplate')}
       onSave={({ name, exercises: rows }) => updateTemplate({ id, name, exercises: rows })}
     />
   );

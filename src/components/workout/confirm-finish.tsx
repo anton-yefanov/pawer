@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import * as haptics from '@/lib/haptics';
 
 type Props = {
@@ -24,7 +25,7 @@ export function ConfirmFinish({ open, onCompleteUnfinished, onCancelWorkout, onD
     <Host style={styles.host}>
       <Alert
         modifiers={[tint(theme.accent)]}
-        title="Finish Workout?"
+        title={t('workout:finish.title')}
         isPresented={open}
         onIsPresentedChange={(presented) => {
           if (!presented) onDismiss();
@@ -33,12 +34,12 @@ export function ConfirmFinish({ open, onCompleteUnfinished, onCancelWorkout, onD
           <Spacer />
         </Alert.Trigger>
         <Alert.Actions>
-          <Button label="Complete Unfinished Sets" onPress={onCompleteUnfinished} />
-          <Button role="destructive" label="Cancel Workout" onPress={onCancelWorkout} />
-          <Button role="cancel" label="Cancel" onPress={onDismiss} />
+          <Button label={t('workout:finish.completeUnfinished')} onPress={onCompleteUnfinished} />
+          <Button role="destructive" label={t('workout:finish.cancelWorkout')} onPress={onCancelWorkout} />
+          <Button role="cancel" label={t('common:action.cancel')} onPress={onDismiss} />
         </Alert.Actions>
         <Alert.Message>
-          <Text>There are valid sets in this workout that have not been marked as complete.</Text>
+          <Text>{t('workout:finish.unfinished')}</Text>
         </Alert.Message>
       </Alert>
     </Host>

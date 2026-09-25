@@ -16,6 +16,7 @@ import { Spacing } from "@/constants/theme";
 import { db } from "@/db/client";
 import { exercises } from "@/db/schema";
 import { useTheme } from "@/hooks/use-theme";
+import { t } from "@/i18n";
 import { deleteCustomExercise } from "@/lib/exercise-actions";
 import { attempt } from "@/lib/observability";
 
@@ -38,8 +39,8 @@ export function ExerciseDetail({
 
   const remove = async () => {
     const removed = await attempt("exercises", deleteCustomExercise(id), {
-      title: "Couldn’t delete exercise",
-      message: "Please try again.",
+      title: t("exercises:deleteFailed"),
+      message: t("common:error.tryAgain"),
     });
     if (removed) router.back();
   };
@@ -60,9 +61,9 @@ export function ExerciseDetail({
       >
         <ConfirmAlert
           open={confirming}
-          title={`Delete "${exercise?.name ?? ""}"?`}
-          message="It will be removed from your exercise list and templates. Past workouts keep their sets."
-          confirmLabel="Delete"
+          title={t("exercises:deleteTitle", { name: exercise?.name ?? "" })}
+          message={t("exercises:deleteMessage")}
+          confirmLabel={t("common:action.delete")}
           onConfirm={() => {
             setConfirming(false);
             void remove();
@@ -78,7 +79,7 @@ export function ExerciseDetail({
                   symbol="trash"
                   symbolSize={18}
                   size={HEADER_CIRCLE_SIZE}
-                  label="Delete"
+                  label={t("common:action.delete")}
                   onPress={() => setConfirming(true)}
                 />
                 {editHref ? (
@@ -86,7 +87,7 @@ export function ExerciseDetail({
                     symbol="pencil"
                     symbolSize={18}
                     size={HEADER_CIRCLE_SIZE}
-                    label="Edit"
+                    label={t("common:action.edit")}
                     onPress={() => router.push(editHref)}
                   />
                 ) : null}

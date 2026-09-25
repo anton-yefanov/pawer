@@ -1,4 +1,5 @@
 import { TIERS, type AchievementTier } from '@/constants/achievement-tiers';
+import { labels, t } from '@/i18n';
 import { thresholdsFor, type LadderMetric, type ScaledExercise } from '@/lib/achievement-scale';
 import { badgeKey } from '@/lib/achievement-news';
 import type { AchievementSession } from '@/lib/achievement-queries';
@@ -34,14 +35,10 @@ const LADDERS: Record<TrackingType, readonly LadderMetric[]> = {
 };
 
 /** Shown only when an exercise has more than one ladder — otherwise the name says it. */
-export const LADDER_TITLES: Record<LadderMetric, string> = {
-  weight: 'Weight',
-  added_weight: 'Added weight',
-  reps: 'Reps',
-  hold: 'Hold',
-  distance: 'Distance',
-  session_time: 'Time',
-};
+export const LADDER_TITLES = labels(
+  ['weight', 'added_weight', 'reps', 'hold', 'distance', 'session_time'] as const satisfies readonly LadderMetric[],
+  (metric) => t(`achievements:ladder.${metric}`)
+);
 
 /**
  * Mobility work earns nothing. A three-minute hamstring stretch is not a feat,
@@ -62,7 +59,7 @@ export function formatLadderValue(metric: LadderMetric, value: number, unit: Wei
     case 'added_weight':
       return `+${formatWeight(value, unit)}`;
     case 'reps':
-      return `${Math.round(value)} reps`;
+      return t('workout:repsCount', { count: Math.round(value) });
     case 'hold':
     case 'session_time':
       return formatDuration(Math.round(value));

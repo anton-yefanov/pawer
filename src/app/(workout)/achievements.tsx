@@ -10,6 +10,7 @@ import { CloseButton, HeaderPillButton } from '@/components/workout/workout-shee
 import { SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { useAchievementNews } from '@/lib/achievement-news';
 import { achievementSessionsQuery } from '@/lib/achievement-queries';
 import { buildAchievements } from '@/lib/achievements';
@@ -57,8 +58,8 @@ export default function AchievementsScreen() {
             style={styles.empty}
             text={
               items.length === 0
-                ? 'Log a workout to start earning badges'
-                : 'Nothing unlocked yet — Show All lists what to aim for'
+                ? t('achievements:empty')
+                : t('achievements:noneUnlocked')
             }
           />
         ) : (
@@ -99,12 +100,12 @@ function Header({
 
   return (
     <SheetHeader
-      title="Achievements"
+      title={t('common:screen.achievements')}
       right={
         spotlight.lifted != null ? (
           <CloseButton onPress={spotlight.close} />
         ) : canToggle ? (
-          <HeaderPillButton title={showLocked ? 'Unlocked' : 'Show All'} onPress={onToggle} />
+          <HeaderPillButton title={showLocked ? t('achievements:showUnlocked') : t('achievements:showAll')} onPress={onToggle} />
         ) : null
       }
     />

@@ -1,4 +1,6 @@
+import { labels, t } from '@/i18n';
 import { startOfDay, type DateRange } from '@/lib/analytics-period';
+import { formatDate } from '@/lib/format';
 
 export type Bucket = 'day' | 'week' | 'month';
 
@@ -9,11 +11,9 @@ export type Series = { bucket: Bucket; label: string; points: SeriesPoint[] };
 
 const DAY_MS = 86_400_000;
 
-const BUCKET_LABELS: Record<Bucket, string> = {
-  day: 'Daily',
-  week: 'Weekly',
-  month: 'Monthly',
-};
+const BUCKET_LABELS = labels(['day', 'week', 'month'] as const satisfies readonly Bucket[], (bucket) =>
+  t(`analytics:bucket.${bucket}`)
+);
 
 function bucketFor(spanMs: number): Bucket {
   if (spanMs <= 60 * DAY_MS) return 'day';
@@ -84,18 +84,16 @@ export function formatBucketRange(point: SeriesPoint, bucket: Bucket): string {
   const start = new Date(point.start);
 
   if (bucket === 'month') {
-    return start.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+    return formatDate(start, { month: 'short', year: 'numeric' });
   }
   if (bucket === 'day') {
-    return start.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+    return formatDate(start, { day: 'numeric', month: 'short' });
   }
 
   const last = new Date(point.end - DAY_MS);
   const sameMonth = start.getMonth() === last.getMonth();
-  const firstLabel = start.toLocaleDateString(
-    undefined,
-    sameMonth ? { day: 'numeric' } : { day: 'numeric', month: 'short' }
+  const firstLabel = formatDate(start, sameMonth ? { day: 'numeric' } : { day: 'numeric', month: 'short' }
   );
-  const lastLabel = last.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-  return `${firstLabel} – ${lastLabel}`;
+  const lastLabel = formatDate(last, { day: 'numeric', month: 'short' });
+  return t('common:range', { start: firstLabel, end: lastLabel });
 }

@@ -1,6 +1,8 @@
 import { eq, inArray, sql } from 'drizzle-orm';
 
 import { asCardColor } from '@/constants/card-colors';
+import { LANGUAGE } from '@/i18n';
+import { exerciseContent, folderName, templateName } from '@/i18n/content';
 import { emojiArtwork, EXERCISES_ARTWORK, serializeArtwork } from '@/lib/card-artwork';
 import { buildSearchText } from '@/lib/exercise-search';
 
@@ -26,6 +28,14 @@ import seedTemplateData from './seed/templates.json';
 export const SEED_VERSION = 17;
 
 const SEED_VERSION_KEY = 'seed_version';
+
+/**
+ * The language the library's names were last written in. The seed writes the
+ * translated names into the library-owned columns, so a change of app language
+ * is a re-seed exactly like a version bump — and iOS relaunches the app when the
+ * language changes, so this is the next launch.
+ */
+const SEED_LANGUAGE_KEY = 'seed_language';
 
 /** SQLite caps bound parameters per statement; 16 columns × 100 rows is safe. */
 const CHUNK_SIZE = 100;
@@ -57,7 +67,8 @@ export async function clearSetting(db: Database, key: string): Promise<void> {
  */
 export async function seedIfNeeded(db: Database): Promise<{ seeded: boolean; count: number }> {
   const current = Number(await getSetting(db, SEED_VERSION_KEY)) || 0;
-  if (current >= SEED_VERSION) {
+  const language = await getSetting(db, SEED_LANGUAGE_KEY);
+  if (current >= SEED_VERSION && language === LANGUAGE) {
     return { seeded: false, count: 0 };
   }
 
@@ -68,11 +79,23 @@ export async function seedIfNeeded(db: Database): Promise<{ seeded: boolean; cou
     await db
       .insert(exercises)
       .values(
-        chunk.map((e) => ({
-          ...e,
-          searchText: buildSearchText(e),
-          isCustom: false,
-        })),
+        chunk.map((e) => {
+          const content = exerciseContent(e.sourceId);
+          const name = content?.name ?? e.name;
+          return {
+            ...e,
+            name,
+            // English stays searchable under any language: gym slang ("RDL",
+            // "lat pulldown") is English wherever people lift.
+            searchText: buildSearchText({
+              ...e,
+              name,
+              aliases: [e.name],
+              tags: [...(content?.tags ?? []), ...e.tags],
+            }),
+            isCustom: false,
+          };
+        }),
       )
       .onConflictDoUpdate({
         target: exercises.sourceId,
@@ -99,6 +122,7 @@ export async function seedIfNeeded(db: Database): Promise<{ seeded: boolean; cou
   await seedTemplates(db);
 
   await setSetting(db, SEED_VERSION_KEY, String(SEED_VERSION));
+  await setSetting(db, SEED_LANGUAGE_KEY, LANGUAGE);
   return { seeded: true, count: rows.length };
 }
 
@@ -114,7 +138,7 @@ async function seedFolders(db: Database): Promise<void> {
       .values({
         id: newId(),
         sourceId: folder.sourceId,
-        name: folder.name,
+        name: folderName(folder.sourceId) ?? folder.name,
         position: folder.position,
         color: asCardColor(folder.color),
         artwork: serializeArtwork(emojiArtwork(folder.emoji)),
@@ -162,7 +186,7 @@ async function seedTemplates(db: Database): Promise<void> {
       .values({
         id: newId(),
         sourceId: template.sourceId,
-        name: template.name,
+        name: templateName(template.sourceId) ?? template.name,
         position: template.position,
         folderId: folderIdBySource.get(template.folderSourceId) ?? null,
         color: asCardColor(template.color),

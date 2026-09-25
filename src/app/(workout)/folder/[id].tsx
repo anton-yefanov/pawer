@@ -23,6 +23,7 @@ import { Spacing } from '@/constants/theme';
 import { db } from '@/db/client';
 import { templates } from '@/db/schema';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { usePro } from '@/lib/purchases';
 import { toFolderCard, toTemplateCard } from '@/lib/template-cards';
 import { folderQuery, foldersQuery, templateCardExercisesQuery } from '@/lib/template-queries';
@@ -86,7 +87,7 @@ export default function FolderScreen() {
     if (!row) return null;
     return (
       <CardMenu
-        accessibilityLabel={`${row.name} options`}
+        accessibilityLabel={t('common:optionsFor', { name: row.name })}
         // `folderId` is the discriminator, not `isBuiltIn` — folders carry that
         // too now that the Library ships its own.
         actions={
@@ -108,7 +109,7 @@ export default function FolderScreen() {
         right={
           folder && !shipped ? (
             <CardMenu
-              accessibilityLabel={`${folder.name} options`}
+              accessibilityLabel={t('common:optionsFor', { name: folder.name })}
               actions={folderActions(folder, { confirm: confirmFolderDelete, canAddFolder: true })}
               size={HEADER_CIRCLE_SIZE}
             />
@@ -123,7 +124,7 @@ export default function FolderScreen() {
         contentInsetAdjustmentBehavior="automatic"
         scrollEnabled={!dragging}>
         {folderCards.length === 0 && templateCards.length === 0 ? (
-          <EmptyState icon="folder.fill" text="Drag a template here, or add a folder" />
+          <EmptyState icon="folder.fill" text={t('templates:folder.empty')} />
         ) : (
           <CardGrid
             folders={folderCards}
@@ -138,7 +139,7 @@ export default function FolderScreen() {
         open={pending != null}
         title={pending?.title ?? ''}
         message={pending?.body ?? ''}
-        confirmLabel="Delete"
+        confirmLabel={t('common:action.delete')}
         onConfirm={() => {
           pending?.onConfirm();
           setPending(null);

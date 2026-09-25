@@ -16,6 +16,7 @@ import { ElapsedTime } from '@/components/workout/elapsed-time';
 import { ExerciseReorderProvider } from '@/components/workout/exercise-reorder';
 import { BottomTabInset, CardRadius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import * as haptics from '@/lib/haptics';
 import { useHomeWidget } from '@/lib/home-widget';
 import { guard } from '@/lib/observability';
@@ -80,8 +81,8 @@ export default function StartWorkoutScreen() {
 
   const startEmpty = async () => {
     const result = await guard('workout', startEmptyWorkout(), {
-      title: 'Couldn’t start workout',
-      message: 'Please try again.',
+      title: t('workout:startFailed'),
+      message: t('common:error.tryAgain'),
     });
     if (!result) return;
     if (result.status === 'blocked') {
@@ -103,7 +104,7 @@ export default function StartWorkoutScreen() {
           // which only iOS makes, and only from a header this screen has not got.
           contentInsetAdjustmentBehavior="never"
           scrollEnabled={!dragging}>
-          <TabTitle title="Home">
+          <TabTitle title={t('common:screen.home')}>
             <AchievementsButton />
           </TabTitle>
 
@@ -125,30 +126,30 @@ export default function StartWorkoutScreen() {
             <View style={styles.section}>
               <View style={[styles.card, { backgroundColor: theme.surface }]}>
                 <View style={styles.cardText}>
-                  <ThemedText numberOfLines={1}>{active.name?.trim() || 'Workout'}</ThemedText>
+                  <ThemedText numberOfLines={1}>{active.name?.trim() || t('workout:defaultName')}</ThemedText>
                   <ThemedText type="footnote" themeColor="textSecondary">
-                    Started {formatStartTime(active.startedAt)}
+                    {t('workout:startedAt', { time: formatStartTime(active.startedAt) })}
                   </ThemedText>
                 </View>
                 <ElapsedTime startedAt={active.startedAt} />
               </View>
-              <BigButton title="Resume Workout" onPress={() => open(active.id)} />
+              <BigButton title={t('templates:home.resume')} onPress={() => open(active.id)} />
             </View>
           ) : (
-            <BigButton title="Start an Empty Workout" onPress={() => void startEmpty()} />
+            <BigButton title={t('templates:home.startEmpty')} onPress={() => void startEmpty()} />
           )}
 
           <TemplateSection
-            title="My Templates"
+            title={t('templates:home.myTemplates')}
             templates={myCards}
             folders={folderCards}
             showAdd
             draggable
-            emptyHint="Add a template with the plus button, or save one from below"
+            emptyHint={t('templates:home.myTemplatesEmpty')}
           />
 
           <TemplateSection
-            title="Templates Library"
+            title={t('templates:home.library')}
             templates={looseBuiltInCards}
             folders={libraryFolders}
             collapsible

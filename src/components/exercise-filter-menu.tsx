@@ -4,7 +4,7 @@ import { View } from 'react-native';
 
 import { sfSymbol, type IconName } from '@/components/icon';
 import { useTheme } from '@/hooks/use-theme';
-import { ANY, titleCase, type FacetMenu } from '@/lib/exercise-filters';
+import { ANY, equipmentMenuLabel, type FacetMenu } from '@/lib/exercise-filters';
 
 /** Tag no row carries, so a Picker holding none of the selection shows no
  *  checkmark. A Picker with an unmatched selection is fine; one sharing the
@@ -115,7 +115,7 @@ export function ExerciseFacetMenu({
               <Text modifiers={[tag(ANY)]}>{anyLabel}</Text>
               {menu.options.map((option) => (
                 <Text key={option} modifiers={[tag(option)]}>
-                  {titleCase(option)}
+                  {equipmentMenuLabel(option)}
                 </Text>
               ))}
             </Picker>
@@ -127,7 +127,7 @@ export function ExerciseFacetMenu({
                   onSelectionChange={(next) => select(String(next))}>
                   {group.options.map((option) => (
                     <Text key={option} modifiers={[tag(option)]}>
-                      {titleCase(option)}
+                      {equipmentMenuLabel(option)}
                     </Text>
                   ))}
                 </Picker>

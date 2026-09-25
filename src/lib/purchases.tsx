@@ -5,6 +5,7 @@ import Purchases, { LOG_LEVEL, type CustomerInfo } from 'react-native-purchases'
 
 import { db } from '@/db/client';
 import { getSetting, setSetting } from '@/db/seed';
+import { t } from '@/i18n';
 import { attempt, guard, guardSync, report } from '@/lib/observability';
 import { track } from '@/lib/telemetry';
 
@@ -47,6 +48,7 @@ type PurchasesValue = {
   customerInfo: CustomerInfo | null;
   restore: () => Promise<RestoreResult>;
   refresh: () => Promise<void>;
+  sync: () => Promise<void>;
 };
 
 const PurchasesContext = createContext<PurchasesValue | null>(null);
@@ -131,6 +133,16 @@ export function PurchasesProvider({ children }: { children: ReactNode }) {
       });
       if (info) setCustomerInfo(info);
     },
+    // A reinstall starts a fresh anonymous RevenueCat user with no purchases on
+    // it, so a subscriber reads as free until the App Store's transactions are
+    // posted. Unlike `restore`, this never asks for an Apple ID password.
+    sync: async () => {
+      if (!CONFIGURED) return;
+      const result = await guard('purchases', Purchases.syncPurchasesForResult(), undefined, {
+        phase: 'sync',
+      });
+      if (result) setCustomerInfo(result.customerInfo);
+    },
     restore: async () => {
       try {
         const info = await Purchases.restorePurchases();
@@ -160,5 +172,5 @@ export function usePro(): boolean {
 
 function messageOf(error: unknown): string {
   if (typeof error === 'object' && error && 'message' in error) return String(error.message);
-  return 'Something went wrong. Please try again.';
+  return t('common:error.generic');
 }

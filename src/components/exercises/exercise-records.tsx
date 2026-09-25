@@ -5,6 +5,7 @@ import { ExerciseSection, SectionRule } from '@/components/exercises/exercise-se
 import { PrChip } from '@/components/pr-chip';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
+import { t } from '@/i18n';
 import type { ExerciseRecordRow } from '@/lib/exercise-history-queries';
 import { earnsRecords } from '@/lib/exercise-metrics';
 import { formatPrValue, PR_KINDS, PR_LABELS } from '@/lib/personal-records';
@@ -32,16 +33,16 @@ export function ExerciseRecords({
 
   if (known.length === 0) {
     return (
-      <ExerciseSection title="Records">
+      <ExerciseSection title={t('exercises:records.title')}>
         <ThemedText type="footnote" themeColor="textSecondary">
-          No records yet.
+          {t('exercises:records.empty')}
         </ThemedText>
       </ExerciseSection>
     );
   }
 
   return (
-    <ExerciseSection title="Records">
+    <ExerciseSection title={t('exercises:records.title')}>
       <View>
         {known.map((record, index) => (
           <Fragment key={record.kind}>

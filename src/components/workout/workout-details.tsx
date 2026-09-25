@@ -16,6 +16,7 @@ import { workoutActions } from '@/components/workout/workout-menu-actions';
 import { SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { usePro } from '@/lib/purchases';
 import { useEarnedBadges } from '@/lib/use-earned-badges';
 import { useWeightUnit } from '@/lib/weight-unit';
@@ -72,10 +73,10 @@ export function WorkoutDetails({
   return (
     <>
       <SheetHeader
-        title={workout.name?.trim() || 'Workout'}
+        title={workout.name?.trim() || t('workout:defaultName')}
         right={
           <CardMenu
-            accessibilityLabel="Workout options"
+            accessibilityLabel={t('workout:menu.workoutOptions')}
             actions={actions}
             size={HEADER_CIRCLE_SIZE}
           />
@@ -111,7 +112,7 @@ export function WorkoutDetails({
           open={pending != null}
           title={pending?.title ?? ''}
           message={pending?.body ?? ''}
-          confirmLabel="Delete"
+          confirmLabel={t('common:action.delete')}
           onConfirm={() => {
             pending?.onConfirm();
             setPending(null);

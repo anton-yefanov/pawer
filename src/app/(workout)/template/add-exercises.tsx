@@ -8,6 +8,7 @@ import { SheetGrabber } from '@/components/sheet-grabber';
 import { BigButton } from '@/components/workout/big-button';
 import { SHEET_TOP_INSET } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
+import { t } from '@/i18n';
 import { addDraftExercises } from '@/lib/template-draft';
 
 export default function AddTemplateExercisesScreen() {
@@ -43,7 +44,7 @@ export default function AddTemplateExercisesScreen() {
 
       {picked.length > 0 && (
         <SheetFooter>
-          <BigButton title={`Add ${picked.length}`} onPress={confirm} feedback="complete" />
+          <BigButton title={t('templates:addCount', { count: picked.length })} onPress={confirm} feedback="complete" />
         </SheetFooter>
       )}
     </>

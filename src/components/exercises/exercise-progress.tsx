@@ -8,6 +8,7 @@ import { Icon } from "@/components/icon";
 import { ThemedText } from "@/components/themed-text";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { t } from "@/i18n";
 import type { ExerciseSession } from "@/lib/exercise-history-queries";
 import { metricsFor } from "@/lib/exercise-metrics";
 import * as haptics from "@/lib/haptics";
@@ -53,7 +54,7 @@ export function ExerciseProgress({
 
   const series: Series = {
     bucket: "day",
-    label: "Per session",
+    label: t("exercises:progress.perSession"),
     points: real ? logged : PLACEHOLDER_POINTS,
   };
 
@@ -69,7 +70,7 @@ export function ExerciseProgress({
 
   return (
     <ExerciseSection
-      title="Progress"
+      title={t("exercises:progress.title")}
       trailing={
         metrics.length > 1 && isPro && !empty ? (
           <View style={styles.chips}>
@@ -117,10 +118,13 @@ export function ExerciseProgress({
         )}
         <ThemedText type="footnote" themeColor="textSecondary">
           {empty
-            ? `${metric.title} · no sessions yet`
+            ? t("exercises:progress.noSessions", { metric: metric.title })
             : isPro
-              ? `${metric.title} · ${formatBucketRange(point, "day")}`
-              : `${metric.title} · best`}
+              ? t("exercises:progress.at", {
+                  metric: metric.title,
+                  when: formatBucketRange(point, "day"),
+                })
+              : t("exercises:progress.best", { metric: metric.title })}
         </ThemedText>
       </View>
 
@@ -161,7 +165,7 @@ export function ExerciseProgress({
                   weight="semibold"
                   themeColor="accent"
                 >
-                  Unlock progress charts
+                  {t("exercises:progress.unlock")}
                 </ThemedText>
               </View>
             </Pressable>

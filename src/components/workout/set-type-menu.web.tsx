@@ -2,6 +2,7 @@ import { Pressable, StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { SET_TYPE_KEYS, SET_TYPES, type SetType } from '@/lib/set-types';
 
 export const SET_TYPE_CELL = { width: 40, height: 30 } as const;
@@ -22,7 +23,7 @@ export function SetTypeMenu({
 
   return (
     <Pressable
-      accessibilityLabel="Set type"
+      accessibilityLabel={t('workout:set.type')}
       onPress={() =>
         onChange(SET_TYPE_KEYS[(SET_TYPE_KEYS.indexOf(setType) + 1) % SET_TYPE_KEYS.length])
       }

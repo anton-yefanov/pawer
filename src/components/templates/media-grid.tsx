@@ -16,6 +16,7 @@ import { ThemedText } from '@/components/themed-text';
 import { SHEET_BOTTOM_INSET, SHEET_SCROLL } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import * as haptics from '@/lib/haptics';
 import { attempt } from '@/lib/observability';
 
@@ -95,8 +96,8 @@ export function MediaGrid({
         <View style={styles.gateBody}>
           <ThemedText type="footnote" themeColor="textSecondary" style={styles.gateText}>
             {askable
-              ? 'Allow access to your photos to use one as this template’s cover.'
-              : 'Photo access is off for pawer. Turn it on in Settings to use a photo as this template’s cover.'}
+              ? t('templates:media.askAccess')
+              : t('templates:media.accessOff')}
           </ThemedText>
           <Pressable
             onPress={() => {
@@ -110,7 +111,7 @@ export function MediaGrid({
               pressed && styles.pressed,
             ]}>
             <ThemedText type="headline" themeColor="accentContent">
-              {askable ? 'Allow access' : 'Open Settings'}
+              {askable ? t('templates:media.allow') : t('common:action.openSettings')}
             </ThemedText>
           </Pressable>
         </View>
@@ -143,7 +144,7 @@ export function MediaGrid({
           }}
           disabled={busyId !== null}
           accessibilityRole="button"
-          accessibilityLabel="Use photo as cover"
+          accessibilityLabel={t('templates:media.useAsCover')}
           style={({ pressed }) => [
             { width: cell, height: cell },
             pressed && styles.pressed,
@@ -175,7 +176,7 @@ function ManageAccess() {
       }}
       accessibilityRole="button"
       style={({ pressed }) => [styles.manage, pressed && styles.pressed]}>
-      <ThemedText themeColor="accent">Manage photos…</ThemedText>
+      <ThemedText themeColor="accent">{t('templates:media.manage')}</ThemedText>
     </Pressable>
   );
 }

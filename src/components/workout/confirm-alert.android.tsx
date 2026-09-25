@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 
 import { Dialog } from '@/components/android/dialog';
+import { t } from '@/i18n';
 import * as haptics from '@/lib/haptics';
 
 export function ConfirmAlert({
@@ -9,7 +10,7 @@ export function ConfirmAlert({
   message,
   confirmLabel,
   confirmRole = 'destructive',
-  dismissLabel = 'Cancel',
+  dismissLabel = t('common:action.cancel'),
   onConfirm,
   onDismiss,
 }: {

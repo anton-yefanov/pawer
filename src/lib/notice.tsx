@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { Dialog, type DialogAction } from '@/components/android/dialog';
+import { t } from '@/i18n';
 
 export type NoticeAction = DialogAction;
 
@@ -43,7 +44,7 @@ export function NoticeHost() {
       title={pending?.title ?? ''}
       message={pending?.message}
       onDismiss={() => setPending(null)}
-      actions={(pending?.actions ?? [{ label: 'OK', onPress: () => {} }]).map((action) => ({
+      actions={(pending?.actions ?? [{ label: t('common:action.ok'), onPress: () => {} }]).map((action) => ({
         ...action,
         onPress: () => {
           setPending(null);

@@ -1,10 +1,11 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { useEffect, useRef, type ReactNode } from 'react';
-import { Platform } from 'react-native';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { AppState, Platform } from 'react-native';
 
 import { TINTS } from '@/constants/tints';
+import { t } from '@/i18n';
 import { workoutActivity, type WorkoutActivityProps } from '@/lib/live-activity-layout';
-import { breadcrumb, guardSync, report } from '@/lib/observability';
+import { breadcrumb, report } from '@/lib/observability';
 import { useRestTimer } from '@/lib/rest-timer';
 import { useResolvedTint } from '@/lib/theme-preference';
 import { isWorkSet } from '@/lib/set-types';
@@ -53,6 +54,7 @@ function useWorkoutActivity() {
   const previous = useRef<WorkoutActivityProps | null>(null);
   const startedId = useRef<string | null>(null);
   const stopping = useRef(false);
+  const foreground = useForeground();
 
   useEffect(() => {
     if (Platform.OS !== 'ios' || workoutActivity == null) return;
@@ -83,10 +85,12 @@ function useWorkoutActivity() {
     const position = currentPosition(exercises, sets, tracking, includeWarmup);
 
     const setAt =
-      position == null ? null : `Set ${position.setIndex} of ${position.setCount}`;
+      position == null
+        ? null
+        : t('workout:activity.setOf', { index: position.setIndex, count: position.setCount });
 
     const props: WorkoutActivityProps = {
-      title: active.name?.trim() || 'Workout',
+      title: active.name?.trim() || t('workout:defaultName'),
       // Rest is said by the bar alone, never by the headline. JS is suspended
       // while the phone is locked — exactly when the activity is on screen — so
       // nothing pushes an update the moment a rest runs out; a headline reading
@@ -98,9 +102,12 @@ function useWorkoutActivity() {
       endedAt: null,
       restStartedAt: instant(rest.endsAt == null ? null : rest.endsAt - rest.total * 1000),
       restEndsAt: instant(rest.endsAt),
-      setsLabel: `${counted.filter((set) => set.completed).length}/${counted.length} sets`,
+      setsLabel: t('workout:activity.sets', {
+        done: counted.filter((set) => set.completed).length,
+        count: counted.length,
+      }),
       volumeLabel: formatTonnage(totalVolumeKg(sets, tracking, includeWarmup), unit),
-      exercisesLabel: exercises.length === 1 ? '1 exercise' : `${exercises.length} exercises`,
+      exercisesLabel: t('workout:exerciseCount', { count: exercises.length }),
       tint,
     };
 
@@ -116,9 +123,20 @@ function useWorkoutActivity() {
         // `push` records the payload only once ActivityKit has taken it.
         push(existing, props, previous);
       } else {
-        guardSync('live-activity', () =>
-          workoutActivity?.start(props, `pawer://active?id=${active.id}`)
-        );
+        // ActivityKit only starts an activity from the foreground ("Target is not
+        // foreground"), and iOS does launch the app in the background with a
+        // workout open. Leaving `startedId` unset retries once the user opens it.
+        if (!foreground) return;
+        try {
+          workoutActivity.start(props, `pawer://active?id=${active.id}`);
+        } catch (error) {
+          // Thrown when the user has switched Live Activities off for Pawer, or
+          // the device has none (iPad) — a setting, not a failure. expo-widgets
+          // exposes no `areActivitiesEnabled` to check first.
+          if (!String(error).includes('LiveActivitiesNotSupportedException')) {
+            report('live-activity', error);
+          }
+        }
         // `start` has no promise to wait on, so this is the only place to set it.
         previous.current = props;
       }
@@ -131,7 +149,16 @@ function useWorkoutActivity() {
 
     const [instance] = workoutActivity.getInstances();
     if (instance) push(instance, props, previous);
-  }, [updatedAt, active, exerciseRows, setRows, rest.endsAt, rest.total, unit, includeWarmup, tint]);
+  }, [updatedAt, active, exerciseRows, setRows, rest.endsAt, rest.total, unit, includeWarmup, tint, foreground]);
+}
+
+function useForeground() {
+  const [foreground, setForeground] = useState(AppState.currentState === 'active');
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => setForeground(state === 'active'));
+    return () => sub.remove();
+  }, []);
+  return foreground;
 }
 
 /**
@@ -145,7 +172,7 @@ function instant(value: number | null): number | null {
 
 /** No set is waiting to be filled: either nothing was added, or it's all logged. */
 function idle(exerciseCount: number): string {
-  return exerciseCount === 0 ? 'No exercises yet' : 'All sets done';
+  return exerciseCount === 0 ? t('workout:activity.empty') : t('workout:activity.allDone');
 }
 
 /**

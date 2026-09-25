@@ -7,6 +7,7 @@ import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { formatDuration } from '@/lib/units';
 
 const SIZE = 32;
@@ -63,12 +64,12 @@ export function ExerciseMenu({
   const items: MenuItem[] = [
     {
       key: 'note',
-      label: hasNote ? 'Remove note' : 'Add note',
+      label: hasNote ? t('workout:menu.removeNote') : t('workout:menu.addNote'),
       onPress: onToggleNote,
     },
     {
       key: 'rest',
-      label: 'Rest timers',
+      label: t('workout:menu.restTimers'),
       items: [
         {
           key: 'rest-default',
@@ -78,13 +79,13 @@ export function ExerciseMenu({
         },
         ...choices.map((seconds) => ({
           key: `rest-${seconds}`,
-          label: seconds === 0 ? 'Off' : formatDuration(seconds),
+          label: seconds === 0 ? t('workout:menu.off') : formatDuration(seconds),
           selected: restSeconds === seconds,
           onPress: () => onChangeRest(seconds),
         })),
         {
           key: 'rest-custom',
-          label: 'Custom',
+          label: t('workout:menu.custom'),
           separated: true,
           onPress: () => setCustomOpen(true),
         },
@@ -95,7 +96,7 @@ export function ExerciseMenu({
   if (candidates.length > 0 || inSuperset) {
     items.push({
       key: 'superset',
-      label: 'Superset',
+      label: t('workout:menu.superset'),
       items: [
         ...candidates.map((row) => ({
           key: row.id,
@@ -106,7 +107,7 @@ export function ExerciseMenu({
           ? [
               {
                 key: 'superset-leave',
-                label: 'Remove from superset',
+                label: t('workout:menu.leaveSuperset'),
                 destructive: true,
                 separated: true,
                 onPress: onLeaveSuperset,
@@ -119,7 +120,7 @@ export function ExerciseMenu({
 
   items.push({
     key: 'remove',
-    label: 'Remove exercise',
+    label: t('workout:menu.removeExercise'),
     destructive: true,
     separated: true,
     onPress: onRemove,
@@ -130,7 +131,7 @@ export function ExerciseMenu({
       <Menu open={open} items={items} onClose={() => setOpen(false)} style={styles.trigger}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Exercise options"
+          accessibilityLabel={t('workout:menu.exerciseOptions')}
           onPress={() => setOpen(true)}
           style={({ pressed }) => [styles.trigger, styles.centre, pressed && { opacity: 0.6 }]}>
           <Icon name="ellipsis" size={20} tintColor={theme.textSecondary} />
@@ -174,7 +175,7 @@ function CustomRest({
       <View style={styles.centreScreen} pointerEvents="box-none">
         <View style={[styles.card, { backgroundColor: theme.surface }]}>
           <ThemedText type="footnote" weight="semibold" themeColor="textSecondary">
-            Rest timer
+            {t('workout:menu.restTimer')}
           </ThemedText>
           <View style={styles.wheels}>
             <Wheel
@@ -192,7 +193,7 @@ function CustomRest({
           </View>
           <Pressable onPress={onClose} style={styles.done}>
             <ThemedText type="footnote" weight="semibold" themeColor="accent">
-              Done
+              {t('common:action.done')}
             </ThemedText>
           </Pressable>
         </View>

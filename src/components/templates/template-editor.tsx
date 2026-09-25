@@ -17,6 +17,7 @@ import { db } from '@/db/client';
 import { exercises } from '@/db/schema';
 import { ThemedTextInput } from '@/components/themed-text-input';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import * as haptics from '@/lib/haptics';
 import type { LoggingActions } from '@/lib/logging-model';
 import { DEFAULT_REST_SECONDS } from '@/lib/rest-timer';
@@ -108,8 +109,8 @@ export function TemplateEditor({
 
   const save = async () => {
     const saved = await attempt('templates', onSave({ ...draft, name }), {
-      title: 'Couldn’t save template',
-      message: 'Please try again.',
+      title: t('templates:saveFailed'),
+      message: t('common:error.tryAgain'),
     });
     if (!saved) return;
     resetDraft();
@@ -122,7 +123,7 @@ export function TemplateEditor({
         title={title}
         options={{ contentStyle: { backgroundColor: theme.background } }}
         left={<CloseButton onPress={() => router.back()} />}
-        right={<HeaderPillButton title="Save" onPress={() => void save()} disabled={name === ''} />}
+        right={<HeaderPillButton title={t('common:action.save')} onPress={() => void save()} disabled={name === ''} />}
       />
 
       <ExerciseReorderProvider
@@ -146,7 +147,7 @@ export function TemplateEditor({
             <ThemedTextInput
               value={draft.name}
               onChangeText={setDraftName}
-              placeholder="New Template"
+              placeholder={t('templates:newTemplate')}
               style={styles.name}
               returnKeyType="done"
             />
@@ -187,7 +188,7 @@ export function TemplateEditor({
 
           <ReorderDim>
             <BigButton
-              title="Add Exercises"
+              title={t('templates:addExercises')}
               symbol="plus.circle"
               onPress={() => router.push('/template/add-exercises')}
             />
@@ -195,7 +196,7 @@ export function TemplateEditor({
 
           {draft.exercises.length === 0 && (
             <ThemedText type="footnote" themeColor="textTertiary" style={styles.hint}>
-              Add an exercise to plan its sets.
+              {t('templates:emptyHint')}
             </ThemedText>
           )}
         </KeyboardScrollView>

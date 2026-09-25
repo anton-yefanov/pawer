@@ -12,6 +12,7 @@ import {
 
 import { base } from '@/components/themed-text';
 import { Colors, Spacing, Type } from '@/constants/theme';
+import { t } from '@/i18n';
 import { breadcrumb, report, span } from '@/lib/observability';
 import { track } from '@/lib/telemetry';
 
@@ -96,11 +97,11 @@ function Bootstrap({ error, onRetry }: { error: Error | null; onRetry: (() => vo
         <ActivityIndicator />
       ) : (
         <>
-          <Text style={[styles.title, { color: colors.text }]}>Database error</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{t('common:databaseError')}</Text>
           <Text style={[styles.body, { color: colors.textSecondary }]}>{error.message}</Text>
           {onRetry && (
             <Pressable onPress={onRetry} style={styles.retry}>
-              <Text style={[styles.retryLabel, { color: colors.accent }]}>Try again</Text>
+              <Text style={[styles.retryLabel, { color: colors.accent }]}>{t('common:action.tryAgain')}</Text>
             </Pressable>
           )}
         </>

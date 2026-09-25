@@ -19,6 +19,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useAppStateActive } from '@/hooks/use-app-state-active';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import * as haptics from '@/lib/haptics';
 import { useRestTimer } from '@/lib/rest-timer';
 import { formatDuration } from '@/lib/units';
@@ -163,7 +164,7 @@ function RestCountdownRow({
             onPress={() => adjust(15)}
           />
           <RestButton
-            label="Skip"
+            label={t('workout:rest.skip')}
             color={theme.textSecondary}
             reveal={reveal}
             order={2}

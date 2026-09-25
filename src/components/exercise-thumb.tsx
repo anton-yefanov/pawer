@@ -1,6 +1,7 @@
 import { Image } from "expo-image";
 import { StyleSheet, View } from "react-native";
 
+import { ArtPlaceholder } from "@/components/art-placeholder";
 import { CIRCLE_BUTTON_SIZE } from "@/components/circle-button";
 import { useTheme } from "@/hooks/use-theme";
 import {
@@ -19,13 +20,15 @@ export function ExerciseThumb({ art }: { art: ExerciseArt }) {
 
   return (
     <View style={[styles.thumb, { backgroundColor: theme.backgroundElement }]}>
-      {thumb && (
+      {thumb ? (
         <Image
           source={thumb}
           style={styles.image}
           contentFit="cover"
           onError={(error) => reportMissingArt(art, error)}
         />
+      ) : (
+        <ArtPlaceholder />
       )}
     </View>
   );

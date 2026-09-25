@@ -233,6 +233,8 @@ const muscles = new Set(exercises.flatMap((e) => e.primaryMuscles));
 console.log(`Wrote ${exercises.length} exercises to ${OUT}`);
 console.log(`  equipment types: ${[...equipment].sort().join(', ')}`);
 console.log(`  primary muscles: ${[...muscles].sort().join(', ')}`);
+
+await import('./build-content.mjs');
 for (const type of [...TRACKING_TYPE]) {
   console.log(`  ${type}: ${exercises.filter((e) => e.trackingType === type).length}`);
 }

@@ -27,6 +27,7 @@ import type { Exercise } from '@/db/schema';
 import { useSheetAutoFocus } from '@/hooks/use-sheet-autofocus';
 import { ThemedTextInput } from '@/components/themed-text-input';
 import { useTheme } from '@/hooks/use-theme';
+import { labels, t } from '@/i18n';
 import { createCustomExercise, updateCustomExercise } from '@/lib/exercise-actions';
 import { MuscleGroupThumb } from '@/components/muscle-map/muscle-group-thumb';
 import { EXERCISE_GROUPS, exerciseGroup, groupOfExercise } from '@/lib/exercise-groups';
@@ -36,15 +37,16 @@ import { notice } from '@/lib/notice';
 import { attempt, guard, report } from '@/lib/observability';
 import { pickPhoto } from '@/lib/pick-photo';
 import {
-  TRACKING_LABELS,
   TRACKING_SECTIONS,
+  trackingLabel,
+  trackingSectionTitle,
   trackingTypeOf,
   type TrackingType,
 } from '@/lib/tracking-types';
 
 const SAVE_FAILED = {
-  title: 'Couldn’t save exercise',
-  message: 'Please try again.',
+  title: t('exercises:form.saveFailed'),
+  message: t('common:error.tryAgain'),
 };
 
 type Step = 'form' | 'category' | 'type';
@@ -104,7 +106,7 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
       setPhoto(file);
     } catch (error) {
       report('photos', error, { phase: 'import-exercise' });
-      notice({ title: 'Couldn’t use that photo', message: 'Please pick a different one.' });
+      notice({ title: t('templates:photoFailed.title'), message: t('templates:photoFailed.message') });
     } finally {
       setImporting(false);
     }
@@ -136,7 +138,7 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
   return (
     <>
       <SheetHeader
-        title={step === 'form' && exercise ? 'Edit Exercise' : STEP_TITLES[step]}
+        title={step === 'form' && exercise ? t('exercises:form.edit') : STEP_TITLES[step]}
         left={
           step === 'form' ? (
             <CloseButton onPress={() => router.back()} />
@@ -175,7 +177,7 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
                   ref={nameRef}
                   value={name}
                   onChangeText={setName}
-                  placeholder="Name"
+                  placeholder={t('exercises:form.name')}
                   style={styles.input}
                   autoFocus={nameAutoFocus}
                   autoCapitalize="words"
@@ -184,7 +186,7 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
               </View>
               <Separator />
               <DisclosureRow
-                label="Category"
+                label={t('exercises:form.category')}
                 value={group ? exerciseGroup(group)?.title : undefined}
                 chevron={!locked}
                 onPress={() => {
@@ -194,14 +196,14 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
             </Card>
             {missingGroup && (
               <SectionFooter themeColor="danger">
-                Pick a category for this exercise before saving.
+                {t('exercises:form.missingCategory')}
               </SectionFooter>
             )}
 
-            <SectionTitle>Exercise Type</SectionTitle>
+            <SectionTitle>{t('exercises:form.step.type')}</SectionTitle>
             <Card radius={SHEET_INNER_RADIUS}>
               <DisclosureRow
-                label={TRACKING_LABELS[trackingType].title}
+                label={trackingLabel(trackingType)}
                 chevron={!locked}
                 onPress={() => {
                   if (!locked) setStep('type');
@@ -210,8 +212,7 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
             </Card>
             {locked && (
               <SectionFooter>
-                Category and Exercise Type are set when an exercise is created and can&apos;t be
-                changed afterwards.
+                {t('exercises:form.locked')}
               </SectionFooter>
             )}
           </>
@@ -239,14 +240,14 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
 
         {step === 'type' &&
           TRACKING_SECTIONS.map((section) => (
-            <View key={section.title}>
-              <SectionTitle>{section.title}</SectionTitle>
+            <View key={section.id}>
+              <SectionTitle>{trackingSectionTitle(section.id)}</SectionTitle>
               <Card radius={SHEET_INNER_RADIUS}>
                 {section.types.map((type, index) => (
                   <View key={type}>
                     {index > 0 && <Separator />}
                     <PickRow
-                      label={TRACKING_LABELS[type].title}
+                      label={trackingLabel(type)}
                       selected={type === trackingType}
                       onPress={() => {
                         setTrackingType(type);
@@ -265,11 +266,9 @@ export function ExerciseFormSheet({ exercise }: { exercise?: Exercise }) {
   );
 }
 
-const STEP_TITLES: Record<Step, string> = {
-  form: 'Add Exercise',
-  category: 'Select Category',
-  type: 'Exercise Type',
-};
+const STEP_TITLES = labels(['form', 'category', 'type'] as const satisfies readonly Step[], (step) =>
+  t(`exercises:form.step.${step}`)
+);
 
 const styles = StyleSheet.create({
   content: {

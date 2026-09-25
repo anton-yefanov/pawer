@@ -16,6 +16,7 @@ import { FloatingSurface } from '@/components/floating-surface';
 import { Icon, type IconName } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 
 export function Step({
   title,
@@ -121,7 +122,7 @@ export function StepHeader({
             entering={reducedMotion ? undefined : drop(0)}
             exiting={reducedMotion ? undefined : lift}
           >
-            <CircleButton symbol="chevron.left" label="Back" onPress={onBack} />
+            <CircleButton symbol="chevron.left" label={t('common:action.back')} onPress={onBack} />
           </Animated.View>
         )}
       </View>
@@ -137,7 +138,7 @@ export function StepHeader({
             style={styles.progress}
             accessibilityRole="progressbar"
             accessibilityValue={{ min: 0, max: count, now: index + 1 }}
-            accessibilityLabel="Onboarding progress"
+            accessibilityLabel={t('onboarding:progress')}
           >
             <Animated.View
               layout={LinearTransition}

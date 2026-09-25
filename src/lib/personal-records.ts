@@ -3,6 +3,7 @@ import { and, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
 import { db, type Executor } from '@/db/client';
 import { newId } from '@/db/id';
 import { exercises, personalRecords, sets, workoutExercises } from '@/db/schema';
+import { labels, t } from '@/i18n';
 import { trackingTypeOf, type TrackedSet, type TrackingType } from '@/lib/tracking-types';
 import { formatTonnage, formatWeight, type WeightUnit } from '@/lib/units';
 import { workSets } from '@/lib/workout-queries';
@@ -10,12 +11,7 @@ import { workSets } from '@/lib/workout-queries';
 export const PR_KINDS = ['heaviest_weight', 'best_1rm', 'best_volume', 'most_reps'] as const;
 export type PrKind = (typeof PR_KINDS)[number];
 
-export const PR_LABELS: Record<PrKind, string> = {
-  heaviest_weight: 'Weight',
-  best_1rm: 'e1RM',
-  best_volume: 'Volume',
-  most_reps: 'Reps',
-};
+export const PR_LABELS = labels(PR_KINDS, (kind) => t(`exercises:prKind.${kind}`));
 
 export function isPrKind(value: string): value is PrKind {
   return (PR_KINDS as readonly string[]).includes(value);
@@ -31,7 +27,7 @@ export function formatPrValue(kind: PrKind, value: number, unit: WeightUnit): st
       return formatTonnage(value, unit);
     case 'most_reps': {
       const reps = Math.round(value);
-      return `${reps} ${reps === 1 ? 'rep' : 'reps'}`;
+      return t('workout:repsCount', { count: reps });
     }
   }
 }

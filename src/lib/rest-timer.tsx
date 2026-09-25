@@ -3,6 +3,7 @@ import { createContext, use, useEffect, useState, type ReactNode } from 'react';
 import { db } from '@/db/client';
 import { getSetting, setSetting } from '@/db/seed';
 import { useAppStateActive } from '@/hooks/use-app-state-active';
+import { t } from '@/i18n';
 import * as haptics from '@/lib/haptics';
 import { cancelRestNotification, scheduleRestNotification } from '@/lib/notifications';
 import { loadRestSound } from '@/lib/rest-sound';
@@ -109,7 +110,10 @@ export function RestTimerProvider({ children }: { children: ReactNode }) {
         return;
       }
       const endsAt = onTheSecond(Date.now() + seconds * 1000);
-      const notificationId = await scheduleRestNotification(endsAt, `Next set: ${exerciseName}`);
+      const notificationId = await scheduleRestNotification(
+        endsAt,
+        t('notifications:rest.nextSetNamed', { name: exerciseName })
+      );
       const next = { setId, endsAt, total: seconds, notificationId };
       setNow(Date.now());
       setRest(next);
@@ -120,7 +124,7 @@ export function RestTimerProvider({ children }: { children: ReactNode }) {
       if (!rest) return;
       await cancelRestNotification(rest.notificationId);
       const endsAt = onTheSecond(Math.max(Date.now(), rest.endsAt + deltaSeconds * 1000));
-      const notificationId = await scheduleRestNotification(endsAt, 'Next set');
+      const notificationId = await scheduleRestNotification(endsAt, t('notifications:rest.nextSet'));
       const next = {
         ...rest,
         endsAt,

@@ -9,6 +9,7 @@ import { useDebouncedWrite } from '@/hooks/use-debounced-write';
 import { ThemedTextInput } from '@/components/themed-text-input';
 import { useTheme } from '@/hooks/use-theme';
 import type { Workout } from '@/db/schema';
+import { t } from '@/i18n';
 import { updateWorkout } from '@/lib/workout-actions';
 import { attempt } from '@/lib/observability';
 
@@ -20,7 +21,7 @@ export function WorkoutDetailsCard({ workout }: { workout: Workout }) {
     <View style={[styles.card, { backgroundColor: theme.surface }]}>
       <WriteThroughField
         value={workout.name ?? ''}
-        placeholder="Name"
+        placeholder={t('workout:details.name')}
         style={styles.nameInput}
         onCommit={(name) => updateWorkout(workout.id, { name: name.trim() || null })}
       />
@@ -28,14 +29,14 @@ export function WorkoutDetailsCard({ workout }: { workout: Workout }) {
       <View style={[styles.divider, { backgroundColor: theme.backgroundElement }]} />
 
       <View style={styles.row}>
-        <ThemedText>Start Time</ThemedText>
+        <ThemedText>{t('workout:details.startTime')}</ThemedText>
         <StartTimePicker
           value={new Date(workout.startedAt)}
           max={new Date(workout.finishedAt ?? openedAt)}
           onChange={(next) =>
             void attempt('workout', updateWorkout(workout.id, { startedAt: next.getTime() }), {
-              title: 'Couldn’t save',
-              message: 'Your last change wasn’t saved. Please try again.',
+              title: t('common:error.saveFailed'),
+              message: t('workout:saveFailedMessage'),
             })
           }
         />
@@ -45,7 +46,7 @@ export function WorkoutDetailsCard({ workout }: { workout: Workout }) {
 
       <WriteThroughField
         value={workout.notes ?? ''}
-        placeholder="Notes"
+        placeholder={t('workout:notes')}
         multiline
         style={styles.notesInput}
         onCommit={(notes) => updateWorkout(workout.id, { notes: notes.trim() || null })}

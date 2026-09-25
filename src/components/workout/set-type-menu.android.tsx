@@ -4,6 +4,7 @@ import { Pressable, StyleSheet } from 'react-native';
 import { Menu } from '@/components/android/menu';
 import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { SET_TYPE_KEYS, SET_TYPES, type SetType } from '@/lib/set-types';
 
 export const SET_TYPE_CELL = { width: 40, height: 30 } as const;
@@ -24,7 +25,7 @@ export function SetTypeMenu({ label, setType, completed, onChange }: Props) {
   return (
     <Menu
       open={open}
-      title="Set type"
+      title={t('workout:set.type')}
       onClose={() => setOpen(false)}
       style={SET_TYPE_CELL}
       items={SET_TYPE_KEYS.map((key) => ({
@@ -35,7 +36,7 @@ export function SetTypeMenu({ label, setType, completed, onChange }: Props) {
       }))}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Set type"
+        accessibilityLabel={t('workout:set.type')}
         onPress={() => setOpen(true)}
         style={({ pressed }) => [
           styles.pill,

@@ -25,6 +25,7 @@ import { SupersetBadge } from '@/components/workout/superset-badge';
 import { SHEET_INNER_RADIUS } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import * as haptics from '@/lib/haptics';
 import type { LoggedExercise, LoggedSet, LoggingActions } from '@/lib/logging-model';
 import { setLabels } from '@/lib/set-types';
@@ -224,7 +225,7 @@ export function ExerciseCard({
                   if (removingNote.current) return;
                   return actions.setExerciseNotes(exercise.id, next.trim() || null);
                 }}
-                placeholder="Notes"
+                placeholder={t('workout:notes')}
                 autoFocus={(exercise.notes ?? '') === ''}
                 style={styles.notes}
               />
@@ -232,10 +233,10 @@ export function ExerciseCard({
 
             <View style={styles.columns}>
               <ThemedText type="footnote" themeColor="textTertiary" style={styles.columnSet}>
-                Set
+                {t('workout:column.set')}
               </ThemedText>
               <ThemedText type="footnote" themeColor="textTertiary" style={styles.columnPrevious}>
-                Previous
+                {t('workout:column.previous')}
               </ThemedText>
               {fields.map((field) => (
                 <ThemedText
@@ -274,7 +275,7 @@ export function ExerciseCard({
               }}
               style={({ pressed }) => [styles.addSet, pressed && styles.pressed]}>
               <ThemedText type="footnote" themeColor="textSecondary">
-                + Add set
+                {t('workout:addSet')}
               </ThemedText>
             </Pressable>
           </View>

@@ -5,6 +5,7 @@ import { Pressable, StyleSheet } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import * as haptics from '@/lib/haptics';
 import { formatStartTime } from '@/lib/workout-stats';
 
@@ -38,7 +39,7 @@ export function StartTimePicker({
     <>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Start time, ${formatStartTime(value.getTime())}`}
+        accessibilityLabel={t('workout:details.startTimeValue', { time: formatStartTime(value.getTime()) })}
         onPress={() => {
           haptics.tap();
           setPickingDay(true);

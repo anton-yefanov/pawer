@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { AppState, Platform } from 'react-native';
 
+import { t } from '@/i18n';
 import { report } from '@/lib/observability';
 import { REST_SOUNDS, restSound, restSoundFile, type RestSoundId } from '@/lib/rest-sound';
 
@@ -53,12 +54,12 @@ const androidChannels =
   Platform.OS === 'android'
     ? Promise.all([
         Notifications.setNotificationChannelAsync(REST_CHANNEL_ID, {
-          name: 'Rest timer',
+          name: t('notifications:channel.rest'),
           importance: Notifications.AndroidImportance.HIGH,
           vibrationPattern: [0, 250, 250, 250],
         }),
         Notifications.setNotificationChannelAsync(REMINDER_CHANNEL_ID, {
-          name: 'Workout reminders',
+          name: t('notifications:channel.reminders'),
           importance: Notifications.AndroidImportance.DEFAULT,
         }),
       ]).catch((error: unknown) => {
@@ -81,7 +82,9 @@ async function restChannelId(sound: RestSoundId): Promise<string> {
   let pending = restChannels.get(sound);
   if (!pending) {
     pending = Notifications.setNotificationChannelAsync(id, {
-      name: `Rest timer (${REST_SOUNDS.find((entry) => entry.id === sound)?.label ?? sound})`,
+      name: t('notifications:channel.restWithSound', {
+        sound: REST_SOUNDS.find((entry) => entry.id === sound)?.label ?? sound,
+      }),
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
       sound: file,
@@ -173,7 +176,7 @@ export async function scheduleRestNotification(
   await dismissRestNotification();
   const sound = restSound();
   return scheduleNotification({
-    title: 'Rest over',
+    title: t('notifications:rest.title'),
     body,
     date: endsAt,
     sound: restSoundFile(sound) ?? 'default',

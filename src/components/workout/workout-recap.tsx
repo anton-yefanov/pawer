@@ -7,6 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { SHEET_INNER_RADIUS } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { isPrKind, PR_LABELS } from '@/lib/personal-records';
 import { isWorkSet } from '@/lib/set-types';
 import { formatPreviousSet, trackingTypeOf } from '@/lib/tracking-types';
@@ -81,7 +82,7 @@ export function SummaryStats({
   summary: WorkoutSummary;
   unit: WeightUnit;
   tally?: boolean;
-  /** Adds a "Date" row. The recap leaves it off — it just happened. */
+  /** Adds a Date row. The recap leaves it off — it just happened. */
   startedAt?: number;
 }) {
   const theme = useTheme();
@@ -90,11 +91,11 @@ export function SummaryStats({
   // At rest `progress` is exactly 1, so every figure is the same call it always
   // was — the climb can never leave a stat reading something the workout isn't.
   const stats = [
-    ...(startedAt == null ? [] : ([['Date', formatStartTime(startedAt)]] as const)),
-    ['Duration', formatElapsed(summary.durationMs * progress)],
-    ['Volume', formatWeight(summary.volumeKg * progress, unit)],
-    ['Sets', String(Math.round(summary.completedSets * progress))],
-    ['Exercises', String(Math.round(summary.exerciseCount * progress))],
+    ...(startedAt == null ? [] : ([[t('workout:stat.date'), formatStartTime(startedAt)]] as const)),
+    [t('workout:stat.duration'), formatElapsed(summary.durationMs * progress)],
+    [t('workout:stat.volume'), formatWeight(summary.volumeKg * progress, unit)],
+    [t('workout:stat.sets'), String(Math.round(summary.completedSets * progress))],
+    [t('workout:stat.exercises'), String(Math.round(summary.exerciseCount * progress))],
   ] as const;
 
   return (
@@ -158,7 +159,7 @@ export function ExerciseBreakdown({
                 {exercise.name}
               </ThemedText>
               <ThemedText type="footnote" themeColor="textSecondary">
-                {logged.length} {logged.length === 1 ? 'set' : 'sets'}
+                {t('workout:setCount', { count: logged.length })}
               </ThemedText>
             </View>
 

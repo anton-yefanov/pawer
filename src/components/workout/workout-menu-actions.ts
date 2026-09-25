@@ -1,4 +1,5 @@
 import { type CardAction, type ConfirmDestructive } from '@/components/templates/card-actions';
+import { t } from '@/i18n';
 import { attempt, guard } from '@/lib/observability';
 import { allowNewTemplate } from '@/lib/pro-gates';
 import { createTemplateFromWorkout } from '@/lib/template-actions';
@@ -17,45 +18,45 @@ export function workoutActions(
   }
 ): CardAction[] {
   const { onEdit, onRepeat, onDeleted, confirm, isPro } = handlers;
-  const name = workout.name?.trim() || 'Workout';
+  const name = workout.name?.trim() || t('workout:defaultName');
 
   return [
-    { label: 'Edit Workout', icon: 'pencil', onPress: onEdit },
+    { label: t('workout:menu.edit'), icon: 'pencil', onPress: onEdit },
     {
-      label: 'Save as Template',
+      label: t('workout:menu.saveAsTemplate'),
       icon: 'square.and.arrow.down',
       onPress: () =>
         void guard('pro-gates', allowNewTemplate(isPro)).then(
           (allowed) =>
             allowed &&
             attempt('templates', createTemplateFromWorkout(workout.id), {
-              title: 'Couldn’t save template',
-              message: 'Please try again.',
+              title: t('workout:menu.saveTemplateFailed'),
+              message: t('common:error.tryAgain'),
             })
         ),
     },
     {
-      label: 'Perform Again',
+      label: t('workout:menu.performAgain'),
       icon: 'arrow.clockwise',
       onPress: () =>
         void guard('workout', repeatWorkout(workout.id), {
-          title: 'Couldn’t start workout',
-          message: 'Please try again.',
+          title: t('workout:menu.startFailed'),
+          message: t('common:error.tryAgain'),
         }).then((result) => result && onRepeat(result)),
     },
     {
-      label: 'Delete',
+      label: t('common:action.delete'),
       icon: 'trash',
       destructive: true,
       separated: true,
       onPress: () =>
         confirm({
-          title: `Delete “${name}”?`,
-          body: 'This cannot be undone.',
+          title: t('common:deleteNamed', { name }),
+          body: t('common:cannotUndo'),
           onConfirm: () =>
             void attempt('workout', deleteWorkout(workout.id), {
-              title: 'Couldn’t delete workout',
-              message: 'Please try again.',
+              title: t('workout:menu.deleteFailed'),
+              message: t('common:error.tryAgain'),
             }).then((deleted) => deleted && onDeleted?.()),
         }),
     },

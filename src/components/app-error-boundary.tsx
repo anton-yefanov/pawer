@@ -4,6 +4,7 @@ import { StyleSheet, Text, View, useColorScheme } from 'react-native';
 import { Pressable } from '@/components/pressable';
 import { base } from '@/components/themed-text';
 import { Colors, Spacing, Type } from '@/constants/theme';
+import { t } from '@/i18n';
 
 type Props = { error: Error; retry: () => Promise<void> };
 
@@ -24,10 +25,10 @@ export const AppErrorBoundary = Sentry.wrapExpoRouterErrorBoundary(function AppE
 
   return (
     <View style={[styles.center, { backgroundColor: colors.background }]}>
-      <Text style={[styles.title, { color: colors.text }]}>Something went wrong</Text>
+      <Text style={[styles.title, { color: colors.text }]}>{t('common:somethingWentWrong')}</Text>
       <Text style={[styles.body, { color: colors.textSecondary }]}>{error.message}</Text>
       <Pressable onPress={() => void retry()} style={styles.retry}>
-        <Text style={[styles.retryLabel, { color: colors.accent }]}>Try again</Text>
+        <Text style={[styles.retryLabel, { color: colors.accent }]}>{t('common:action.tryAgain')}</Text>
       </Pressable>
     </View>
   );

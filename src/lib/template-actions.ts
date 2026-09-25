@@ -11,6 +11,7 @@ import {
   workoutExercises,
   workouts,
 } from '@/db/schema';
+import { t } from '@/i18n';
 import {
   artworkPhotoFile,
   asCardArtwork,
@@ -158,7 +159,7 @@ export async function createTemplateFromWorkout(workoutId: string): Promise<stri
   const id = newId();
   await db.insert(templates).values({
     id,
-    name: workout?.name?.trim() || 'Workout',
+    name: workout?.name?.trim() || t('workout:defaultName'),
     position: await nextPersonalPosition(),
     isBuiltIn: false,
     artwork: DEFAULT_ARTWORK,

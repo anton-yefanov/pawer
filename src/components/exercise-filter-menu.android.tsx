@@ -4,7 +4,7 @@ import { Pressable } from 'react-native';
 import { Menu, type MenuItem } from '@/components/android/menu';
 import { Icon, type IconName } from '@/components/icon';
 import { useTheme } from '@/hooks/use-theme';
-import { ANY, titleCase, type FacetMenu } from '@/lib/exercise-filters';
+import { ANY, equipmentMenuLabel, type FacetMenu } from '@/lib/exercise-filters';
 
 type Props = {
   /** Section heading inside the menu, e.g. "Muscle". */
@@ -55,7 +55,7 @@ export function ExerciseFacetMenu({
     { key: ANY, label: anyLabel, selected: value === ANY, onPress: () => onChange(ANY) },
     ...menu.options.map((option) => ({
       key: option,
-      label: titleCase(option),
+      label: equipmentMenuLabel(option),
       selected: value === option,
       onPress: () => onChange(option),
     })),
@@ -65,7 +65,7 @@ export function ExerciseFacetMenu({
       selected: group.options.includes(value),
       items: group.options.map((option) => ({
         key: option,
-        label: titleCase(option),
+        label: equipmentMenuLabel(option),
         selected: value === option,
         onPress: () => onChange(option),
       })),

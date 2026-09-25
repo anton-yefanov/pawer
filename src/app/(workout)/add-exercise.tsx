@@ -8,6 +8,7 @@ import { SheetGrabber } from '@/components/sheet-grabber';
 import { BigButton } from '@/components/workout/big-button';
 import { SHEET_BOTTOM_INSET, SHEET_TOP_INSET } from '@/constants/sheet';
 import { Spacing } from '@/constants/theme';
+import { t } from '@/i18n';
 import { addExerciseToWorkout } from '@/lib/workout-actions';
 
 export default function AddExerciseScreen() {
@@ -51,7 +52,7 @@ export default function AddExerciseScreen() {
         // stops the native glass view inside from drawing at all.
         <SheetFooter style={{ paddingBottom: Spacing.three + SHEET_BOTTOM_INSET }}>
           <BigButton
-            title={`Add Exercise${picked.length > 1 ? 's' : ''}`}
+            title={t('workout:addExercises', { count: Math.max(1, picked.length) })}
             onPress={confirm}
             feedback="complete"
           />

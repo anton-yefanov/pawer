@@ -13,6 +13,7 @@ import { PrChip } from "@/components/pr-chip";
 import { ThemedText } from "@/components/themed-text";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { t } from "@/i18n";
 import { periodRecordsQuery } from "@/lib/analytics-queries";
 import { formatPrValue, isPrKind, PR_LABELS } from "@/lib/personal-records";
 import { BLOCK_CATALOG } from "@/lib/analytics-layout";
@@ -23,12 +24,12 @@ const VISIBLE = 5;
 
 /** Shape only: an empty card previews its own layout under the "no records" pill. */
 const PLACEHOLDER_ROWS = [
-  { name: "Bench Press", kind: "heaviest_weight", value: 80 },
-  { name: "Back Squat", kind: "best_1rm", value: 120 },
-  { name: "Deadlift", kind: "best_volume", value: 4200 },
-  { name: "Pull-up", kind: "most_reps", value: 15 },
-  { name: "Overhead Press", kind: "heaviest_weight", value: 55 },
-  { name: "Barbell Row", kind: "best_1rm", value: 90 },
+  { name: t("analytics:placeholder.bench"), kind: "heaviest_weight", value: 80 },
+  { name: t("analytics:placeholder.squat"), kind: "best_1rm", value: 120 },
+  { name: t("analytics:placeholder.deadlift"), kind: "best_volume", value: 4200 },
+  { name: t("analytics:placeholder.pullUp"), kind: "most_reps", value: 15 },
+  { name: t("analytics:placeholder.overhead"), kind: "heaviest_weight", value: 55 },
+  { name: t("analytics:placeholder.row"), kind: "best_1rm", value: 90 },
 ] as const;
 
 export function RecordsCard({ slot }: { slot: BlockSlot }) {
@@ -46,13 +47,15 @@ export function RecordsCard({ slot }: { slot: BlockSlot }) {
       slot={slot}
       title={BLOCK_CATALOG.records.title}
       subtitle={
-        known.length === 0 ? "None yet" : `${known.length} set in this period`
+        known.length === 0
+          ? t("analytics:noneYet")
+          : t("analytics:records.setInPeriod", { count: known.length })
       }
       period={period}
       onPeriodChange={select}
     >
       {shown.length === 0 ? (
-        <CardPlaceholder text="Log a workout to unlock">
+        <CardPlaceholder text={t("analytics:locked")}>
           {PLACEHOLDER_ROWS.map((row, index) => (
             <Fragment key={row.name}>
               {index > 0 && (
@@ -122,7 +125,7 @@ export function RecordsCard({ slot }: { slot: BlockSlot }) {
                 style={styles.row}
               >
                 <ThemedText type="subhead" themeColor="accent">
-                  {hidden} more
+                  {t("analytics:more", { count: hidden })}
                 </ThemedText>
               </Pressable>
             </>

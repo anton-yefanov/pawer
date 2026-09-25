@@ -1,3 +1,4 @@
+import { t } from '@/i18n';
 import type { ThemeColor } from '@/constants/theme';
 
 /**
@@ -12,9 +13,34 @@ import type { ThemeColor } from '@/constants/theme';
 export type SetType = 'normal' | 'warmup' | 'drop';
 
 export const SET_TYPES = {
-  normal: { label: 'Normal', letter: null, color: 'text', countsWork: true },
-  warmup: { label: 'Warm up', letter: 'W', color: 'warmup', countsWork: false },
-  drop: { label: 'Drop set', letter: 'D', color: 'drop', countsWork: true },
+  normal: {
+    get label() {
+      return t('workout:setType.normal');
+    },
+    letter: null,
+    color: 'text',
+    countsWork: true,
+  },
+  warmup: {
+    get label() {
+      return t('workout:setType.warmup');
+    },
+    get letter() {
+      return t('workout:setType.warmupLetter');
+    },
+    color: 'warmup',
+    countsWork: false,
+  },
+  drop: {
+    get label() {
+      return t('workout:setType.drop');
+    },
+    get letter() {
+      return t('workout:setType.dropLetter');
+    },
+    color: 'drop',
+    countsWork: true,
+  },
 } as const satisfies Record<
   SetType,
   { label: string; letter: string | null; color: ThemeColor; countsWork: boolean }

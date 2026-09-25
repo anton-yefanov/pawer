@@ -3,12 +3,13 @@ import { Directory, File, Paths } from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 
+import { t } from '@/i18n';
 import { notice } from '@/lib/notice';
 import { attempt, guard } from '@/lib/observability';
 
 const FOLDER = 'share';
 /** The share sheet and Files both show this, so it is written for a human. */
-const FILENAME = 'Pawer Achievement.png';
+const FILENAME = `${t('achievements:share.filename')}.png`;
 
 /**
  * The card on disk, in the cache rather than the documents directory: it exists
@@ -36,8 +37,8 @@ export function writeShareCard(image: SkImage): string {
 export async function shareAchievement(uri: string): Promise<boolean> {
   if (!(await Sharing.isAvailableAsync())) {
     notice({
-      title: 'Sharing unavailable',
-      message: 'This device has no apps that can take an image.',
+      title: t('achievements:share.unavailableTitle'),
+      message: t('achievements:share.unavailableMessage'),
     });
     return false;
   }
@@ -47,9 +48,9 @@ export async function shareAchievement(uri: string): Promise<boolean> {
     Sharing.shareAsync(uri, {
       UTI: 'public.png',
       mimeType: 'image/png',
-      dialogTitle: 'Share achievement',
+      dialogTitle: t('achievements:share.dialogTitle'),
     }),
-    { title: "Couldn't share", message: 'The achievement card could not be shared.' },
+    { title: t('common:error.shareFailed'), message: t('achievements:share.shareFailed') },
   );
 }
 
@@ -63,14 +64,14 @@ export async function saveAchievement(uri: string): Promise<boolean> {
 
   if (!permission.granted) {
     notice({
-      title: 'Photos access needed',
-      message: 'Allow Pawer to add photos in Settings to save your achievement cards.',
+      title: t('achievements:share.photosNeededTitle'),
+      message: t('achievements:share.photosNeededMessage'),
     });
     return false;
   }
 
   return attempt('achievements', MediaLibrary.Asset.create(uri), {
-    title: "Couldn't save",
-    message: 'The achievement card could not be added to your photos.',
+    title: t('common:error.saveFailed'),
+    message: t('achievements:share.saveFailed'),
   });
 }

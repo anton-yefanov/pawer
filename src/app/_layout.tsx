@@ -1,4 +1,6 @@
 import * as Sentry from '@sentry/react-native';
+import '@/i18n';
+
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';

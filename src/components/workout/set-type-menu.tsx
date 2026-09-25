@@ -11,6 +11,7 @@ import {
 import { StyleSheet, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { SET_TYPE_KEYS, SET_TYPES, setTypeOf, type SetType } from '@/lib/set-types';
 
 export const SET_TYPE_CELL = { width: 40, height: 30 } as const;
@@ -59,7 +60,7 @@ export function SetTypeMenu({ label, setType, completed, onChange }: Props) {
             </ZStack>
           }>
           <Picker
-            label="Set type"
+            label={t('workout:set.type')}
             selection={setType}
             onSelectionChange={(value) => onChange(setTypeOf(String(value)))}>
             {SET_TYPE_KEYS.map((key) => (

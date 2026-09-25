@@ -14,6 +14,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { CIRCLE_BUTTON_SIZE, GlassCircle } from '@/components/circle-button';
 import { useAppStateActive } from '@/hooks/use-app-state-active';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { useRestTimer } from '@/lib/rest-timer';
 
 const SIZE = CIRCLE_BUTTON_SIZE;
@@ -63,7 +64,7 @@ export function RestTimerButton({ onPress }: { onPress: () => void }) {
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel="Show rest timer"
+        accessibilityLabel={t('workout:rest.show')}
         style={StyleSheet.absoluteFill}
       />
     </GlassCircle>

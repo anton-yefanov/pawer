@@ -3,6 +3,7 @@ import { KeyboardStickyView } from 'react-native-keyboard-controller';
 
 import { CIRCLE_BUTTON_SIZE, CircleButton } from '@/components/circle-button';
 import { Spacing } from '@/constants/theme';
+import { t } from '@/i18n';
 
 /** Far enough below the window's bottom edge to be off screen entirely. Shared
  *  with `set-focus-arrows.tsx`, which parks on the same row. */
@@ -29,7 +30,7 @@ export function KeyboardDismissButton() {
       pointerEvents="box-none">
       <CircleButton
         symbol="keyboard.chevron.compact.down"
-        label="Hide keyboard"
+        label={t('common:hideKeyboard')}
         onPress={Keyboard.dismiss}
       />
     </KeyboardStickyView>

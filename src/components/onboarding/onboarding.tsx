@@ -34,6 +34,7 @@ import { TINT_OPTIONS } from '@/constants/tints';
 import { useTheme } from '@/hooks/use-theme';
 import { db } from '@/db/client';
 import { getSetting } from '@/db/seed';
+import { t } from '@/i18n';
 import * as haptics from '@/lib/haptics';
 import {
   openLegalDocument,
@@ -46,7 +47,7 @@ import { BODY_SEXES, useBodySexPreference } from '@/lib/body-sex';
 import { attempt, report } from '@/lib/observability';
 import { useOnboarding } from '@/lib/onboarding';
 import { buildPersonalPlan, isPlanAnswers, SESSION_MINUTES, type PlanAnswers } from '@/lib/personal-plan';
-import { usePro } from '@/lib/purchases';
+import { usePurchases } from '@/lib/purchases';
 import { PERSONAL_PLAN_KEY, savePersonalPlan } from '@/lib/save-personal-plan';
 import { track } from '@/lib/telemetry';
 import { ColorSchemeOverride, useThemePreference } from '@/lib/theme-preference';
@@ -63,14 +64,14 @@ import { ChoiceArt, Step, StepHeader } from './step';
 const PEEK_RADIUS = 110;
 
 const GOAL_PHRASE: Record<PlanAnswers['goal'], string> = {
-  muscle: 'build muscle',
-  strength: 'get stronger',
-  consistency: 'make training a habit',
+  muscle: t('onboarding:goalPhrase.muscle'),
+  strength: t('onboarding:goalPhrase.strength'),
+  consistency: t('onboarding:goalPhrase.consistency'),
 };
 
 const SAVE_FAILED = {
-  title: 'Couldn’t save that',
-  message: 'Your choice wasn’t saved. Please try again.',
+  title: t('onboarding:saveFailed.title'),
+  message: t('onboarding:saveFailed.message'),
 };
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -109,105 +110,105 @@ const STEPS: StepName[] = [
 const QUESTIONS = {
   goal: {
     icon: 'flame.fill',
-    title: 'What’s your goal?',
+    title: t('onboarding:goal.title'),
     choices: [
       {
         id: 'muscle',
-        title: 'Build muscle',
-        detail: 'Make every rep count',
+        title: t('onboarding:goal.muscle.title'),
+        detail: t('onboarding:goal.muscle.detail'),
         icon: 'dumbbell.fill',
       },
       {
         id: 'strength',
-        title: 'Get stronger',
-        detail: 'Build confidence under the weight',
+        title: t('onboarding:goal.strength.title'),
+        detail: t('onboarding:goal.strength.detail'),
         icon: 'bolt.fill',
       },
       {
         id: 'consistency',
-        title: 'Build a lasting habit',
-        detail: 'A routine you’ll want to come back to',
+        title: t('onboarding:goal.consistency.title'),
+        detail: t('onboarding:goal.consistency.detail'),
         icon: 'calendar',
       },
     ],
   },
   experience: {
     icon: 'chart.line.uptrend.xyaxis',
-    title: 'Where are you starting?',
+    title: t('onboarding:experience.title'),
     choices: [
       {
         id: 'new',
-        title: 'I’m new to strength training',
-        detail: 'Simple movements. A manageable start',
+        title: t('onboarding:experience.new.title'),
+        detail: t('onboarding:experience.new.detail'),
         icon: 'hand.wave.fill',
       },
       {
         id: 'returning',
-        title: 'I have some experience',
-        detail: 'I know the basics or I’m coming back',
+        title: t('onboarding:experience.returning.title'),
+        detail: t('onboarding:experience.returning.detail'),
         icon: 'arrow.clockwise',
       },
       {
         id: 'experienced',
-        title: 'I train regularly',
-        detail: 'Ready for a more demanding routine',
+        title: t('onboarding:experience.experienced.title'),
+        detail: t('onboarding:experience.experienced.detail'),
         icon: 'dumbbell.fill',
       },
     ],
   },
   equipment: {
     icon: 'dumbbell.fill',
-    title: 'Your training setup',
+    title: t('onboarding:equipment.title'),
     choices: [
       {
         id: 'gym',
-        title: 'A fully equipped gym',
-        detail: 'Machines, cables and free weights',
+        title: t('onboarding:equipment.gym.title'),
+        detail: t('onboarding:equipment.gym.detail'),
         icon: 'dumbbell.fill',
       },
       {
         id: 'dumbbells',
-        title: 'Dumbbells and a bench',
-        detail: 'A pair of weights. Plenty of possibilities',
+        title: t('onboarding:equipment.dumbbells.title'),
+        detail: t('onboarding:equipment.dumbbells.detail'),
         icon: 'house.fill',
       },
       {
         id: 'bodyweight',
-        title: 'Just my bodyweight',
-        detail: 'Floor space is all you need',
+        title: t('onboarding:equipment.bodyweight.title'),
+        detail: t('onboarding:equipment.bodyweight.detail'),
         icon: 'figure.arms.open',
       },
     ],
   },
   days: {
     icon: 'calendar',
-    title: 'Make room for your goals',
+    title: t('onboarding:days.title'),
     choices: [
-      { id: 2, title: '2 days', detail: 'A steady start with room to recover', icon: 'calendar' },
-      { id: 3, title: '3 days', detail: 'A balanced rhythm for the week', icon: 'calendar' },
-      { id: 4, title: '4 days', detail: 'More time to make training your own', icon: 'calendar' },
+      { id: 2, title: t('onboarding:days.count', { count: 2 }), detail: t('onboarding:days.two.detail'), icon: 'calendar' },
+      { id: 3, title: t('onboarding:days.count', { count: 3 }), detail: t('onboarding:days.three.detail'), icon: 'calendar' },
+      { id: 4, title: t('onboarding:days.count', { count: 4 }), detail: t('onboarding:days.four.detail'), icon: 'calendar' },
     ],
   },
   minutes: {
     icon: 'clock.fill',
-    title: 'How much time is yours?',
+    title: t('onboarding:minutes.title'),
     choices: [
       {
         id: 20,
-        title: 'About 30 minutes',
-        detail: 'The essentials',
+        title: t('onboarding:minutes.short.title'),
+        detail: t('onboarding:minutes.short.detail'),
         icon: 'bolt.fill',
       },
       {
         id: 35,
-        title: 'About 45 minutes',
-        detail: 'Room to focus on every movement',
+        title: t('onboarding:minutes.medium.title'),
+        detail: t('onboarding:minutes.medium.detail'),
         icon: 'clock',
       },
       {
         id: 50,
-        title: 'About an hour',
-        detail: 'More room for volume and recovery',
+        title: t('onboarding:minutes.long.title'),
+        detail: t('onboarding:minutes.long.detail'),
         icon: 'dumbbell.fill',
       },
     ],
@@ -232,7 +233,8 @@ function OnboardingFlow() {
   const { complete } = useOnboarding();
   const router = useRouter();
   const pathname = usePathname();
-  const isPro = usePro();
+  const { isPro, sync } = usePurchases();
+  const [synced, setSynced] = useState(false);
   const { unit, setUnit } = useWeightUnitPreference();
   const { tint, setTint } = useThemePreference();
   const { sex, setSex } = useBodySexPreference();
@@ -337,6 +339,13 @@ function OnboardingFlow() {
   });
 
   useEffect(() => {
+    // Onboarding only runs on a fresh install, which is exactly when a returning
+    // subscriber's purchases aren't on the new RevenueCat user yet.
+    void sync().finally(() => setSynced(true));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     // Someone who already owns Pro has nothing to be offered.
     if (step === 'paywall' && isPro) go('commit');
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -365,7 +374,7 @@ function OnboardingFlow() {
       setStep('paywall');
     } catch (cause) {
       report('onboarding', cause, { phase: 'plan' });
-      setError('Your plan couldn’t be saved. Please try again.');
+      setError(t('onboarding:planFailed'));
     } finally {
       busyRef.current = false;
       setBusy(false);
@@ -403,7 +412,7 @@ function OnboardingFlow() {
       track('onboarding_completed', { notifications_granted: notificationsGranted });
     } catch (cause) {
       report('onboarding', cause, { phase: 'complete' });
-      setError('Couldn’t save your progress. Your plan is safe. Please try again.');
+      setError(t('onboarding:completeFailed'));
       busyRef.current = false;
       setBusy(false);
     }
@@ -452,7 +461,7 @@ function OnboardingFlow() {
         ))}
       >
         <BigButton
-          title="Continue"
+          title={t('onboarding:continue')}
           onPress={() => go(steps[index + 1])}
           disabled={answers[questionKey] == null || busy}
         />
@@ -462,7 +471,7 @@ function OnboardingFlow() {
     const focus = answers.focus ?? [];
     page = (
       <Step
-        title="Any muscle groups you want to focus on?"
+        title={t('onboarding:focus.title')}
         choices={
           <FocusGrid
             selected={focus}
@@ -477,7 +486,7 @@ function OnboardingFlow() {
         }
       >
         <BigButton
-          title={focus.length > 0 ? 'Continue' : 'No Focus Area'}
+          title={focus.length > 0 ? t('onboarding:continue') : t('onboarding:focus.none')}
           variant={focus.length > 0 ? 'filled' : 'tinted'}
           onPress={() => {
             setAnswers((current) => ({ ...current, focus }));
@@ -491,21 +500,21 @@ function OnboardingFlow() {
     page = (
       <Step
         centered
-        title={'Your next chapter\nstarts here'}
-        body="A plan built around your goal, your schedule and your starting point"
+        title={t('onboarding:welcome.title')}
+        body={t('onboarding:welcome.body')}
         art={<WelcomeHero color={TINT_FOLDER[tint]} />}
       >
-        <BigButton title="Build My Plan" onPress={() => go('history')} />
+        <BigButton title={t('onboarding:welcome.cta')} onPress={() => go('history')} />
         <View style={styles.legal}>
-          <LegalLink title="Terms of Service" url={TERMS_OF_SERVICE_URL} />
-          <LegalLink title="Privacy Policy" url={PRIVACY_POLICY_URL} />
+          <LegalLink title={t('onboarding:welcome.terms')} url={TERMS_OF_SERVICE_URL} />
+          <LegalLink title={t('onboarding:welcome.privacy')} url={PRIVACY_POLICY_URL} />
         </View>
       </Step>
     );
   } else if (step === 'history') {
     page = (
       <Step
-        title="Already tracking your workouts?"
+        title={t('onboarding:history.title')}
         art={
           <ChoiceArt
             placeholder="clock.arrow.circlepath"
@@ -517,8 +526,8 @@ function OnboardingFlow() {
         choices={
           <>
             <Choice
-              title="Yes, I’ve used another app"
-              detail="Bring your progress into Pawer"
+              title={t('onboarding:history.yes.title')}
+              detail={t('onboarding:history.yes.detail')}
               selected={usedApps === true}
               onPress={() => {
                 haptics.select();
@@ -526,8 +535,8 @@ function OnboardingFlow() {
               }}
             />
             <Choice
-              title="No, I’m starting here"
-              detail="Your first entry is waiting"
+              title={t('onboarding:history.no.title')}
+              detail={t('onboarding:history.no.detail')}
               selected={usedApps === false}
               onPress={() => {
                 haptics.select();
@@ -538,7 +547,7 @@ function OnboardingFlow() {
         }
       >
         <BigButton
-          title="Continue"
+          title={t('onboarding:continue')}
           onPress={() => go(usedApps ? 'import' : 'goal')}
           disabled={usedApps === null}
         />
@@ -549,14 +558,14 @@ function OnboardingFlow() {
   } else if (step === 'preferences') {
     page = (
       <Step
-        title="Make Pawer feel like you"
+        title={t('onboarding:preferences.title')}
         art={<AnatomyPreview sex={sex} />}
         choices={
           // The grouped card carries its own sheet-width inset; this page already pads its edges.
           <View style={styles.bleed}>
             <Card>
               <MenuRow
-                label="Tint Color"
+                label={t('settings:row.tint')}
                 leading={<RowIcon name="paintpalette" />}
                 options={TINT_OPTIONS}
                 selected={tint}
@@ -565,7 +574,7 @@ function OnboardingFlow() {
               />
               <Separator inset={ROW_ICON_INSET} />
               <MenuRow
-                label="Body Diagram"
+                label={t('settings:row.bodyDiagram')}
                 leading={<RowIcon name="figure.strengthtraining.traditional" />}
                 options={BODY_SEXES}
                 selected={sex}
@@ -573,7 +582,7 @@ function OnboardingFlow() {
               />
               <Separator inset={ROW_ICON_INSET} />
               <MenuRow
-                label="Weight Unit"
+                label={t('settings:row.weightUnit')}
                 leading={<RowIcon name="dumbbell" />}
                 options={WEIGHT_UNITS}
                 selected={unit}
@@ -583,18 +592,18 @@ function OnboardingFlow() {
           </View>
         }
       >
-        <BigButton title="Continue" onPress={() => go('notifications')} />
+        <BigButton title={t('onboarding:continue')} onPress={() => go('notifications')} />
       </Step>
     );
   } else if (step === 'notifications') {
     page = (
       <Step
-        title="Know when rest is over"
-        body="Pawer can send a notification the moment your rest timer ends, so you can put your phone down between sets"
+        title={t('onboarding:notifications.title')}
+        body={t('onboarding:notifications.body')}
         art={<ChoiceArt placeholder="bell.badge.fill" icon={notificationsGranted ? 'bell.badge.fill' : null} />}
       >
         <BigButton
-          title="Allow Notifications"
+          title={t('onboarding:notifications.allow')}
           disabled={busy}
           onPress={() => {
             if (busyRef.current) return;
@@ -610,25 +619,29 @@ function OnboardingFlow() {
               });
           }}
         />
-        <BigButton title="Not Now" variant="tinted" disabled={busy} onPress={() => go('plan')} />
+        <BigButton title={t('common:action.notNow')} variant="tinted" disabled={busy} onPress={() => go('plan')} />
       </Step>
     );
   } else if (step === 'plan' && plan) {
     page = (
       <Step
-        title="Your plan is ready"
-        body={`${plan.workouts.length} workouts · ${plan.days} days a week · ~${SESSION_MINUTES[plan.minutes]} min`}
+        title={t('onboarding:plan.ready')}
+        body={t('onboarding:plan.summary', {
+          workouts: t('onboarding:plan.workoutCount', { count: plan.workouts.length }),
+          count: plan.days,
+          minutes: SESSION_MINUTES[plan.minutes],
+        })}
         art={<PlanFolder color={TINT_FOLDER[tint]} />}
       >
         <BigButton
-          title={busy ? 'Saving Your Plan…' : 'Start My Plan'}
+          title={busy ? t('onboarding:plan.saving') : t('onboarding:plan.start')}
           onPress={() => void preparePlan()}
           disabled={busy}
         />
       </Step>
     );
   } else if (step === 'paywall') {
-    page = isPro ? null : <PaywallPage onDone={() => go('commit')} />;
+    page = isPro || !synced ? null : <PaywallPage onDone={() => go('commit')} />;
   } else {
     page = (
       // The one dark page, whatever the appearance: the promise is a moment, not another form.
@@ -636,18 +649,21 @@ function OnboardingFlow() {
         <StatusBar style="light" />
         <Step
           centered
-          eyebrow="MY PROMISE"
-          title="I promise to follow my goals"
+          eyebrow={t('onboarding:commit.eyebrow')}
+          title={t('onboarding:commit.title')}
           choices={
             <View style={styles.promise}>
               {ready && (
                 <ThemedText type="title3" weight="regular" style={styles.center}>
-                  I’ll show up {answers.days} days a week, {SESSION_MINUTES[answers.minutes!]} minutes at a time, to{' '}
-                  {GOAL_PHRASE[answers.goal!]}
+                  {t('onboarding:commit.promise', {
+                    count: answers.days,
+                    minutes: SESSION_MINUTES[answers.minutes!],
+                    goal: GOAL_PHRASE[answers.goal!],
+                  })}
                 </ThemedText>
               )}
               <ThemedText type="callout" themeColor="textSecondary" style={styles.center}>
-                Some days will be hard. I’ll show up anyway
+                {t('onboarding:commit.hard')}
               </ThemedText>
             </View>
           }
@@ -665,7 +681,7 @@ function OnboardingFlow() {
               onCommit={() => void finish()}
             />
             <ThemedText type="headline" themeColor={busy ? 'accent' : 'textSecondary'}>
-              {busy ? 'Welcome to Pawer' : screenReader ? 'Double tap to sign' : 'Hold to sign'}
+              {busy ? t('onboarding:commit.welcome') : screenReader ? t('onboarding:commit.doubleTap') : t('onboarding:commit.hold')}
             </ThemedText>
           </View>
         </Step>
@@ -722,7 +738,7 @@ function OnboardingFlow() {
         {!restoring && step !== 'paywall' && <StepHeader {...common} />}
         {restoring ? (
           <View style={styles.loading}>
-            <ActivityIndicator color={theme.accent} accessibilityLabel="Preparing onboarding" />
+            <ActivityIndicator color={theme.accent} accessibilityLabel={t('onboarding:preparing')} />
           </View>
         ) : (
           <Animated.View
@@ -801,7 +817,7 @@ function ImportStep({ onNext }: { onNext: () => void }) {
   if (state.file) {
     return (
       <Step
-        title="Here’s what we found"
+        title={t('onboarding:import.found')}
         choices={
           <View style={styles.bleed}>
             <ImportReview state={state} />
@@ -811,34 +827,34 @@ function ImportStep({ onNext }: { onNext: () => void }) {
         {state.workouts.length > 0 ? (
           <ImportButton state={state} />
         ) : (
-          <BigButton title="Continue" onPress={onNext} />
+          <BigButton title={t('onboarding:continue')} onPress={onNext} />
         )}
-        <BigButton title="Skip for Now" variant="tinted" onPress={onNext} />
+        <BigButton title={t('onboarding:import.skip')} variant="tinted" onPress={onNext} />
       </Step>
     );
   }
   return (
     <Step
-      title="Your effort comes with you"
+      title={t('onboarding:import.title')}
       art={<ChoiceArt placeholder="square.and.arrow.down" icon="square.and.arrow.down" />}
       choices={
         <>
           <ActionRow
-            title="Upload CSV"
-            detail="From Pawer, Strong or Hevy"
+            title={t('onboarding:import.upload')}
+            detail={t('onboarding:import.uploadDetail')}
             trailing="chevron.right"
             onPress={() => void state.choose()}
           />
           <ActionRow
-            title="Convert any format"
-            detail="Turn notes or another app’s export into a CSV"
+            title={t('onboarding:import.convert')}
+            detail={t('onboarding:import.convertDetail')}
             trailing="arrow.up.right"
             onPress={() => void attempt('import', openLegalDocument(WORKOUT_IMPORT_TOOL_URL))}
           />
         </>
       }
     >
-      <BigButton title="Skip for Now" variant="tinted" onPress={onNext} />
+      <BigButton title={t('onboarding:import.skip')} variant="tinted" onPress={onNext} />
     </Step>
   );
 }

@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import * as haptics from '@/lib/haptics';
 
 /**
@@ -21,7 +22,7 @@ export function ConfirmAlert({
   message,
   confirmLabel,
   confirmRole = 'destructive',
-  dismissLabel = 'Cancel',
+  dismissLabel = t('common:action.cancel'),
   onConfirm,
   onDismiss,
 }: {

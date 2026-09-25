@@ -1,6 +1,7 @@
 import { createContext, use, useEffect, useState, type ReactNode } from 'react';
 import { Appearance, Platform, useColorScheme as useDeviceColorScheme } from 'react-native';
 
+import { t } from '@/i18n';
 import { DEFAULT_TINT, isTintId, TINTS, type TintId } from '@/constants/tints';
 import { db } from '@/db/client';
 import { getSetting, setSetting } from '@/db/seed';
@@ -12,11 +13,15 @@ const TINT_KEY = 'tint_color';
 
 export type ThemePreference = 'system' | 'dark' | 'light';
 
-export const THEME_PREFERENCES: { id: ThemePreference; label: string; short: string }[] = [
-  { id: 'system', label: 'System', short: 'System' },
-  { id: 'light', label: 'Light', short: 'Light' },
-  { id: 'dark', label: 'Dark', short: 'Dark' },
-];
+export const THEME_PREFERENCES = (['system', 'light', 'dark'] as const).map((id) => ({
+  id,
+  get label() {
+    return t(`settings:theme.${id}`);
+  },
+  get short() {
+    return t(`settings:theme.${id}`);
+  },
+}));
 
 type ThemePreferenceValue = {
   preference: ThemePreference;

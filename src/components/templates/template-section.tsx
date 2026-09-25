@@ -32,6 +32,7 @@ import { useTemplateDrag } from "@/components/templates/template-drag";
 import { ThemedText } from "@/components/themed-text";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { t } from "@/i18n";
 import * as haptics from "@/lib/haptics";
 
 export const COLUMNS = 2;
@@ -151,7 +152,9 @@ function CollapseToggle({
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel={collapsed ? `Expand ${title}` : `Collapse ${title}`}
+        accessibilityLabel={
+          collapsed ? t('common:expand', { name: title }) : t('common:collapse', { name: title })
+        }
         accessibilityState={{ expanded: !collapsed }}
         style={({ pressed }) => [styles.toggle, pressed && styles.pressed]}
       >

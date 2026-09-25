@@ -1,6 +1,7 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 
 import { tabIcon } from './icon';
 
@@ -10,27 +11,27 @@ export default function AppTabs() {
   return (
     <NativeTabs labelVisibilityMode="unlabeled" tintColor={theme.accent}>
       <NativeTabs.Trigger name="history">
-        <NativeTabs.Trigger.Label hidden>History</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label hidden>{t('common:tab.history')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon {...tabIcon('clock', 'clock.fill')} />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="exercises">
-        <NativeTabs.Trigger.Label hidden>Exercises</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label hidden>{t('common:tab.exercises')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon {...tabIcon('dumbbell', 'dumbbell.fill')} />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="(workout)">
-        <NativeTabs.Trigger.Label hidden>Workout</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label hidden>{t('common:tab.workout')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon {...tabIcon('house', 'house.fill')} />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="analytics">
-        <NativeTabs.Trigger.Label hidden>Analytics</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label hidden>{t('common:tab.analytics')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon {...tabIcon('chart.bar', 'chart.bar.fill')} />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="settings">
-        <NativeTabs.Trigger.Label hidden>Settings</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label hidden>{t('common:tab.settings')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon {...tabIcon('gearshape', 'gearshape.fill')} />
       </NativeTabs.Trigger>
     </NativeTabs>

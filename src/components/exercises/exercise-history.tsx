@@ -7,6 +7,7 @@ import { PrChip } from '@/components/pr-chip';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import type { ExerciseSession, ExerciseSetRow } from '@/lib/exercise-history-queries';
 import * as haptics from '@/lib/haptics';
 import { SET_TYPES, setTypeOf } from '@/lib/set-types';
@@ -69,7 +70,7 @@ export function ExerciseHistory({
   if (recent.length === 0) {
     return (
       <ThemedText type="footnote" themeColor="textSecondary">
-        No finished sessions with this exercise yet.
+        {t('exercises:history.empty')}
       </ThemedText>
     );
   }
@@ -127,7 +128,7 @@ export function ExerciseHistory({
 
       {sessions.length > recent.length && (
         <ThemedText type="footnote" themeColor="textTertiary" style={styles.footer}>
-          Showing the last {recent.length} of {sessions.length} sessions.
+          {t("exercises:history.showingLast", { count: sessions.length, shown: recent.length })}
         </ThemedText>
       )}
     </View>

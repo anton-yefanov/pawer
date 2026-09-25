@@ -9,6 +9,7 @@ import {
   SHEET,
 } from "@/constants/sheet";
 import { useTheme } from "@/hooks/use-theme";
+import { t } from "@/i18n";
 
 /**
  * Sheets are siblings in this Stack, not nested stacks. react-native-screens
@@ -30,13 +31,13 @@ export default function WorkoutLayout() {
       {/* The only tab root without a native large title: Home's title is drawn
           in the screen so the achievements button can sit beside it. iOS puts a
           bar-button item above an expanded large title, never inside its row. */}
-      <Stack.Screen name="index" options={{ title: "Home", headerShown: false }} />
-      <Stack.Screen name="achievements" options={{ ...FULL_SHEET, title: "Achievements" }} />
+      <Stack.Screen name="index" options={{ title: t("common:screen.home"), headerShown: false }} />
+      <Stack.Screen name="achievements" options={{ ...FULL_SHEET, title: t("common:screen.achievements") }} />
       {/* Home's analytics widget opens its sheets here, not in the Analytics
           stack, so a tap on it never switches tabs. */}
-      <Stack.Screen name="home-widget" options={{ ...FULL_SHEET, title: "Replace Widget" }} />
-      <Stack.Screen name="home/muscles" options={{ ...DETAIL_SHEET, title: "Muscles worked" }} />
-      <Stack.Screen name="home/records" options={{ ...DETAIL_SHEET, title: "Personal records" }} />
+      <Stack.Screen name="home-widget" options={{ ...FULL_SHEET, title: t("common:screen.replaceWidget") }} />
+      <Stack.Screen name="home/muscles" options={{ ...DETAIL_SHEET, title: t("common:screen.musclesWorked") }} />
+      <Stack.Screen name="home/records" options={{ ...DETAIL_SHEET, title: t("common:screen.personalRecords") }} />
       {/* The logger and the recap of the session it finishes, in this one
           sheet. See `WorkoutStage` for why they are not two. */}
       <Stack.Screen name="active" options={{ ...FULL_SHEET, title: "" }} />
@@ -69,11 +70,11 @@ export default function WorkoutLayout() {
       />
       <Stack.Screen
         name="template/new"
-        options={{ ...FULL_SHEET, title: "New Template" }}
+        options={{ ...FULL_SHEET, title: t("common:screen.newTemplate") }}
       />
       <Stack.Screen
         name="template/edit"
-        options={{ ...FULL_SHEET, title: "Edit Template" }}
+        options={{ ...FULL_SHEET, title: t("common:screen.editTemplate") }}
       />
       <Stack.Screen
         name="template/add-exercises"

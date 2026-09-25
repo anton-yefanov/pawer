@@ -6,6 +6,7 @@ import { useBadgeSpotlight } from '@/components/achievements/badge-spotlight';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { acknowledgeBadge, badgeKey } from '@/lib/achievement-news';
 import type { LadderMetric } from '@/lib/achievement-scale';
 import { formatLadderValue, type Badge } from '@/lib/achievements';
@@ -113,7 +114,10 @@ export function BadgeStrip({
                   }}
                   style={{ width: size, height: size }}
                   accessibilityRole="button"
-                  accessibilityLabel={`${badge.tier.name}, ${formatLadderValue(metric, badge.threshold, unit)}`}
+                  accessibilityLabel={t('achievements:badgeLabel', {
+                    tier: badge.tier.name,
+                    value: formatLadderValue(metric, badge.threshold, unit),
+                  })}
                   onPress={() => press(badge)}>
                   {newKeys.has(badgeKey(exerciseId, metric, badge.tier.id)) && (
                     <View
@@ -124,7 +128,7 @@ export function BadgeStrip({
                         weight="bold"
                         maxFontSizeMultiplier={1}
                         style={[styles.chipLabel, { color: theme.accentContent }]}>
-                        NEW
+                        {t('achievements:newBadge')}
                       </ThemedText>
                     </View>
                   )}
@@ -153,9 +157,9 @@ export function BadgeStrip({
 }
 
 function detailFor(badge: Badge, metric: LadderMetric, best: number, unit: WeightUnit): string {
-  if (badge.unlockedAt != null) return `Earned ${formatDay(badge.unlockedAt)}`;
-  if (best <= 0) return 'Not trained yet';
-  return `${formatLadderValue(metric, badge.threshold - best, unit)} to go`;
+  if (badge.unlockedAt != null) return t('achievements:earnedOn', { date: formatDay(badge.unlockedAt) });
+  if (best <= 0) return t('achievements:notTrained');
+  return t('achievements:toGo', { value: formatLadderValue(metric, badge.threshold - best, unit) });
 }
 
 const styles = StyleSheet.create({

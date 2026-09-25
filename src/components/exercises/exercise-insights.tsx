@@ -21,6 +21,7 @@ import {
 import { PeriodMenu } from "@/components/exercises/period-menu";
 import { ThemedText } from "@/components/themed-text";
 import { Spacing } from "@/constants/theme";
+import { t } from "@/i18n";
 import {
   exercisePrWorkoutsQuery,
   exerciseRecordsQuery,
@@ -90,24 +91,24 @@ function totalMeasure(totals: ExerciseTotals, kind: string, unit: WeightUnit) {
   switch (kind) {
     case "volume":
       return {
-        label: "Volume",
+        label: t("exercises:insights.volume"),
         ...splitMeasure(formatTonnage(totals.volumeKg, unit)),
       };
     case "distance":
       return {
-        label: "Distance",
+        label: t("exercises:insights.distance"),
         ...splitMeasure(
           formatDistance(totals.distanceM, distanceUnitFor(unit)),
         ),
       };
     case "duration":
       return {
-        label: "Time",
+        label: t("exercises:insights.time"),
         value: formatDuration(totals.durationSeconds),
         unit: undefined,
       };
     default:
-      return { label: "Reps", value: String(totals.reps), unit: undefined };
+      return { label: t("exercises:insights.reps"), value: String(totals.reps), unit: undefined };
   }
 }
 
@@ -150,8 +151,8 @@ export function ExerciseInsights({
   };
 
   const tabs: ExerciseTab[] = [
-    { id: "stats", label: "Stats" },
-    { id: "history", label: "History" },
+    { id: "stats", label: t("exercises:insights.stats") },
+    { id: "history", label: t("common:tab.history") },
   ];
 
   const { data: totalRows } = useLiveQuery(
@@ -175,8 +176,8 @@ export function ExerciseInsights({
   const totals = totalRows?.[0] ?? EMPTY_TOTALS;
 
   const tiles = [
-    { label: "Sessions", value: String(totals.sessions), unit: undefined },
-    { label: "Sets", value: String(totals.completedSets), unit: undefined },
+    { label: t("exercises:insights.sessions"), value: String(totals.sessions), unit: undefined },
+    { label: t("exercises:insights.sets"), value: String(totals.completedSets), unit: undefined },
     ...totalsFor(type).map((kind) => totalMeasure(totals, kind, unit)),
   ];
 

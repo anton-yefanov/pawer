@@ -5,13 +5,14 @@ import {
   type ExerciseTab,
 } from "@/components/exercises/exercise-tabs";
 import { Spacing } from "@/constants/theme";
+import { t } from "@/i18n";
 
 export type ArtworkMode = "exercises" | "emoji" | "media";
 
 const TABS: readonly ExerciseTab[] = [
-  { id: "exercises", label: "Exercises" },
-  { id: "emoji", label: "Emojis" },
-  { id: "media", label: "Media" },
+  { id: "exercises", label: t("templates:tab.exercises") },
+  { id: "emoji", label: t("templates:tab.emoji") },
+  { id: "media", label: t("templates:tab.media") },
 ];
 
 /** Picks which of the three sources the cover draws from, and so what the

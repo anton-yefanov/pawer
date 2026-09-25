@@ -7,6 +7,7 @@ import { CIRCLE_BUTTON_SIZE, GlassCircle } from '@/components/circle-button';
 import { Icon } from '@/components/icon';
 import { promptNewFolder } from '@/components/templates/card-actions';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { allowNewTemplate } from '@/lib/pro-gates';
 import { usePro } from '@/lib/purchases';
 import { guard } from '@/lib/observability';
@@ -21,7 +22,7 @@ export function AddMenu() {
   };
 
   return (
-    <GlassCircle accessibilityLabel="Add">
+    <GlassCircle accessibilityLabel={t('templates:add')}>
       <Menu
         open={open}
         onClose={() => setOpen(false)}
@@ -29,12 +30,12 @@ export function AddMenu() {
         items={[
           {
             key: 'template',
-            label: 'New Template',
+            label: t('templates:newTemplate'),
             onPress: () => void newTemplate(),
           },
           {
             key: 'folder',
-            label: 'New Folder',
+            label: t('templates:newFolder'),
             onPress: () => promptNewFolder(),
           },
         ]}>

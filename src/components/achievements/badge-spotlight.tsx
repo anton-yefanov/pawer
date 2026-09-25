@@ -24,6 +24,7 @@ import { ThemedText } from '@/components/themed-text';
 import type { AchievementTier } from '@/constants/achievement-tiers';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { lockedMaterial, struckMaterial } from '@/lib/badge-material';
 import { REST_TILT } from '@/lib/badge-mesh';
 import * as haptics from '@/lib/haptics';
@@ -237,7 +238,7 @@ export function BadgeSpotlight({ children }: { children: React.ReactNode }) {
               <Pressable
                 style={StyleSheet.absoluteFill}
                 onPress={close}
-                accessibilityLabel="Close"
+                accessibilityLabel={t('common:action.close')}
               />
 
               {badge.unlocked && (

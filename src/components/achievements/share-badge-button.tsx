@@ -5,6 +5,7 @@ import { CircleButton } from '@/components/circle-button';
 import { BigButton } from '@/components/workout/big-button';
 import type { AchievementTier } from '@/constants/achievement-tiers';
 import { Spacing } from '@/constants/theme';
+import { t } from '@/i18n';
 import * as haptics from '@/lib/haptics';
 import type { BadgeMaterial } from '@/lib/badge-material';
 import { notice } from '@/lib/notice';
@@ -65,7 +66,7 @@ export function ShareBadgeButton({
         uri = writeShareCard(drawShareCard(card, assets.fonts, assets.logo));
       } catch (error) {
         report('achievements', error);
-        notice({ title: "Couldn't make the image", message: String(error) });
+        notice({ title: t('achievements:share.imageFailed'), message: String(error) });
         return;
       }
 
@@ -87,7 +88,7 @@ export function ShareBadgeButton({
     <View style={styles.row}>
       <View style={styles.share}>
         <BigButton
-          title="Share"
+          title={t('achievements:share.share')}
           symbol="square.and.arrow.up"
           disabled={disabled}
           onPress={() => void run(shareAchievement, 'share')}
@@ -95,7 +96,7 @@ export function ShareBadgeButton({
       </View>
       <CircleButton
         symbol={saved ? 'checkmark' : 'arrow.down.to.line'}
-        label="Save to Photos"
+        label={t('achievements:share.saveToPhotos')}
         disabled={disabled}
         feedback="press"
         onPress={() => void run(saveAchievement, 'save')}
