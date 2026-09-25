@@ -1,4 +1,4 @@
-import { t } from '@/i18n';
+import { LOCALE, t } from '@/i18n';
 import type catalog from '@/i18n/locales/en/exercises.json';
 
 type GroupId = keyof typeof catalog.group;
@@ -40,7 +40,8 @@ export const EXERCISE_GROUPS: ExerciseGroup[] = GROUPS.map((group) => ({
   get title() {
     return t(`exercises:group.${group.id}`);
   },
-}));
+  // Alphabetical in whatever language is showing; fixed for the process, like `t`.
+})).sort((a, b) => a.title.localeCompare(b.title, LOCALE));
 
 export function exerciseGroup(id: string): ExerciseGroup | undefined {
   return EXERCISE_GROUPS.find((group) => group.id === id);

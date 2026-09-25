@@ -28,6 +28,7 @@ import { DotsThreeIcon } from "phosphor-react-native/src/icons/DotsThree";
 import { DownloadSimpleIcon } from "phosphor-react-native/src/icons/DownloadSimple";
 import { ExportIcon } from "phosphor-react-native/src/icons/Export";
 import { FilePlusIcon } from "phosphor-react-native/src/icons/FilePlus";
+import { GlobeIcon } from "phosphor-react-native/src/icons/Globe";
 import { FlameIcon } from "phosphor-react-native/src/icons/Flame";
 import { FolderIcon } from "phosphor-react-native/src/icons/Folder";
 import { FolderMinusIcon } from "phosphor-react-native/src/icons/FolderMinus";
@@ -227,6 +228,7 @@ const ICONS = {
     symbol: { ios: "gearshape", android: "settings" },
     glyph: GearIcon,
   },
+  globe: { symbol: { ios: "globe", android: "language" }, glyph: GlobeIcon },
   "gearshape.fill": {
     symbol: { ios: "gearshape.fill", android: "settings" },
     glyph: GearIcon,

@@ -213,7 +213,8 @@
       "reactCompiler": true
     },
     "locales": {
-      "en": "./src/i18n/native/en.json"
+      "en": "./src/i18n/native/en.json",
+      "es": "./src/i18n/native/es.json"
     }
   }
 }
