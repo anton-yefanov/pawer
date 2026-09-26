@@ -65,13 +65,13 @@ export function templateActions(
   template: TemplateMenuTarget,
   { confirm, isPro }: { confirm: ConfirmDestructive; isPro: boolean },
 ): CardAction[] {
-  const save: CardAction = {
-    label: t('templates:action.save'),
+  const copy: CardAction = {
+    label: template.isBuiltIn ? t('templates:action.save') : t('templates:action.duplicate'),
     icon: 'plus.square.on.square',
     onPress: () => void saveTemplateCopy(template.id, isPro),
   };
 
-  if (template.isBuiltIn) return [save];
+  if (template.isBuiltIn) return [copy];
 
   const actions: CardAction[] = [
     {
@@ -92,7 +92,7 @@ export function templateActions(
           params: { id: template.id, kind: 'template' },
         }),
     },
-    save,
+    copy,
   ];
 
   if (template.folderId) {

@@ -18,7 +18,7 @@ import { ThemedText } from "@/components/themed-text";
 import { TAB_CONTENT_INSET } from "@/constants/navigation";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
-import { t } from "@/i18n";
+import { LANGUAGE, t } from "@/i18n";
 import { openReview } from "@/lib/app-store-review";
 import { useAutofillWeightPreference } from "@/lib/autofill-weight";
 import { BODY_SEXES, useBodySexPreference } from "@/lib/body-sex";
@@ -34,7 +34,6 @@ import {
 import { useAppReset } from "@/lib/app-reset";
 import {
   changeLanguage,
-  LANGUAGE_CHOICE,
   LANGUAGE_OPTIONS,
   LANGUAGE_SUPPORTED,
 } from "@/lib/app-language";
@@ -179,6 +178,19 @@ export default function SettingsScreen() {
             }
             onOpenChange={setMenuOpen}
           />
+          {LANGUAGE_SUPPORTED ? (
+            <>
+              <Separator inset={ROW_ICON_INSET} />
+              <MenuRow
+                label={t("settings:row.language")}
+                leading={<RowIcon name="globe" />}
+                options={LANGUAGE_OPTIONS}
+                selected={LANGUAGE}
+                onSelect={changeLanguage}
+                onOpenChange={setMenuOpen}
+              />
+            </>
+          ) : null}
           <Separator inset={ROW_ICON_INSET} />
           <MenuRow
             label={t("settings:row.tint")}
@@ -191,19 +203,6 @@ export default function SettingsScreen() {
             onSelect={(id) => void attempt("settings", setTint(id), SAVE_FAILED)}
             onOpenChange={setMenuOpen}
           />
-          {LANGUAGE_SUPPORTED ? (
-            <>
-              <Separator inset={ROW_ICON_INSET} />
-              <MenuRow
-                label={t("settings:row.language")}
-                leading={<RowIcon name="globe" />}
-                options={LANGUAGE_OPTIONS}
-                selected={LANGUAGE_CHOICE}
-                onSelect={changeLanguage}
-                onOpenChange={setMenuOpen}
-              />
-            </>
-          ) : null}
         </Section>
 
         <Section title={t("settings:section.workouts")}>

@@ -1,7 +1,9 @@
+import { and, count, isNotNull, isNull } from 'drizzle-orm';
 import * as StoreReview from 'expo-store-review';
 import { Linking } from 'react-native';
 
 import { db } from '@/db/client';
+import { workouts } from '@/db/schema';
 import { getSetting, setSetting } from '@/db/seed';
 
 import { t } from '@/i18n';
@@ -34,18 +36,25 @@ export async function openReview(): Promise<void> {
 }
 
 const PROMPTED_KEY = 'review_prompted';
+const WORKOUTS_BEFORE_ASKING = 3;
 
 // Asking while the sheet is still animating away can land the system alert on a
 // view controller that is being torn down, and iOS then drops it silently.
 const AFTER_DISMISS_MS = 700;
 
 /**
- * The system rating sheet, once per install, after the first finished workout.
+ * The system rating sheet, once per install, after the third finished workout.
  * The flag is written before asking because iOS decides on its own whether to
  * show anything and never says — a retry would just spend the yearly quota.
  */
 export async function requestReviewOnce(): Promise<void> {
   if (await getSetting(db, PROMPTED_KEY)) return;
+  const row = await db
+    .select({ total: count() })
+    .from(workouts)
+    .where(and(isNotNull(workouts.finishedAt), isNull(workouts.deletedAt)))
+    .get();
+  if ((row?.total ?? 0) < WORKOUTS_BEFORE_ASKING) return;
   if (!(await StoreReview.isAvailableAsync())) return;
   await setSetting(db, PROMPTED_KEY, String(Date.now()));
 

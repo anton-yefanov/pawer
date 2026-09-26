@@ -4,6 +4,9 @@
   "version": "1.0.0",
   "dependencies": {
     "@expo/ui": "~57.0.18",
+    "@formatjs/intl-getcanonicallocales": "^3.2.12",
+    "@formatjs/intl-locale": "^5.3.12",
+    "@formatjs/intl-pluralrules": "^6.3.15",
     "@sentry/react-native": "^8.24.0",
     "@shopify/react-native-skia": "2.6.2",
     "@vercel/blob": "^2.8.0",
