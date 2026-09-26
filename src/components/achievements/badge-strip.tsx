@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { BadgeRow, type BadgeFace } from '@/components/achievements/badge-canvas';
 import { useBadgeSpotlight } from '@/components/achievements/badge-spotlight';
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { DEVANAGARI, leading, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
 import { acknowledgeBadge, badgeKey } from '@/lib/achievement-news';
@@ -180,15 +180,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     right: 0,
-    height: 14,
+    height: leading(14),
     justifyContent: 'center',
     paddingHorizontal: 5,
-    borderRadius: 7,
+    borderRadius: leading(14) / 2,
   },
   // Off the Type scale on purpose: a marker this small has no role in it.
   chipLabel: {
     fontSize: 9,
-    lineHeight: 10,
-    letterSpacing: 0.4,
+    lineHeight: leading(10),
+    letterSpacing: DEVANAGARI ? 0 : 0.4,
   },
 });

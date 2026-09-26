@@ -7,6 +7,8 @@ import "@/global.css";
 
 import { Platform } from "react-native";
 
+import { LANGUAGE } from "@/i18n";
+
 /**
  * Every screen is a grey `background` page carrying white `surface` cards.
  * `backgroundElement` is a fill *inside* a surface — a divider, an input, a
@@ -116,20 +118,27 @@ export const Fonts = Platform.select({
  * apply for us, so it is set by hand and only where that face is actually in
  * use — Nunito is drawn with its own metrics and needs none of it.
  */
-const track = (ios: number) => Platform.select({ ios: { letterSpacing: ios } });
+export const DEVANAGARI = LANGUAGE === "hi";
+
+// Tracking pulls apart the headline bar that joins Devanagari letters, and its
+// vowel signs reach above and below a Latin line box and get clipped. A fixed
+// height that holds text is sized through `leading` for the same reason.
+const track = (ios: number) =>
+  DEVANAGARI ? undefined : Platform.select({ ios: { letterSpacing: ios } });
+export const leading = (lineHeight: number) => (DEVANAGARI ? Math.round(lineHeight * 1.3) : lineHeight);
 
 export const Type = {
-  largeTitle: { fontSize: 34, lineHeight: 41, fontWeight: 700, ...track(0.4) },
-  title1: { fontSize: 28, lineHeight: 34, fontWeight: 700, ...track(0.36) },
-  title2: { fontSize: 22, lineHeight: 28, fontWeight: 700, ...track(-0.26) },
-  title3: { fontSize: 20, lineHeight: 25, fontWeight: 600, ...track(0.38) },
-  headline: { fontSize: 17, lineHeight: 22, fontWeight: 600, ...track(-0.43) },
-  body: { fontSize: 17, lineHeight: 22, fontWeight: 400, ...track(-0.43) },
-  callout: { fontSize: 16, lineHeight: 21, fontWeight: 400, ...track(-0.31) },
-  subhead: { fontSize: 15, lineHeight: 20, fontWeight: 400, ...track(-0.23) },
-  footnote: { fontSize: 13, lineHeight: 18, fontWeight: 400, ...track(-0.08) },
-  caption1: { fontSize: 12, lineHeight: 16, fontWeight: 400 },
-  caption2: { fontSize: 11, lineHeight: 13, fontWeight: 500, ...track(0.06) },
+  largeTitle: { fontSize: 34, lineHeight: leading(41), fontWeight: 700, ...track(0.4) },
+  title1: { fontSize: 28, lineHeight: leading(34), fontWeight: 700, ...track(0.36) },
+  title2: { fontSize: 22, lineHeight: leading(28), fontWeight: 700, ...track(-0.26) },
+  title3: { fontSize: 20, lineHeight: leading(25), fontWeight: 600, ...track(0.38) },
+  headline: { fontSize: 17, lineHeight: leading(22), fontWeight: 600, ...track(-0.43) },
+  body: { fontSize: 17, lineHeight: leading(22), fontWeight: 400, ...track(-0.43) },
+  callout: { fontSize: 16, lineHeight: leading(21), fontWeight: 400, ...track(-0.31) },
+  subhead: { fontSize: 15, lineHeight: leading(20), fontWeight: 400, ...track(-0.23) },
+  footnote: { fontSize: 13, lineHeight: leading(18), fontWeight: 400, ...track(-0.08) },
+  caption1: { fontSize: 12, lineHeight: leading(16), fontWeight: 400 },
+  caption2: { fontSize: 11, lineHeight: leading(13), fontWeight: 500, ...track(0.06) },
 } as const;
 
 export type TypeRole = keyof typeof Type;

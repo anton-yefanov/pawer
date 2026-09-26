@@ -29,7 +29,8 @@ export function normalize(value: string): string {
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')
     .toLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    // Marks stay: Devanagari vowel signs are \p{M}, and a word split at each one is unsearchable.
+    .replace(/[^\p{L}\p{M}\p{N}]+/gu, ' ')
     .trim();
 }
 
@@ -38,7 +39,7 @@ export function collapse(value: string): string {
 }
 
 /**
- * Tokens are stripped of everything but letters and digits — in any script —
+ * Tokens are stripped of everything but letters, marks and digits — in any script —
  * which also means a query can never smuggle a `%` or `_` into the LIKE
  * patterns built from it.
  */

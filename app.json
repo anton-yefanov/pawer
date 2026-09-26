@@ -214,7 +214,8 @@
     },
     "locales": {
       "en": "./src/i18n/native/en.json",
-      "es": "./src/i18n/native/es.json"
+      "es": "./src/i18n/native/es.json",
+      "hi": "./src/i18n/native/hi.json"
     }
   }
 }
