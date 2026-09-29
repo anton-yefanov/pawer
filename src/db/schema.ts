@@ -303,6 +303,22 @@ export const settings = sqliteTable('settings', {
   ...timestamps,
 });
 
+/**
+ * Links this phone has published. The site keeps the snapshot; this keeps the
+ * delete token it handed back, which is the only proof of ownership there is
+ * without an account. `localId` is the template or folder shared, as it was.
+ */
+export const shares = sqliteTable('shares', {
+  id: text('id').primaryKey(),
+  remoteId: text('remote_id').notNull(),
+  url: text('url').notNull(),
+  deleteToken: text('delete_token').notNull(),
+  /** 'template' | 'folder' */
+  kind: text('kind').notNull(),
+  localId: text('local_id').notNull(),
+  ...timestamps,
+});
+
 export type Exercise = typeof exercises.$inferSelect;
 export type NewExercise = typeof exercises.$inferInsert;
 export type Workout = typeof workouts.$inferSelect;

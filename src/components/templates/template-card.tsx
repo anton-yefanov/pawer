@@ -19,6 +19,20 @@ export type TemplateCardData = {
   exerciseArt: readonly ExerciseArt[];
 };
 
+/** What a template card draws on its cover; a shared link's card is drawn from the same call. */
+export function templateCover(
+  template: Pick<TemplateCardData, 'artwork' | 'exerciseArt'>,
+  cardWidth: number,
+) {
+  return (
+    <ArtworkLayer
+      artwork={template.artwork}
+      coverHeight={coverSize(cardWidth).height}
+      exerciseArt={template.exerciseArt}
+    />
+  );
+}
+
 type Props = {
   template: TemplateCardData;
   width: number;
@@ -39,13 +53,7 @@ export function TemplateCard({ template, width, index, draggable = false, menu }
       onPress={() =>
         router.push({ pathname: '/template/[id]', params: { id: template.id } })
       }
-      cover={
-        <ArtworkLayer
-          artwork={template.artwork}
-          coverHeight={coverSize(cardWidth).height}
-          exerciseArt={template.exerciseArt}
-        />
-      }
+      cover={templateCover(template, cardWidth)}
     />
   );
 

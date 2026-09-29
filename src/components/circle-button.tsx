@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 
 import { FloatingSurface } from '@/components/floating-surface';
 import { Icon, type IconName } from '@/components/icon';
@@ -45,6 +45,7 @@ export function CircleButton({
   tintColor,
   symbolColor,
   disabled = false,
+  loading = false,
   feedback = 'tap',
   onPress,
 }: {
@@ -55,6 +56,8 @@ export function CircleButton({
   tintColor?: string;
   symbolColor?: string;
   disabled?: boolean;
+  /** A spinner in place of the symbol, for work that outlasts the tap. */
+  loading?: boolean;
   /** `press` for the buttons that commit something rather than just navigate. */
   feedback?: 'tap' | 'press';
   onPress: () => void;
@@ -68,6 +71,7 @@ export function CircleButton({
     <GlassCircle size={size} tintColor={tintColor}>
       <Pressable
         onPress={() => {
+          if (loading) return;
           if (disabled) {
             haptics.reject();
             return;
@@ -80,7 +84,11 @@ export function CircleButton({
         accessibilityLabel={label}
         accessibilityState={{ disabled }}
         style={({ pressed }) => [styles.content, pressed && styles.pressed]}>
-        <Icon name={symbol} size={symbolSize} tintColor={symbolColor ?? theme.text} />
+        {loading ? (
+          <ActivityIndicator color={symbolColor ?? theme.text} />
+        ) : (
+          <Icon name={symbol} size={symbolSize} tintColor={symbolColor ?? theme.text} />
+        )}
       </Pressable>
     </GlassCircle>
   );

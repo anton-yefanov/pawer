@@ -10,6 +10,7 @@ import {
 } from '@/components/templates/card-actions';
 import { ExerciseThumb } from '@/components/exercise-thumb';
 import { CardMenu } from '@/components/templates/card-menu';
+import { useShareButton } from '@/components/templates/share-button';
 import { ThemedText } from '@/components/themed-text';
 import { ActiveWorkoutPrompt } from '@/components/workout/active-workout-prompt';
 import { ConfirmAlert } from '@/components/workout/confirm-alert';
@@ -37,6 +38,7 @@ export function TemplatePreview({ id }: { id: string }) {
   const templateRows = useLiveRows(() => templateQuery(id), id);
   const exercises = useLiveRows(() => templateExercisesQuery(id), id);
   const template = templateRows[0];
+  const share = useShareButton(template ? { kind: 'template', id: template.id } : null);
   const [blockedBy, setBlockedBy] = useState<string | null>(null);
   const [pending, setPending] = useState<ConfirmRequest | null>(null);
 
@@ -70,7 +72,8 @@ export function TemplatePreview({ id }: { id: string }) {
       <SheetHeader
         title={template?.name ?? ''}
         options={{ contentStyle: { backgroundColor: theme.surface } }}
-        right={
+        right={share.button}
+        left={
           template && !template.isBuiltIn ? (
             <CardMenu
               accessibilityLabel={t('common:optionsFor', { name: template.name })}
@@ -115,6 +118,7 @@ export function TemplatePreview({ id }: { id: string }) {
           </Pressable>
         ))}
       </ScrollView>
+      {share.host}
 
       <SheetOverlay>
         <SheetFooter style={styles.footer}>

@@ -69,7 +69,9 @@ type TelemetryEvents = {
   workout_started: { source: 'empty' | 'template' | 'repeat' };
   workout_finished: Record<never, never>;
   workout_cancelled: Record<never, never>;
-  template_created: { source: 'blank' | 'from_workout' | 'duplicate' };
+  template_created: { source: 'blank' | 'from_workout' | 'duplicate' | 'shared' };
+  share_created: { kind: 'template' | 'folder'; nodes: number };
+  share_imported: { kind: 'template' | 'folder'; templates: number; exercises_created: number };
   custom_exercise_created: { tracking_type: TrackingType };
   paywall_shown: { source: PaywallSource };
   paywall_result: { source: PaywallSource; outcome: PaywallOutcome };

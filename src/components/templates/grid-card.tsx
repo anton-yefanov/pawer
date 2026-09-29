@@ -31,8 +31,6 @@ export function GridCard({
   /** Set when a long press lifts the card for dragging. */
   liftable?: boolean;
 }) {
-  const raised = CardRaised[useColorScheme()];
-
   return (
     <View style={{ width }}>
       <Pressable
@@ -45,16 +43,7 @@ export function GridCard({
         onLongPress={liftable ? () => {} : undefined}
         delayLongPress={LIFT_DELAY}
         style={({ pressed }) => [pressed && styles.pressed]}>
-        <View style={[styles.slot, { height: coverBoxHeight(width) }]}>
-          {showCover ? (
-            <View style={[styles.cover, coverStyle(width), raised]}>
-              <CardCover color={color} />
-              {cover}
-            </View>
-          ) : (
-            cover
-          )}
-        </View>
+        <CardArt cover={cover} color={color} width={width} showCover={showCover} />
         <View style={styles.body}>
           <ThemedText type="footnote" weight="semibold" numberOfLines={1}>
             {title}
@@ -62,6 +51,37 @@ export function GridCard({
         </View>
       </Pressable>
       {menu && <View style={[styles.menu, menuOffset(width)]}>{menu}</View>}
+    </View>
+  );
+}
+
+/**
+ * Everything above the title: a template's cover or a folder's illustration, in
+ * the box both kinds share. A shared link's card images are snapshots of this.
+ */
+export function CardArt({
+  cover,
+  color,
+  width,
+  showCover = true,
+}: {
+  cover: React.ReactNode;
+  color: CardColor | null;
+  width: number;
+  showCover?: boolean;
+}) {
+  const raised = CardRaised[useColorScheme()];
+
+  return (
+    <View style={[styles.slot, { height: coverBoxHeight(width) }]}>
+      {showCover ? (
+        <View style={[styles.cover, coverStyle(width), raised]}>
+          <CardCover color={color} />
+          {cover}
+        </View>
+      ) : (
+        cover
+      )}
     </View>
   );
 }
@@ -116,7 +136,7 @@ function coverStyle(cardWidth: number) {
 }
 
 /** The box both kinds sit in, sized by the folder icon — the deeper of the two. */
-function coverBoxHeight(cardWidth: number): number {
+export function coverBoxHeight(cardWidth: number): number {
   return (cardWidth * COVER_SCALE) / FOLDER_ICON_ASPECT;
 }
 

@@ -23,6 +23,7 @@ import m0018 from './0018_bitter_colleen_wing.sql';
 import m0019 from './0019_modern_namorita.sql';
 import m0020 from './0020_swift_war_machine.sql';
 import m0021 from './0021_slim_baron_zemo.sql';
+import m0022 from './0022_small_bloodscream.sql';
 
   export default {
     journal,
@@ -48,7 +49,8 @@ m0017,
 m0018,
 m0019,
 m0020,
-m0021
+m0021,
+m0022
     }
   }
   

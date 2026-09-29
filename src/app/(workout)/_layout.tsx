@@ -23,6 +23,9 @@ import { t } from "@/i18n";
  * rather than chrome, so a new sheet renders either `SheetHeader`, which draws
  * one, or `SheetGrabber` itself.
  */
+/** A shared link cold-launches straight into its sheet; Home has to be under it. */
+export const unstable_settings = { initialRouteName: "index" };
+
 export default function WorkoutLayout() {
   const theme = useTheme();
 
@@ -100,6 +103,13 @@ export default function WorkoutLayout() {
       <Stack.Screen
         name="folder/[id]"
         options={DETAIL_SHEET}
+      />
+      <Stack.Screen
+        name="shared/[id]"
+        options={{
+          ...DETAIL_SHEET,
+          sheetCornerRadius: PINNED_CORNER_RADIUS,
+        }}
       />
       {/* Full height whatever it is showing: the sheet draws its own Close and
           Save where a nav bar's buttons would be, and the emoji picker step

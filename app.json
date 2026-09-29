@@ -80,7 +80,11 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleAllowMixedLocalizations": true
-      }
+      },
+      "associatedDomains": [
+        "applinks:getpawer.app",
+        "applinks:www.getpawer.app"
+      ]
     },
     "android": {
       "package": "com.antonyefanov.pawer",
@@ -206,7 +210,8 @@
       "posthog": {
         "apiKey": "phc_rhLTiCCKSqx6CL4YSCYvESJZN8xLKZbGTvGzoyf6aXtD",
         "host": "https://us.i.posthog.com"
-      }
+      },
+      "shareHost": "https://www.getpawer.app"
     },
     "experiments": {
       "typedRoutes": true,

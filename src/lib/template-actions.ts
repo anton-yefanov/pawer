@@ -77,17 +77,31 @@ async function nextPersonalPosition(): Promise<number> {
 export async function createTemplate({
   name,
   exercises,
+  notes = null,
+  folderId = null,
+  color = null,
+  artwork,
+  source = 'blank',
 }: {
   name: string;
   exercises: readonly TemplateExerciseInput[];
+  notes?: string | null;
+  folderId?: string | null;
+  color?: CardColor | null;
+  /** Left out, a new cover shows the template's exercises. */
+  artwork?: CardArtwork | null;
+  source?: 'blank' | 'shared';
 }): Promise<string> {
   const id = newId();
   await db.insert(templates).values({
     id,
     name,
+    notes,
+    folderId,
+    color,
     position: await nextPersonalPosition(),
     isBuiltIn: false,
-    artwork: DEFAULT_ARTWORK,
+    artwork: artwork === undefined ? DEFAULT_ARTWORK : serializeArtwork(artwork),
   });
 
   if (exercises.length > 0) {
@@ -109,7 +123,7 @@ export async function createTemplate({
     if (planned.length > 0) await db.insert(templateSets).values(planned);
   }
 
-  track('template_created', { source: 'blank' });
+  track('template_created', { source });
   return id;
 }
 

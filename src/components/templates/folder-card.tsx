@@ -19,6 +19,11 @@ export type FolderCardData = {
   templateNames: readonly string[];
 };
 
+/** A folder's whole card art; a shared link's card is drawn from the same call. */
+export function folderCover(folder: Pick<FolderCardData, 'color' | 'artwork'>, cardWidth: number) {
+  return <FolderArt color={folder.color} artwork={folder.artwork} width={cardWidth * COVER_SCALE} />;
+}
+
 type Props = {
   folder: FolderCardData;
   width: number;
@@ -90,9 +95,7 @@ function FolderGridCard({
           params: { id: folder.id },
         })
       }
-      cover={
-        <FolderArt color={folder.color} artwork={folder.artwork} width={cardWidth * COVER_SCALE} />
-      }
+      cover={folderCover(folder, cardWidth)}
     />
   );
 }

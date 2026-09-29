@@ -8,7 +8,11 @@ import { type CardArtwork, serializeArtwork } from '@/lib/card-artwork';
 
 const touch = () => ({ updatedAt: Date.now() });
 
-export async function createFolder(name: string, parentId: string | null = null): Promise<string> {
+export async function createFolder(
+  name: string,
+  parentId: string | null = null,
+  appearance: { color: CardColor; artwork: CardArtwork | null } = { color: 'blue', artwork: null },
+): Promise<string> {
   const last = await db
     .select({ position: folders.position })
     .from(folders)
@@ -22,7 +26,8 @@ export async function createFolder(name: string, parentId: string | null = null)
     id,
     name,
     parentId,
-    color: 'blue',
+    color: appearance.color,
+    artwork: serializeArtwork(appearance.artwork),
     position: (last?.position ?? -1) + 1,
   });
   return id;

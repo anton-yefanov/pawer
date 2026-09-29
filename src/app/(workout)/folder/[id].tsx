@@ -14,6 +14,7 @@ import {
 } from '@/components/templates/card-actions';
 import { CARD_MENU_SIZE, CardMenu } from '@/components/templates/card-menu';
 import { TemplateDragProvider } from '@/components/templates/template-drag';
+import { useShareButton } from '@/components/templates/share-button';
 import { CardGrid, type Cell } from '@/components/templates/template-section';
 import { useGridDrop } from '@/components/templates/use-grid-drop';
 import { ConfirmAlert } from '@/components/workout/confirm-alert';
@@ -55,6 +56,7 @@ export default function FolderScreen() {
   const [dragging, setDragging] = useState(false);
 
   const folder = folderRows?.[0];
+  const share = useShareButton(folder ? { kind: 'folder', id: folder.id } : null);
   // A Library folder is app-shipped: its cards are read-only, and the way one
   // leaves it is Save in the preview sheet, not a corner menu.
   const shipped = folder?.isBuiltIn ?? false;
@@ -106,7 +108,8 @@ export default function FolderScreen() {
         title={folder?.name ?? ''}
         // Dismissing mid-drag would unmount the lifted card under the finger.
         options={{ contentStyle: { backgroundColor: theme.background }, gestureEnabled: !dragging }}
-        right={
+        right={share.button}
+        left={
           folder && !shipped ? (
             <CardMenu
               accessibilityLabel={t('common:optionsFor', { name: folder.name })}
@@ -134,6 +137,7 @@ export default function FolderScreen() {
           />
         )}
       </ScrollView>
+      {share.host}
 
       <ConfirmAlert
         open={pending != null}
