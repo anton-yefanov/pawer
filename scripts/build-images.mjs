@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 /**
- * Vendor stills → the WebP the app bundles.
+ * Vendor clips → the stills the app bundles.
  *
  *   node scripts/build-images.mjs
  *
- * Input  assets/new_exercises_data/posters/<slug>.webp   720x402, the video's first frame
+ * Input  the vendor clip's opening frame — the loop's `first` when it has one —
+ *        colour corrected exactly like build-videos does it
  *
  * Output assets/exercises/poster/<slug>.webp   720x402  the detail sheet's still
  *        assets/exercises/thumb/<slug>.webp    150x150  centre-cropped, the list row
@@ -17,12 +18,14 @@
  * size of optimised PNG, natively decoded by expo-image, and unlike JPEG it
  * keeps transparency and does not smear crisp outlines.
  */
+import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
-import { METADATA_PATH, POSTERS_DIR, groupOf } from './exercise-taxonomy.mjs';
+import { colorFilter } from './exercise-grade.mjs';
+import { METADATA_PATH, VIDEOS_DIR, groupOf } from './exercise-taxonomy.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -42,16 +45,23 @@ const write = (output, buf) => {
 
 // --- Exercise stills -------------------------------------------------------
 const meta = JSON.parse(readFileSync(resolve(ROOT, METADATA_PATH), 'utf8'));
+const loops = JSON.parse(readFileSync(resolve(ROOT, 'scripts/exercise-loops.json'), 'utf8'));
+
+// The poster sits under the clip until its first frame renders, so it is cut
+// from that frame — a loop opens later than the vendor's own still, and every
+// clip is regraded — rather than taken from the vendor's posters.
+const openingFrame = (entry) => {
+  const first = loops[entry.slug]?.first ?? 0;
+  // rgb24 last: the grade runs at 16 bits, and a 16-bit PNG overflows execFileSync's buffer.
+  const vf = [`select=eq(n\\,${first})`, 'scale=720:402:flags=lanczos', colorFilter(entry.slug), 'format=rgb24'];
+  return execFileSync('ffmpeg', [
+    '-loglevel', 'error', '-i', resolve(ROOT, VIDEOS_DIR, entry.videoFile),
+    '-vf', vf.filter(Boolean).join(','),
+    '-frames:v', '1', '-f', 'image2pipe', '-c:v', 'png', '-',
+  ]);
+};
 
 for (const entry of meta) {
-  const src = resolve(ROOT, POSTERS_DIR, `${entry.slug}.webp`);
-  try {
-    statSync(src);
-  } catch {
-    warnings.push(`${entry.slug}: no poster at ${POSTERS_DIR}`);
-    continue;
-  }
-
   // The generated map `require`s the clip, so a missing one fails Metro rather
   // than this script. Catch it here where the message says what to do.
   const clip = resolve(ROOT, `assets/exercise-videos/${groupOf(entry)}/${entry.slug}.mp4`);
@@ -61,11 +71,12 @@ for (const entry of meta) {
     warnings.push(`${entry.slug}: no clip — run \`npm run videos:pull\``);
   }
 
-  write(resolve(ROOT, `assets/exercises/poster/${entry.slug}.webp`), readFileSync(src));
+  const poster = await sharp(openingFrame(entry)).webp(WEBP).toBuffer();
+  write(resolve(ROOT, `assets/exercises/poster/${entry.slug}.webp`), poster);
 
   // The row draws a 48pt circle. Cropping to a square here rather than letting
   // expo-image do it keeps a 720px frame out of every cell of a long list.
-  const thumb = await sharp(src)
+  const thumb = await sharp(poster)
     .resize(SIZES.thumb, SIZES.thumb, { fit: 'cover', position: 'centre' })
     .webp(WEBP)
     .toBuffer();

@@ -26,7 +26,7 @@ npm run build:seed       # rebuild src/db/seed/exercises.json from the purchased
 npm run build:sounds     # synthesize the rest-timer tones into assets/sounds/ (committed; app.json lists them)
 npm run build:emoji      # rebuild src/constants/emoji-data.ts from emoji-datasource
 npm run build:content    # regenerate the English content catalogs in src/i18n/content/en from the seed
-npm run build:images     # vendor posters -> shipped webp (see §Assets)
+npm run build:images     # clip opening frames -> shipped poster/thumb webp (see §Assets)
 npm run build:videos     # vendor mp4 -> assets/exercise-videos/, ~45 min (see §Assets)
 npm run videos:pull      # mirror the encoded clips down from Vercel Blob — needed before prebuild
 npm run videos:push      # the other direction, after a re-encode
@@ -102,11 +102,15 @@ These are cheap now and painful to retrofit — hold them for every new table:
 
 Illustrations are never referenced by path from a screen. `src/lib/exercise-media.ts` is the only resolver (Metro needs static `require` literals, so any real lookup map must be generated or written out).
 
-**Every exercise is a video, and the video ships in the app.** The purchased library at `assets/new_exercises_data/` ships 412 clips, 412 posters and `metadata.json`; the vendor originals are 889 MB and gitignored. `npm run build:videos` re-encodes them to `assets/exercise-videos/<tag>/<slug>.mp4` — 10-bit HEVC 1084×600 CRF 30, no audio, ~78 MB for the set — and `npm run build:images` copies the posters and cuts a 150px square thumb from each, writing `src/lib/exercise-media-map.ts` as it goes.
+**Every exercise is a video, and the video ships in the app.** The purchased library at `assets/new_exercises_data/` ships 412 clips, 412 posters and `metadata.json`; the vendor originals are 889 MB and gitignored. `npm run build:videos` re-encodes them to `assets/exercise-videos/<tag>/<slug>.mp4` — 10-bit HEVC 1084×600 CRF 30, no audio, ~55 MB for the set — and `npm run build:images` cuts each poster from the clip's opening frame and a 150px square thumb from that, writing `src/lib/exercise-media-map.ts` as it goes.
 
-**Clips are ordinary bundled assets.** `EXERCISE_MEDIA[slug].video` is a `require()` of the mp4, so Metro pulls all 412 into the binary the same way it pulls the posters — no download, no progress UI, no network path to fail. That costs ~78 MB of app size, which was a deliberate trade against the complexity of on-demand delivery: an earlier version shipped the clips as twelve iOS On-Demand Resource asset packs and it is gone, so don't reintroduce `NSBundleResourceRequest`, a config plugin, or a download provider.
+**A clip is one seamless loop, not the vendor's two or three reps.** `scripts/find-video-loops.py` (Python + numpy, run by hand, not by npm) writes `scripts/exercise-loops.json`: per slug, the span whose last frame flows back into its first as smoothly as the clip moves on its own, rotated to open on the frame nearest the vendor's poster. `build:videos` cuts on those points and `build:images` draws the poster from the frame the clip now opens on, so the still under `ExerciseVideo` still matches. Most vendor cameras drift, so the finder scores the cut against the motion *at* the cut — a seam at the top of a rep, where the body is still, shows the camera snap. A clip with no clean span, or no repeating rep at all (run then walk), is absent from the json and ships uncut. A loop is never shorter than one full rep, holds included, and must contain every pose of the original — the shortest clean seam on its own finds half-reps.
 
-The posters ship too, at 3.7 MB. A clip needs a moment to produce its first frame, and `ExerciseVideo` draws the still underneath until `onFirstFrameRender` fires, so a sheet never opens on a black rectangle.
+**Every clip sits on the same neutral grey backdrop.** The vendor rendered most clips warm and a few near white. `scripts/find-video-grades.py` writes `scripts/exercise-grades.json`, a per-channel gain that maps each clip's backdrop to 228 grey, and `scripts/exercise-grade.mjs` turns it into the ffmpeg chain both builds apply — which is why posters are cut from the clip rather than copied from the vendor's, whose colour no longer matches. A handful of clips are warm only in the middle and are also chroma-neutralized; that step erases the red glow round the muscles, so it is a hand-picked list, not a default.
+
+**Clips are ordinary bundled assets.** `EXERCISE_MEDIA[slug].video` is a `require()` of the mp4, so Metro pulls all 412 into the binary the same way it pulls the posters — no download, no progress UI, no network path to fail. That costs ~55 MB of app size, which was a deliberate trade against the complexity of on-demand delivery: an earlier version shipped the clips as twelve iOS On-Demand Resource asset packs and it is gone, so don't reintroduce `NSBundleResourceRequest`, a config plugin, or a download provider.
+
+The posters ship too, at 4.3 MB. A clip needs a moment to produce its first frame, and `ExerciseVideo` draws the still underneath until `onFirstFrameRender` fires, so a sheet never opens on a black rectangle.
 
 `<tag>` survives as the directory the encoder writes into (`assets/exercise-videos/<tag>/<slug>.mp4`) and comes from `groupOf()` in `scripts/exercise-taxonomy.mjs`. It is now only a filing convention — nothing at runtime reads it, because the generated `require` path already encodes it.
 

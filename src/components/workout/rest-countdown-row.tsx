@@ -110,7 +110,7 @@ function RestCountdownRow({
     transform: [{ scaleX: interpolate(reveal.value, [0, 1], [0.86, 1]) }],
   }));
 
-    // `adjust` is a no-op once the rest has already run out; buzzing then would
+  // `adjust` is a no-op once the rest has already run out; buzzing then would
   // claim something happened.
   const adjust = (delta: number) => {
     if (rest.setId == null) return;
@@ -195,6 +195,7 @@ function RestButton({
   // Each button pops a beat after the one before it, and on the way out the
   // same ranges run backwards, so Skip tucks away first and the pill is bare
   // by the time it slides under the set.
+  const theme = useTheme();
   const pop = useAnimatedStyle(() => {
     const start = 0.35 + order * 0.12;
     return {
@@ -205,7 +206,9 @@ function RestButton({
   });
 
   return (
-    <AnimatedFloatingSurface style={[styles.button, pop]}>
+    // Clear glass over the accent fill turns accent-blue itself, and the
+    // accent labels vanish into it — so the glass carries the surface colour.
+    <AnimatedFloatingSurface tintColor={theme.surface} style={[styles.button, pop]}>
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
